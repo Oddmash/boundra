@@ -1,10 +1,18 @@
+<div align="center">
+
+<img src="docs/assets/boundra-mark.svg" alt="Boundra" width="120" />
+
 # Boundra
 
 **아키텍처가 무너지기 전에 도메인 경계를 지킵니다.**
 
 [English](README.md) · [한국어](README.ko.md) · [日本語](README.ja.md) · [简体中文](README.zh-CN.md)
 
-[![npm](https://img.shields.io/npm/v/boundra)](https://www.npmjs.com/package/boundra) [![CI](https://github.com/Oddmash/boundra/actions/workflows/boundra.yml/badge.svg)](https://github.com/Oddmash/boundra/actions/workflows/boundra.yml) [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+</div>
+
+**[상세 사용 가이드](docs/user-guide.ko.md)** · [도입 기준 및 장단점](docs/product-positioning.md)
+
+[![npm](https://img.shields.io/npm/v/boundra?color=ea580c)](https://www.npmjs.com/package/boundra) [![CI](https://github.com/Oddmash/boundra/actions/workflows/boundra.yml/badge.svg)](https://github.com/Oddmash/boundra/actions/workflows/boundra.yml) [![License](https://img.shields.io/badge/license-MIT-ea580c)](LICENSE)
 
 Boundra는 도메인 중심 애플리케이션을 위한 스키마 기반 TypeScript 계약 런타임과 Rust 정적 분석 CLI입니다. 기존 Next.js, Vite 및 서버 스택과 함께 사용합니다.
 

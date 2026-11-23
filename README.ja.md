@@ -1,10 +1,18 @@
+<div align="center">
+
+<img src="docs/assets/boundra-mark.svg" alt="Boundra" width="120" />
+
 # Boundra
 
 **アーキテクチャが崩れる前に、ドメイン境界を守る。**
 
 [English](README.md) · [한국어](README.ko.md) · [日本語](README.ja.md) · [简体中文](README.zh-CN.md)
 
-[![npm](https://img.shields.io/npm/v/boundra)](https://www.npmjs.com/package/boundra) [![CI](https://github.com/Oddmash/boundra/actions/workflows/boundra.yml/badge.svg)](https://github.com/Oddmash/boundra/actions/workflows/boundra.yml) [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+</div>
+
+**[ユーザーガイド](docs/user-guide.ja.md)** · [導入判断と制約](docs/product-positioning.md)
+
+[![npm](https://img.shields.io/npm/v/boundra?color=ea580c)](https://www.npmjs.com/package/boundra) [![CI](https://github.com/Oddmash/boundra/actions/workflows/boundra.yml/badge.svg)](https://github.com/Oddmash/boundra/actions/workflows/boundra.yml) [![License](https://img.shields.io/badge/license-MIT-ea580c)](LICENSE)
 
 Boundra は、ドメイン中心のアプリケーション向けのスキーマベース TypeScript 契約ランタイムと Rust 製の静的解析 CLI です。既存の Next.js、Vite、サーバー構成と併用できます。
 

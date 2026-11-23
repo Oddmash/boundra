@@ -1,10 +1,18 @@
+<div align="center">
+
+<img src="docs/assets/boundra-mark.svg" alt="Boundra" width="120" />
+
 # Boundra
 
 **在架构失控之前守住领域边界。**
 
 [English](README.md) · [한국어](README.ko.md) · [日本語](README.ja.md) · [简体中文](README.zh-CN.md)
 
-[![npm](https://img.shields.io/npm/v/boundra)](https://www.npmjs.com/package/boundra) [![CI](https://github.com/Oddmash/boundra/actions/workflows/boundra.yml/badge.svg)](https://github.com/Oddmash/boundra/actions/workflows/boundra.yml) [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+</div>
+
+**[详细使用指南](docs/user-guide.zh-cn.md)** · [采用建议及取舍](docs/product-positioning.md)
+
+[![npm](https://img.shields.io/npm/v/boundra?color=ea580c)](https://www.npmjs.com/package/boundra) [![CI](https://github.com/Oddmash/boundra/actions/workflows/boundra.yml/badge.svg)](https://github.com/Oddmash/boundra/actions/workflows/boundra.yml) [![License](https://img.shields.io/badge/license-MIT-ea580c)](LICENSE)
 
 Boundra 是面向领域优先应用的基于 Schema 的 TypeScript 契约运行时，以及使用 Rust 编写的静态分析 CLI。可与现有 Next.js、Vite 和服务端技术栈配合使用。
 
