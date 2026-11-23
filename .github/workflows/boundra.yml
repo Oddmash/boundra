@@ -73,3 +73,12 @@ jobs:
           node-version: 24
       - run: cargo build --release -p boundra-cli
       - run: node scripts/benchmark-boundaries.mjs --files 1000 --iterations 2 --max-ms 5000 --max-rss-mb 512
+
+  verify:
+    if: ${{ always() }}
+    needs: [verify-example, verify-runtime, verify-cli-platforms, benchmark-smoke]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Require all Boundra checks
+        if: ${{ needs.verify-example.result != 'success' || needs.verify-runtime.result != 'success' || needs.verify-cli-platforms.result != 'success' || needs.benchmark-smoke.result != 'success' }}
+        run: exit 1
