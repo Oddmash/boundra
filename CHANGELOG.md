@@ -6,6 +6,10 @@ The format follows Keep a Changelog and versions follow Semantic Versioning.
 
 ## [Unreleased]
 
+### Changed
+
+- move canonical repository metadata, CLI release downloads, and documentation to Oddmash/boundra without renaming the npm package
+
 ## [0.6.0] - 2026-09-14
 
 ### Added
