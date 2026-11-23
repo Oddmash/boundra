@@ -1,4 +1,7 @@
-import { dirname, posix } from "node:path";
+import { dirname, posix, relative as relativePath, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const docsRoot = fileURLToPath(new URL("../docs/", import.meta.url));
 
 export default function remarkDocLinks() {
   return (tree, file) => {
@@ -6,7 +9,8 @@ export default function remarkDocLinks() {
       "\\",
       "/",
     );
-    const source = path.slice(path.lastIndexOf("/docs/") + 6);
+    const source = relativePath(docsRoot, resolve(path)).replaceAll("\\", "/");
+    if (source.startsWith("../") || !source.endsWith(".md")) return;
     const rewrite = (node) => {
       if (
         (node.type === "link" || node.type === "image") &&
@@ -18,8 +22,8 @@ export default function remarkDocLinks() {
         const hash = fragment ? `#${fragment}` : "";
         if (relative === "../examples/order-billing")
           node.url = `/boundra/docs/example/${hash}`;
-        else if (relative === "assets/boundra-mark.svg")
-          node.url = "/boundra/boundra-mark.svg";
+        else if (relative.startsWith("assets/"))
+          node.url = `/boundra/docs/${relative}${hash}`;
         else if (relative.endsWith(".md") && !relative.startsWith("../"))
           node.url = `/boundra/docs/${relative.slice(0, -3)}/${hash}`;
       }

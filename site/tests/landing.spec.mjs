@@ -1,22 +1,72 @@
 import { test, expect } from "@playwright/test";
 
-const assertReflow = async (page) => {
-  const reflow = await page.evaluate(() => ({
+const readReflow = (page) =>
+  page.evaluate(() => ({
     viewport: innerWidth,
     document: document.documentElement.scrollWidth,
     overflowing: [...document.querySelectorAll("main *")]
-      .filter(
-        (element) =>
-          element.getBoundingClientRect().right > innerWidth &&
-          getComputedStyle(element).overflowX !== "auto",
-      )
+      .filter((element) => {
+        const rect = element.getBoundingClientRect();
+        if (!rect.width || !rect.height) return false;
+        for (
+          let parent = element.parentElement;
+          parent;
+          parent = parent.parentElement
+        ) {
+          if (
+            ["auto", "scroll"].includes(getComputedStyle(parent).overflowX) &&
+            parent.scrollWidth > parent.clientWidth
+          )
+            return false;
+        }
+        return rect.left < -0.5 || rect.right > innerWidth + 0.5;
+      })
       .map((element) => `${element.tagName}.${element.className}`)
       .slice(0, 12),
   }));
+
+const assertReflow = async (page) => {
+  const reflow = await readReflow(page);
   expect(reflow.document, JSON.stringify(reflow)).toBeLessThanOrEqual(
     reflow.viewport,
   );
+  expect(reflow.overflowing, JSON.stringify(reflow)).toEqual([]);
 };
+
+test("reflow diagnostics detect content clipped on the left", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 900 });
+  await page.goto("./");
+  await page.locator("main").evaluate((main) => {
+    const element = document.createElement("div");
+    element.className = "left-reflow-fixture";
+    Object.assign(element.style, {
+      position: "absolute",
+      left: "-30px",
+      width: "100px",
+      height: "20px",
+    });
+    main.append(element);
+  });
+  expect((await readReflow(page)).overflowing).toContain(
+    "DIV.left-reflow-fixture",
+  );
+});
+
+test("documentation images resolve to published docs assets", async ({
+  page,
+}) => {
+  await page.goto("./docs/brand/");
+  const mark = page.getByRole("img", { name: "Boundra mark" });
+  await expect(mark).toHaveAttribute(
+    "src",
+    "/boundra/docs/assets/boundra-mark.svg",
+  );
+  expect(
+    await mark.evaluate((image) => image.complete && image.naturalWidth > 0),
+  ).toBe(true);
+});
 
 for (const width of [1440, 768, 390, 320]) {
   test(`landing and documentation at ${width}px`, async ({
