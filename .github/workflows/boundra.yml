@@ -23,6 +23,7 @@ jobs:
       - run: pnpm check-release-notes
       - run: pnpm verify-example
       - run: pnpm verify-clean-room
+      - run: node scripts/verify-framework-consumers.mjs
       - run: cargo clippy --workspace --all-targets -- -D warnings
 
   verify-runtime:
@@ -73,6 +74,7 @@ jobs:
           node-version: 24
       - run: cargo build --release -p boundra-cli
       - run: node scripts/benchmark-boundaries.mjs --files 1000 --iterations 2 --max-ms 5000 --max-rss-mb 512
+      - run: node scripts/benchmark-boundaries.mjs --files 10000 --iterations 3
 
   verify:
     if: ${{ always() }}
