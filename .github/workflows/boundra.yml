@@ -15,10 +15,10 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa
       - uses: actions/setup-node@v6
         with:
           node-version: 24
-      - run: corepack enable
       - run: pnpm install --frozen-lockfile
       - run: pnpm check-release-notes
       - run: pnpm verify-example
@@ -34,12 +34,16 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - run: pnpm install --frozen-lockfile
       - uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
-      - run: npm install
-      - run: npm exec tsc -- -p packages/runtime/tsconfig.build.json
-      - run: npm run test-runtime
+      - run: node node_modules/typescript/bin/tsc -p packages/runtime/tsconfig.build.json
+      - run: node --import tsx packages/runtime/tests/runtime-test.ts
 
   verify-cli-platforms:
     strategy:
