@@ -16,6 +16,15 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+      - run: npm ci
+        working-directory: site
+      - run: npm run build
+        working-directory: site
       - name: Validate landing assets
         run: |
           python3 - <<'PY'
@@ -33,14 +42,17 @@ jobs:
                       assert attrs['id'] not in self.ids, 'duplicate id'
                       self.ids.add(attrs['id'])
                   self.links.extend(attrs[key] for key in ('href', 'src') if key in attrs)
-          root = Path('site')
+          root = Path('site/dist')
           parser = Links()
           parser.feed((root / 'index.html').read_text())
           for link in parser.links:
               parsed = urlsplit(link)
               if not parsed.scheme and not parsed.netloc:
                   if parsed.path:
-                      assert (root / parsed.path).exists(), link
+                      path = parsed.path
+                      if path.startswith('/boundra/'):
+                          path = path.removeprefix('/boundra/')
+                      assert (root / path).exists(), link
                   if parsed.fragment:
                       assert parsed.fragment in parser.ids, link
           PY
@@ -48,7 +60,7 @@ jobs:
         if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v4
         with:
-          path: site
+          path: site/dist
   deploy:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: validate
