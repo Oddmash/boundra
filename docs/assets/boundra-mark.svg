@@ -1,8 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-labelledby="title">
   <title id="title">Boundra</title>
-  <rect width="256" height="256" rx="40" fill="#fff"/>
-  <g fill="none" stroke="#EA580C" stroke-width="17" stroke-linecap="round" stroke-linejoin="round">
-    <rect x="42" y="42" width="172" height="172" rx="32"/>
-    <path d="M128 42v172M128 99H81M128 157h47"/>
-  </g>
+  <path fill="#FFFFFF" d="M0 0h256v256H0z"/>
+  <path fill="#EA580C" fill-rule="evenodd" d="M44 35h120l47 47-38 43 41 44-51 52H44V35Zm50 45h55v20l-55 38V80Zm9 59h43l19 22-18 19h-44v-41Z"/>
+  <path fill="#FFFFFF" d="M44 163 149 87v13L44 176Z"/>
 </svg>
