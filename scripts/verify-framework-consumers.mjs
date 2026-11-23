@@ -55,8 +55,9 @@ export const readOrder = () => createBoundraClient(async () => ({id: "order-1", 
   await write("apps/next/app/page.tsx", 'import { readOrder } from "@domains/commerce/order/shared/public";\nexport default async function Page() { const order = await readOrder(); return <main>Next order: {order.status}</main>; }');
   await json("apps/next/tsconfig.json", { extends: "../../tsconfig.json", compilerOptions: { baseUrl: "../..", paths, jsx: "react-jsx" }, include: ["**/*.ts", "**/*.tsx", ".next/types/**/*.ts"] });
   await write("apps/vite/index.html", '<!doctype html><html lang="en"><head><title>Boundra consumer</title></head><body><main id="app"></main><script type="module" src="/src/main.ts"></script></body></html>');
-  await write("apps/vite/src/main.ts", 'import { readOrder } from "#order";\nconst app = document.querySelector("main")!; readOrder().then(order => { app.textContent = "Vite order: " + order.status; });');
-  await write("apps/vite/vite.config.mjs", 'import { defineConfig } from "vite";\nimport { boundra } from "boundra/vite";\nimport { fileURLToPath } from "node:url";\nexport default defineConfig({plugins: [boundra({root: fileURLToPath(new URL("../..", import.meta.url)), cliPath: process.env.BOUNDRA_CLI_PATH})], resolve: {alias: {"#order": fileURLToPath(new URL("../../domains/commerce/order/shared/public.ts", import.meta.url))}}, server: {fs: {allow: [fileURLToPath(new URL("../..", import.meta.url))]}}});');
+  await write("apps/vite/src/pixel.png", Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jJ1sAAAAASUVORK5CYII=", "base64"));
+  await write("apps/vite/src/main.ts", 'import { readOrder } from "#order";\nimport pixel from "./pixel.png";\nconst image = document.createElement("img"); image.src = pixel; image.alt = ""; document.body.append(image);\nconst app = document.querySelector("main")!; readOrder().then(order => { app.textContent = "Vite order: " + order.status; });');
+  await write("apps/vite/vite.config.mjs", 'import { defineConfig } from "vite";\nimport { boundra } from "boundra/vite";\nimport { fileURLToPath } from "node:url";\nexport default defineConfig({build: {assetsInlineLimit: 0}, plugins: [boundra({root: fileURLToPath(new URL("../..", import.meta.url)), cliPath: process.env.BOUNDRA_CLI_PATH})], resolve: {alias: {"#order": fileURLToPath(new URL("../../domains/commerce/order/shared/public.ts", import.meta.url))}}, server: {fs: {allow: [fileURLToPath(new URL("../..", import.meta.url))]}}});');
   run("npm", ["install", "--ignore-scripts", "--no-audit", "--no-fund"]);
   run("npm", ["exec", "--", "playwright", "install", "--with-deps", "chromium"]);
   const check = JSON.parse(cli("check-boundaries", "--format", "json", "--min-domains", "2"));
@@ -93,8 +94,11 @@ try {
   await page.goto(server.resolvedUrls.local[0]);
   await page.getByText("Vite order: ready").waitFor();
   assert.ok((await page.content()).includes("virtual:boundra-overlay"));
-  const files = await readdir("apps/vite/dist/assets");
-  for (const file of files) assert.ok(!(await readFile("apps/vite/dist/assets/" + file, "utf8")).includes("boundra:diagnostics"));
+  const files = (await readdir("apps/vite/dist/assets", {withFileTypes: true})).filter(entry => entry.isFile());
+  assert.ok(files.some(file => file.name.endsWith(".png")), "Expected an emitted binary asset");
+  const textFiles = files.filter(file => [".js", ".mjs", ".cjs", ".map"].some(extension => file.name.endsWith(extension)));
+  assert.ok(textFiles.some(file => file.name.endsWith(".js")), "Expected an emitted JavaScript bundle");
+  for (const file of textFiles) assert.ok(!(await readFile("apps/vite/dist/assets/" + file.name, "utf8")).includes("boundra:diagnostics"), file.name);
 } finally {
   await browser?.close();
   await server.close();
