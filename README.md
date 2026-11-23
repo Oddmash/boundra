@@ -1,10 +1,18 @@
+<div align="center">
+
+<img src="docs/assets/boundra-mark.svg" alt="Boundra" width="120" />
+
 # Boundra
 
 **Domain boundaries before architecture drifts.**
 
 [English](README.md) · [한국어](README.ko.md) · [日本語](README.ja.md) · [简体中文](README.zh-CN.md)
 
-[![npm](https://img.shields.io/npm/v/boundra)](https://www.npmjs.com/package/boundra) [![CI](https://github.com/Oddmash/boundra/actions/workflows/boundra.yml/badge.svg)](https://github.com/Oddmash/boundra/actions/workflows/boundra.yml) [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+</div>
+
+**[User guide](docs/user-guide.md)** · [Product positioning and trade-offs](docs/product-positioning.md)
+
+[![npm](https://img.shields.io/npm/v/boundra?color=ea580c)](https://www.npmjs.com/package/boundra) [![CI](https://github.com/Oddmash/boundra/actions/workflows/boundra.yml/badge.svg)](https://github.com/Oddmash/boundra/actions/workflows/boundra.yml) [![License](https://img.shields.io/badge/license-MIT-ea580c)](LICENSE)
 
 Boundra is a schema-backed TypeScript contract runtime and a Rust static-analysis CLI for domain-first applications. Use it with your existing Next.js, Vite, and server stack.
 
