@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-labelledby="title">
+  <title id="title">Boundra</title>
+  <rect width="256" height="256" rx="40" fill="#fff"/>
+  <g fill="none" stroke="#EA580C" stroke-width="17" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="42" y="42" width="172" height="172" rx="32"/>
+    <path d="M128 42v172M128 99H81M128 157h47"/>
+  </g>
+</svg>
