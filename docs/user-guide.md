@@ -126,7 +126,7 @@ Run `pnpm exec boundra check-boundaries --root . --format json` on PRs alongside
 
 ```sh
 pnpm exec boundra check-boundaries --format json > boundra-report.json
-node --input-type=module -e 'import fs from "node:fs"; const r = JSON.parse(fs.readFileSync("boundra-report.json", "utf8")); if (r.status !== "passed" || r.meta.scanned_file_count < 1 || r.meta.analyzed_domain_count < 2) process.exit(1)'
+node --input-type=module -e 'import fs from "node:fs"; const r = JSON.parse(fs.readFileSync("boundra-report.json", "utf8")); if (r.status !== "passed" || !Number.isInteger(r.meta?.scanned_file_count) || r.meta.scanned_file_count < 1 || !Number.isInteger(r.meta?.analyzed_domain_count) || r.meta.analyzed_domain_count < 2) process.exit(1)'
 ```
 
 Adjust the expected domain count to your pilot. Keep the report out of version control if it contains internal paths.
