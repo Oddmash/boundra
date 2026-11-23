@@ -69,6 +69,7 @@ the command exit code by themselves.
 - `DEPENDENCY-*`: domain dependency workflow errors
 - `GEN-*`: generated artifact and public API update errors
 - `RUNTIME-*`: TypeScript contract execution errors
+- `COVERAGE-001`: the configured `--min-domains` threshold was not met; context includes `minimum_domain_count`, `analyzed_domain_count`, and `scanned_file_count`
 
 ## 5. Runtime Validation Issues
 

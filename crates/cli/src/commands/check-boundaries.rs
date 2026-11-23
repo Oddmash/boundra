@@ -14,6 +14,7 @@ use crate::output::{
 pub(crate) struct CheckBoundariesOptions {
     pub(crate) format: OutputFormat,
     pub(crate) root: PathBuf,
+    pub(crate) min_domains: Option<usize>,
 }
 
 pub(crate) fn run(options: &CheckBoundariesOptions) -> i32 {
@@ -71,6 +72,23 @@ pub(crate) fn run(options: &CheckBoundariesOptions) -> i32 {
         },
         &project.config.check_boundaries,
     );
+
+    if let Some(minimum) = options.min_domains.filter(|&minimum| {
+        violations.is_empty() && coverage.analyzed_domain_count < minimum
+    }) {
+        report_error(
+            options,
+            &CliDiagnostic::new(
+                "COVERAGE-001",
+                "boundary scan did not analyze the required number of domains",
+                "check the domain paths, manifests, and ignore patterns or adjust --min-domains",
+            )
+            .with_context("minimum_domain_count", minimum.to_string())
+            .with_context("analyzed_domain_count", coverage.analyzed_domain_count.to_string())
+            .with_context("scanned_file_count", coverage.scanned_file_count.to_string()),
+        );
+        return 2;
+    }
 
     match options.format {
         OutputFormat::Text => print_text(&violations, coverage),

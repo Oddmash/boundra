@@ -6,6 +6,10 @@ The format follows Keep a Changelog and versions follow Semantic Versioning.
 
 ## [Unreleased]
 
+### Added
+
+- optional `check-boundaries --min-domains <n>` coverage gate for CI with structured `COVERAGE-001` diagnostics
+
 ### Changed
 
 - move canonical repository metadata, CLI release downloads, and documentation to Oddmash/boundra without renaming the npm package
