@@ -57,8 +57,8 @@ export const readOrder = () => createBoundraClient(async () => ({id: "order-1", 
   await write("apps/vite/index.html", '<!doctype html><html lang="en"><head><title>Boundra consumer</title></head><body><main id="app"></main><script type="module" src="/src/main.ts"></script></body></html>');
   await write("apps/vite/src/main.ts", 'import { readOrder } from "#order";\nconst app = document.querySelector("main")!; readOrder().then(order => { app.textContent = "Vite order: " + order.status; });');
   await write("apps/vite/vite.config.mjs", 'import { defineConfig } from "vite";\nimport { boundra } from "boundra/vite";\nimport { fileURLToPath } from "node:url";\nexport default defineConfig({plugins: [boundra({root: fileURLToPath(new URL("../..", import.meta.url)), cliPath: process.env.BOUNDRA_CLI_PATH})], resolve: {alias: {"#order": fileURLToPath(new URL("../../domains/commerce/order/shared/public.ts", import.meta.url))}}, server: {fs: {allow: [fileURLToPath(new URL("../..", import.meta.url))]}}});');
-  run("pnpm", ["install"]);
-  run("pnpm", ["exec", "playwright", "install", "--with-deps", "chromium"]);
+  run("npm", ["install", "--ignore-scripts", "--no-audit", "--no-fund"]);
+  run("npm", ["exec", "--", "playwright", "install", "--with-deps", "chromium"]);
   const check = JSON.parse(cli("check-boundaries", "--format", "json", "--min-domains", "2"));
   assert.equal(check.status, "passed");
   assert.equal(check.meta.analyzed_domain_count, 2);
@@ -67,8 +67,8 @@ export const readOrder = () => createBoundraClient(async () => ({id: "order-1", 
   assert.equal(violation.status, 1);
   assert.ok(JSON.parse(violation.stdout).violations.some(item => item.rule === "BR-005"));
   await rm(join(project, "apps/next/app/forbidden.ts"));
-  run("pnpm", ["exec", "next", "build", "--webpack"], join(project, "apps/next"));
-  run("pnpm", ["exec", "vite", "build"], join(project, "apps/vite"));
+  run("npm", ["exec", "--", "next", "build", "--webpack"], join(project, "apps/next"));
+  run("npm", ["exec", "--", "vite", "build"], join(project, "apps/vite"));
   await write("browser.mjs", `import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { readFile, readdir } from "node:fs/promises";
