@@ -501,7 +501,7 @@ button:focus-visible {
   .doc-list,
   .docs-layout,
   .docs-layout:has(.doc-content:last-child) {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .hero {
     padding-block: 46px;

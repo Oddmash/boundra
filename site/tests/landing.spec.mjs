@@ -1,5 +1,23 @@
 import { test, expect } from "@playwright/test";
 
+const assertReflow = async (page) => {
+  const reflow = await page.evaluate(() => ({
+    viewport: innerWidth,
+    document: document.documentElement.scrollWidth,
+    overflowing: [...document.querySelectorAll("main *")]
+      .filter(
+        (element) =>
+          element.getBoundingClientRect().right > innerWidth &&
+          getComputedStyle(element).overflowX !== "auto",
+      )
+      .map((element) => `${element.tagName}.${element.className}`)
+      .slice(0, 12),
+  }));
+  expect(reflow.document, JSON.stringify(reflow)).toBeLessThanOrEqual(
+    reflow.viewport,
+  );
+};
+
 for (const width of [1440, 768, 390, 320]) {
   test(`landing and documentation at ${width}px`, async ({
     page,
@@ -10,11 +28,11 @@ for (const width of [1440, 768, 390, 320]) {
     await page.goto("./");
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     await expect(page.getByText("BR-004", { exact: true })).toBeVisible();
-    expect(
-      await page.evaluate(
-        () => document.documentElement.scrollWidth <= innerWidth,
-      ),
-    ).toBe(true);
+    await page.screenshot({
+      path: testInfo.outputPath("landing.png"),
+      fullPage: true,
+    });
+    await assertReflow(page);
     expect(
       await page.evaluate(() =>
         [...document.images].every(
@@ -22,20 +40,12 @@ for (const width of [1440, 768, 390, 320]) {
         ),
       ),
     ).toBe(true);
-    await page.screenshot({
-      path: testInfo.outputPath("landing.png"),
-      fullPage: true,
-    });
     await page.getByRole("link", { name: "Get started" }).click();
     await expect(page).toHaveURL(/\/docs\/user-guide\/$/);
     await expect(
       page.getByRole("heading", { name: "Boundra user guide" }),
     ).toBeVisible();
-    expect(
-      await page.evaluate(
-        () => document.documentElement.scrollWidth <= innerWidth,
-      ),
-    ).toBe(true);
+    await assertReflow(page);
     await page.screenshot({
       path: testInfo.outputPath("documentation.png"),
       fullPage: true,
@@ -49,11 +59,7 @@ for (const width of [1440, 768, 390, 320]) {
       .click();
     await expect(page).toHaveURL(/\/docs\/user-guide\.ko\/$/);
     await expect(page.locator("html")).toHaveAttribute("lang", "ko");
-    expect(
-      await page.evaluate(
-        () => document.documentElement.scrollWidth <= innerWidth,
-      ),
-    ).toBe(true);
+    await assertReflow(page);
     expect(errors).toEqual([]);
   });
 }
