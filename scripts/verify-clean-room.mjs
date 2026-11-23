@@ -175,6 +175,17 @@ void client.query(getOrderQuery, {});
   const packedPackage = JSON.parse(
     await readFile(join(project, "node_modules/boundra/package.json"), "utf8"),
   );
+  const expectedRepository = "https://github.com/Oddmash/boundra";
+  if (packedPackage.name !== "boundra"
+    || packedPackage.repository?.url !== `git+${expectedRepository}.git`
+    || packedPackage.homepage !== `${expectedRepository}#readme`
+    || packedPackage.bugs?.url !== `${expectedRepository}/issues`) {
+    throw new Error("clean-room package metadata does not match the canonical repository");
+  }
+  if (packedPackage.bin?.boundra !== "./bin/boundra.mjs") {
+    throw new Error("clean-room package is missing the native CLI launcher");
+  }
+
   if (packedPackage.exports?.["."]?.import !== "./dist/index.js") {
     throw new Error("clean-room project did not install the compiled runtime export");
   }
