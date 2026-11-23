@@ -7,7 +7,7 @@
 도메인 중심 TypeScript 애플리케이션을 위한 계약 runtime과 Rust 기반 정적 분석 CLI.
 
 [![npm](https://img.shields.io/npm/v/boundra?color=315c45&label=npm)](https://www.npmjs.com/package/boundra)
-[![CI](https://github.com/qtaghdi/boundra/actions/workflows/boundra.yml/badge.svg)](https://github.com/qtaghdi/boundra/actions/workflows/boundra.yml)
+[![CI](https://github.com/Oddmash/boundra/actions/workflows/boundra.yml/badge.svg)](https://github.com/Oddmash/boundra/actions/workflows/boundra.yml)
 [![license](https://img.shields.io/badge/license-MIT-c8ed6b)](LICENSE)
 [![node](https://img.shields.io/badge/node-%3E%3D20-315c45)](packages/runtime/package.json)
 
