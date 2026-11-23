@@ -31,6 +31,13 @@ jobs:
         working-directory: site
       - run: npx playwright test
         working-directory: site
+      - name: Upload responsive verification captures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: landing-browser-results
+          path: site/test-results/
+          if-no-files-found: ignore
       - name: Upload static website
         if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v4

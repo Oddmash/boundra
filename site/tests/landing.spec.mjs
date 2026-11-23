@@ -1,7 +1,9 @@
 import { test, expect } from "@playwright/test";
 
 for (const width of [1440, 768, 390, 320]) {
-  test(`landing and documentation at ${width}px`, async ({ page }) => {
+  test(`landing and documentation at ${width}px`, async ({
+    page,
+  }, testInfo) => {
     await page.setViewportSize({ width, height: 900 });
     const errors = [];
     page.on("pageerror", (error) => errors.push(error.message));
@@ -20,6 +22,10 @@ for (const width of [1440, 768, 390, 320]) {
         ),
       ),
     ).toBe(true);
+    await page.screenshot({
+      path: testInfo.outputPath("landing.png"),
+      fullPage: true,
+    });
     await page.getByRole("link", { name: "Get started" }).click();
     await expect(page).toHaveURL(/\/docs\/user-guide\/$/);
     await expect(
@@ -30,6 +36,10 @@ for (const width of [1440, 768, 390, 320]) {
         () => document.documentElement.scrollWidth <= innerWidth,
       ),
     ).toBe(true);
+    await page.screenshot({
+      path: testInfo.outputPath("documentation.png"),
+      fullPage: true,
+    });
     if (width <= 720) {
       await page.locator(".mobile-docs-nav summary").click();
     }
