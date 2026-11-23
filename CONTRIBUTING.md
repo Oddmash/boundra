@@ -1,5 +1,7 @@
 # Contributing
 
+Follow the [Oddmash organization working agreements](https://github.com/Oddmash/.github/blob/main/AGENTS.md) for shared contribution and review policy. This document describes Boundra-specific requirements.
+
 ## 1. Working Agreement
 
 - 문서화된 규칙 없이 구조를 변경하지 않는다.
