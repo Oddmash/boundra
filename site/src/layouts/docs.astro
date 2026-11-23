@@ -10,6 +10,26 @@ const { title, slug = '', headings = [], lang = 'en' } = Astro.props;
     {headings.length > 0 && <aside class="docs-toc"><nav aria-label="On this page"><h2>On this page</h2>{headings.filter((h: {depth: number}) => h.depth === 2).map((heading: {slug: string, text: string}) => <a href={`#${heading.slug}`}>{heading.text}</a>)}</nav></aside>}
   </div>
 </Layout>
+<script>
+  if (document.documentElement.lang === 'ko') {
+    const { mountKowrap } = await import('@oddmash/kowrap/dom');
+    const controllers: ReturnType<typeof mountKowrap>[] = [];
+    const candidates = document.querySelectorAll<HTMLElement>('.doc-content h1, .doc-content h2, .doc-content h3, .doc-content p');
+    for (const element of candidates) {
+      const text = element.textContent ?? '';
+      if (!/[가-힣]/.test(text) || text.length > 160 || element.querySelector('code, pre, img, br, button, input')) continue;
+      try {
+        controllers.push(mountKowrap(element, { inline: true, strategy: 'balanced' }));
+        element.dataset.kowrap = 'applied';
+      } catch {
+        element.dataset.kowrap = 'fallback';
+      }
+    }
+    window.addEventListener('pagehide', (event) => {
+      if (!event.persisted) for (const controller of controllers) controller.destroy();
+    });
+  }
+</script>
 <style>
   .mobile-docs-nav{display:none}
   @media(max-width:720px){.desktop-docs-nav{display:none}.mobile-docs-nav{display:block}.mobile-docs-nav summary{cursor:pointer;font-weight:650;padding:8px 0}.mobile-docs-nav summary:focus-visible{outline:2px solid var(--brand);outline-offset:3px}.mobile-docs-nav[open] summary{margin-bottom:12px}}
