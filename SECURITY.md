@@ -11,7 +11,7 @@ Please do not open a public issue for a suspected vulnerability.
 
 Use GitHub private vulnerability reporting:
 
-https://github.com/qtaghdi/boundra/security/advisories/new
+https://github.com/Oddmash/boundra/security/advisories/new
 
 Include affected versions, reproduction steps, impact, and any suggested
 mitigation. The project will acknowledge reports as soon as practical and will
