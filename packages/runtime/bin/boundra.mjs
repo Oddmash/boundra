@@ -62,7 +62,7 @@ async function resolveNativeCli() {
   }
 
   await mkdir(releaseDir, { recursive: true });
-  const baseUrl = `https://github.com/qtaghdi/boundra/releases/download/v${version}`;
+  const baseUrl = `https://github.com/Oddmash/boundra/releases/download/v${version}`;
   const archiveName = `${name}.${extension}`;
   const [archive, checksums] = await Promise.all([
     download(`${baseUrl}/${archiveName}`),
