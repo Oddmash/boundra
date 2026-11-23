@@ -128,7 +128,7 @@ console.log(order);
 
 ```sh
 pnpm exec boundra check-boundaries --format json > boundra-report.json
-node --input-type=module -e 'import fs from "node:fs"; const r = JSON.parse(fs.readFileSync("boundra-report.json", "utf8")); if (r.status !== "passed" || r.meta.scanned_file_count < 1 || r.meta.analyzed_domain_count < 2) process.exit(1)'
+node --input-type=module -e 'import fs from "node:fs"; const r = JSON.parse(fs.readFileSync("boundra-report.json", "utf8")); if (r.status !== "passed" || !Number.isInteger(r.meta?.scanned_file_count) || r.meta.scanned_file_count < 1 || !Number.isInteger(r.meta?.analyzed_domain_count) || r.meta.analyzed_domain_count < 2) process.exit(1)'
 ```
 
 예상 도메인 수에 맞춰 조건을 조정하세요. 내부 경로가 포함된 리포트를 공개 저장소에 커밋하지 않도록 주의합니다.
