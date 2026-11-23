@@ -133,6 +133,41 @@ void client.query(getOrderQuery, {});
   );
 
   run(
+    "node",
+    [
+      "--input-type=module",
+      "-e",
+      `import assert from "node:assert/strict";
+import { createBoundraClient, defineQuery, BoundraRuntimeError } from "boundra";
+import { z } from "zod";
+const query = defineQuery({
+  name: "get-order",
+  input: z.object({ orderId: z.string().min(1) }),
+  result: z.object({ orderId: z.string(), status: z.literal("pending") }),
+});
+let calls = 0;
+const client = createBoundraClient(async (request) => {
+  calls += 1;
+  return { orderId: request.input.orderId, status: "pending" };
+});
+assert.deepEqual(await client.query(query, { orderId: "order-001" }), {
+  orderId: "order-001", status: "pending",
+});
+await assert.rejects(
+  () => client.query(query, { orderId: "" }),
+  (error) => error instanceof BoundraRuntimeError && error.code === "RUNTIME-001",
+);
+assert.equal(calls, 1);
+const invalidResult = createBoundraClient(async () => ({ orderId: "order-001", status: "unknown" }));
+await assert.rejects(
+  () => invalidResult.query(query, { orderId: "order-001" }),
+  (error) => error instanceof BoundraRuntimeError && error.code === "RUNTIME-002",
+);`,
+    ],
+    { cwd: project },
+  );
+
+  run(
     "pnpm",
     ["exec", "boundra", "init", "--root", project, "--name", "boundra-clean-room"],
     { cwd: project, env: { BOUNDRA_CLI_PATH: binary } },
@@ -157,6 +192,10 @@ void client.query(getOrderQuery, {});
   const boundary = JSON.parse(boundaryOutput);
   if (boundary.status !== "passed" || boundary.meta.violation_count !== 0) {
     throw new Error(`unexpected boundary output: ${boundaryOutput}`);
+  }
+  if (!Number.isInteger(boundary.meta.scanned_file_count) || boundary.meta.scanned_file_count < 1
+    || boundary.meta.analyzed_domain_count !== 2) {
+    throw new Error(`clean-room boundary scan did not cover both generated domains: ${boundaryOutput}`);
   }
 
   const graphOutput = run(
