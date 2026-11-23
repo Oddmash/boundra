@@ -4,14 +4,14 @@
   "description": "Schema-backed runtime contracts for Boundra applications",
   "type": "module",
   "license": "MIT",
-  "homepage": "https://github.com/qtaghdi/boundra#readme",
+  "homepage": "https://github.com/Oddmash/boundra#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/qtaghdi/boundra.git",
+    "url": "git+https://github.com/Oddmash/boundra.git",
     "directory": "packages/runtime"
   },
   "bugs": {
-    "url": "https://github.com/qtaghdi/boundra/issues"
+    "url": "https://github.com/Oddmash/boundra/issues"
   },
   "sideEffects": false,
   "files": [

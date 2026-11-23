@@ -57,6 +57,12 @@
 - [x] publish and verify `boundra@0.5.0`
 - [x] create and push the `v0.5.0` tag
 
+## Oddmash Ownership Migration
+
+- [ ] Verify the npm trusted publisher points to `Oddmash/boundra` and `release.yml` before publishing the next version.
+- [ ] Verify old published CLI versions can still download their matching archived releases through GitHub redirects.
+- [ ] Run the release workflow dry-run from Oddmash and verify all artifacts.
+
 ## Release Trigger
 
 After the release preparation commit is merged, push the version tag and let

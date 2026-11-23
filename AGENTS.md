@@ -2,6 +2,8 @@
 
 Boundra 프로젝트에서 작업하는 사람/AI 에이전트 공통 운영 규약.
 
+Follow the [Oddmash organization working agreements](https://github.com/Oddmash/.github/blob/main/AGENTS.md). Public issues, PRs, reviews, commits, and changelog entries use English. Preserve Boundra's product-specific architecture and release constraints.
+
 ## 1. Mission
 
 Boundra는 도메인 중심 풀스택 개발을 강제하는 TypeScript 프레임워크이며, Rust 기반 툴링 엔진으로 경계를 정적 분석한다.
@@ -61,6 +63,7 @@ crates/
 - `shared -> policy-denied capability` 의존 금지 (BR-003, 기본 UI/DB/runtime)
 - 도메인 간 내부 경로 직접 import 금지, public API만 허용 (BR-004)
 - 앱에서 도메인 내부 경로 직접 import 금지, public API만 허용 (BR-005)
+- 선언되지 않은 다른 도메인의 public API 의존 및 도메인 순환 의존 금지 (BR-006)
 
 허용:
 - `client -> shared`

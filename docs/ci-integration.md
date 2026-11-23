@@ -40,7 +40,16 @@ pnpm verify-example
 ```
 
 The individual boundary command remains suitable for repositories that only
-adopt Boundra's analyzer.
+adopt Boundra's analyzer. On the unreleased CLI, mature workspaces can require
+an expected minimum number of scanned domains, so a misconfigured empty scan
+cannot pass silently:
+
+```bash
+boundra check-boundaries --format json --min-domains 2
+```
+
+Set the threshold to the number expected in your adoption slice. Without the
+option, the CLI retains its existing warning-only empty-scan behavior.
 
 ## Exit Codes
 

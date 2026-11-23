@@ -51,7 +51,7 @@ fn print_help() {
     println!();
     println!("Usage:");
     println!("  boundra add-dependency <domain>/<dependency> [--root <path>]");
-    println!("  boundra check-boundaries [--root <path>] [--format text|json]");
+    println!("  boundra check-boundaries [--root <path>] [--format text|json] [--min-domains <n>]");
     println!("  boundra create-domain <name> [--path <parent-path>] [--root <path>]");
     println!("  boundra init [--root <path>] [--name <kebab-case>]");
     println!(

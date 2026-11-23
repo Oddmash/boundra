@@ -64,6 +64,7 @@ target source file in its server artifact.
 Options:
 - `--root <path>` (default: `.`)
 - `--format text|json` (default: `text`)
+- `--min-domains <positive integer>` (optional; also accepts `--min-domains=<n>`)
 
 Coverage reporting:
 - `paths.domains` is analyzed independently from `paths.apps`.
@@ -72,6 +73,11 @@ Coverage reporting:
   `analyzed_domain_count` counts unique domains that contain at least one source
   file included by the configured scan, not merely loaded manifests.
 - Text output warns when no source files or no domains were analyzed.
+- If `--min-domains` is set and the scan has no violations but covers fewer than
+  the requested number of domains, the command returns `COVERAGE-001` and exit
+  code 2. JSON uses the existing structured error shape with actual and expected
+  coverage counts in context. If violations exist, they retain priority and exit
+  code 1. Without the option, existing behavior and output remain unchanged.
 
 ### 1.3 `graph-domains`
 

@@ -128,11 +128,27 @@ fn parse_check_boundaries_options(args: &[String]) -> Result<CheckBoundariesOpti
     let mut options = CheckBoundariesOptions {
         format: OutputFormat::Text,
         root: PathBuf::from("."),
+        min_domains: None,
     };
     let mut index = 0;
 
     while index < args.len() {
         let arg = &args[index];
+
+        if arg == "--min-domains" {
+            let Some(value) = args.get(index + 1) else {
+                return Err("missing value for --min-domains".to_string());
+            };
+            options.min_domains = Some(parse_min_domains(value)?);
+            index += 2;
+            continue;
+        }
+
+        if let Some(value) = arg.strip_prefix("--min-domains=") {
+            options.min_domains = Some(parse_min_domains(value)?);
+            index += 1;
+            continue;
+        }
 
         if arg == "--format" {
             let Some(value) = args.get(index + 1) else {
@@ -168,6 +184,13 @@ fn parse_check_boundaries_options(args: &[String]) -> Result<CheckBoundariesOpti
     }
 
     Ok(options)
+}
+
+fn parse_min_domains(value: &str) -> Result<usize, String> {
+    match value.parse::<usize>() {
+        Ok(count) if count > 0 => Ok(count),
+        _ => Err(format!("invalid --min-domains value: {value}; expected a positive integer")),
+    }
 }
 
 fn parse_create_domain_options(args: &[String]) -> Result<CreateDomainOptions, String> {
