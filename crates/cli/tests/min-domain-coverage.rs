@@ -1,9 +1,12 @@
 use std::fs;
 use std::path::PathBuf;
 use std::process::{Command, Output};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde_json::Value;
+
+static NEXT_ID: AtomicUsize = AtomicUsize::new(0);
 
 struct Workspace(PathBuf);
 
@@ -13,12 +16,18 @@ impl Workspace {
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_nanos();
-        let path = std::env::temp_dir().join(format!(
-            "boundra-coverage-{}-{nonce}",
-            std::process::id()
-        ));
-        fs::create_dir(&path).unwrap();
-        Self(path)
+        loop {
+            let id = NEXT_ID.fetch_add(1, Ordering::Relaxed);
+            let path = std::env::temp_dir().join(format!(
+                "boundra-coverage-{}-{nonce}-{id}",
+                std::process::id()
+            ));
+            match fs::create_dir(&path) {
+                Ok(()) => return Self(path),
+                Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
+                Err(error) => panic!("failed to create test workspace: {error}"),
+            }
+        }
     }
 
     fn run(&self, args: &[&str]) -> Output {
