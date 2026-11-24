@@ -38,6 +38,9 @@ test("Kowrap enhances Korean prose without rewriting documentation", async ({
   await expect
     .poll(() => page.locator('.doc-content [data-kowrap="applied"] br').count())
     .toBeGreaterThan(0);
+  const countingHeading = page.locator('[id="2-도메인-두-개로-시작하기"]');
+  await expect(countingHeading).toHaveAttribute("data-kowrap", "applied");
+  await expect.poll(() => countingHeading.innerText()).toContain("두 개로");
   expect(await snapshot(page)).toEqual(original);
   expect(
     await page.evaluate(
