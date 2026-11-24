@@ -3,7 +3,7 @@
   "version": "0.6.0",
   "private": true,
   "license": "MIT",
-  "packageManager": "pnpm@11.7.0",
+  "packageManager": "pnpm@11.25.0",
   "scripts": {
     "benchmark:boundaries": "node scripts/benchmark-boundaries.mjs --files 1000 --iterations 3",
     "benchmark:boundaries:large": "node scripts/benchmark-boundaries.mjs --files 10000 --iterations 3",
