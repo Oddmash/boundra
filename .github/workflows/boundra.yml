@@ -2,6 +2,7 @@ name: Boundra
 
 on:
   pull_request:
+    types: [opened, reopened, synchronize, edited, ready_for_review]
   push:
     branches:
       - main
@@ -14,6 +15,14 @@ permissions:
   contents: read
 
 jobs:
+  scope:
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+    uses: Oddmash/.github/.github/workflows/ci-scope.yml@9a2077a4b0ff9188ef2cb2ab306f181a134d3110
+    with:
+      profile: meta
   verify-example:
     runs-on: ubuntu-24.04
     steps:
@@ -82,9 +91,9 @@ jobs:
 
   verify:
     if: ${{ always() }}
-    needs: [verify-example, verify-runtime, verify-cli-platforms, benchmark-smoke]
+    needs: [scope, verify-example, verify-runtime, verify-cli-platforms, benchmark-smoke]
     runs-on: ubuntu-24.04
     steps:
       - name: Require all Boundra checks
-        if: ${{ needs.verify-example.result != 'success' || needs.verify-runtime.result != 'success' || needs.verify-cli-platforms.result != 'success' || needs.benchmark-smoke.result != 'success' }}
+        if: ${{ needs.scope.result != 'success' || needs.verify-example.result != 'success' || needs.verify-runtime.result != 'success' || needs.verify-cli-platforms.result != 'success' || needs.benchmark-smoke.result != 'success' }}
         run: exit 1
