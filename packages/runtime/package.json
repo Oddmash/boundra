@@ -48,7 +48,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json && tsc -p ../ui/tsconfig.build.json && tsc -p ../config/tsconfig.build.json",
-    "prepack": "npm run build"
+    "prepack": "pnpm run build"
   },
   "engines": {
     "node": ">=20"
