@@ -167,6 +167,8 @@ ADR 위치: `docs/adr/`
 - PR은 기본적으로 ready 상태로 생성한다. 사용자가 명시적으로 요청한
   경우에만 draft PR을 생성한다.
 
+Follow the [Oddmash review follow-up guidance](https://github.com/Oddmash/.github/blob/main/docs/AI-CODE-REVIEW.md#following-up-on-review-findings) when addressing review comments, including recording non-adoption or deferral and the final thread disposition.
+
 ## Agent contribution attribution
 
 Follow the [Oddmash agent attribution convention](https://github.com/Oddmash/.github/blob/main/AGENTS.md#agent-contribution-attribution). When a commit materially incorporates a verified finding or recommendation from Reviewer, Impact, Triage, QA, Release, Docs, or Architect, append the canonical `Co-authored-by` trailer for each actual contributing GitHub account. Deduplicate trailers, preserve human authorship and record the source role or discussion for shared identities. Do not credit unused advice or rewrite published history.
