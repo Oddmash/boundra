@@ -111,6 +111,7 @@ button:focus-visible {
   letter-spacing: 0.02em;
 }
 .hero h1 {
+  text-wrap: balance;
   font-size: clamp(38px, 4.2vw, 58px);
   line-height: 1.07;
   letter-spacing: -0.055em;
@@ -228,6 +229,7 @@ button:focus-visible {
   margin-bottom: 26px;
 }
 .content-section h2 {
+  text-wrap: balance;
   font-size: clamp(27px, 3.8vw, 42px);
   line-height: 1.15;
   letter-spacing: -0.04em;
@@ -388,12 +390,14 @@ button:focus-visible {
   overflow-wrap: anywhere;
 }
 .doc-content h1 {
+  text-wrap: balance;
   font-size: clamp(30px, 4vw, 46px);
   letter-spacing: -0.04em;
   line-height: 1.12;
   margin: 0 0 24px;
 }
 .doc-content h2 {
+  text-wrap: balance;
   font-size: 26px;
   line-height: 1.25;
   letter-spacing: -0.025em;
@@ -402,6 +406,7 @@ button:focus-visible {
   border-top: 1px solid var(--line);
 }
 .doc-content h3 {
+  text-wrap: balance;
   font-size: 20px;
   line-height: 1.35;
   margin-top: 28px;
@@ -409,6 +414,18 @@ button:focus-visible {
 .doc-content p,
 .doc-content li {
   line-height: 1.75;
+}
+html[lang="ko"] .doc-content :is(h1, h2, h3, p, li) {
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+html[lang="ko"] .doc-content [data-kowrap="applied"] {
+  text-wrap: wrap;
+}
+.lead,
+.content-section p,
+.doc-content p {
+  text-wrap: pretty;
 }
 .doc-content .doc-intro {
   font-size: 18px;
