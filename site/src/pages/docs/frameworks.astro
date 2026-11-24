@@ -1,0 +1,16 @@
+---
+import Docs from '../../layouts/docs.astro';
+const base = import.meta.env.BASE_URL.replace(/\/$/, '') + '/docs/';
+const vite = `import { defineConfig } from "vite";
+import { boundra } from "boundra/vite";
+
+export default defineConfig({
+  plugins: [boundra()],
+});`;
+---
+<Docs title="Framework integration" slug="frameworks">
+  <h1>Framework integration</h1><p>Boundra works alongside your existing framework. The native CLI is independent of the application runtime.</p>
+  <h2>Vite</h2><p>Add the optional development overlay to your existing Vite configuration. Keep your existing React or other framework plugins.</p><pre><code>{vite}</code></pre><p><a href={`${base}vite-integration/`}>Full Vite integration guide</a></p>
+  <h2>Next.js App Router</h2><p>Keep your existing server and client component separation. Use the runtime contracts in application code and run the CLI at the project root. There is no automatic Next.js plugin. For development diagnostics, integrate the optional error view explicitly in a Client Component.</p><p><a href={`${base}error-view/`}>Development error view integration</a></p>
+  <h2>Verified compatibility</h2><p>The packed runtime is built and exercised in isolated Next.js App Router and Vite consumers. This is representative coverage rather than a guarantee for every configuration.</p><p><a href={`${base}framework-conformance/`}>Framework verification details</a></p>
+</Docs>

@@ -1,0 +1,18 @@
+---
+import Docs from '../../layouts/docs.astro';
+import type { MarkdownInstance } from 'astro';
+export async function getStaticPaths() {
+  const documents = import.meta.glob<MarkdownInstance<Record<string, unknown>>>('../../../../docs/**/*.md', { eager: true });
+  return Object.entries(documents).map(([path, document]) => ({
+    params: { slug: path.replace(/^.*?\/docs\//, '').replace(/\.md$/, '') },
+    props: { document },
+  }));
+}
+const { document } = Astro.props;
+const slug = Astro.params.slug ?? '';
+const { Content, getHeadings } = document;
+const headings = getHeadings();
+const title = headings.find((heading: {depth: number}) => heading.depth === 1)?.text ?? 'Documentation';
+const lang = slug.endsWith('.ko') ? 'ko' : slug.endsWith('.ja') ? 'ja' : slug.endsWith('.zh-cn') ? 'zh-CN' : 'en';
+---
+<Docs title={title} slug={slug} headings={headings} lang={lang}><Content /></Docs>

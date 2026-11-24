@@ -1,6 +1,33 @@
 # CI Integration
 
-## GitHub Actions
+## Add Boundra to your application
+
+Install `boundra` and `zod` with your project package manager, initialize the project, and commit the configuration and domain manifests. Run the boundary check alongside your existing typecheck, tests, and build. Here is a minimal GitHub Actions example for a pnpm application using the published CLI:
+
+```yaml
+name: Check boundaries
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  boundaries:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec boundra check-boundaries --root . --format json
+```
+
+For npm projects, replace the last two commands with `npm ci` and `npx boundra check-boundaries --root . --format json`. The native launcher retrieves the matching released CLI on first use. See [installation](cli-install.md) for offline or unsupported platform requirements. An empty scan can pass with a warning in published v0.6.0; inspect the JSON coverage counts and use the [user guide](user-guide.md) coverage check if your project requires a minimum number of domains.
+
+## Boundra repository verification
 
 Use the committed example flow as the required CI gate. It type-checks the
 TypeScript surface, executes runtime and example flows, runs Rust tests, checks

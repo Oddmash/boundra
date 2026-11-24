@@ -1,0 +1,16 @@
+---
+import Layout from './site.astro';
+import DocsNav from '../components/docs-nav.astro';
+const { title, slug = '', headings = [], lang = 'en' } = Astro.props;
+---
+<Layout title={`${title} | Boundra docs`} lang={lang}>
+  <div class="shell docs-layout">
+    <aside class="docs-sidebar"><div class="desktop-docs-nav"><DocsNav slug={slug}/></div><details class="mobile-docs-nav"><summary>Browse documentation</summary><DocsNav slug={slug}/></details></aside>
+    <article class="doc-content"><slot /></article>
+    {headings.length > 0 && <aside class="docs-toc"><nav aria-label="On this page"><h2>On this page</h2>{headings.filter((h: {depth: number}) => h.depth === 2).map((heading: {slug: string, text: string}) => <a href={`#${heading.slug}`}>{heading.text}</a>)}</nav></aside>}
+  </div>
+</Layout>
+<style>
+  .mobile-docs-nav{display:none}
+  @media(max-width:720px){.desktop-docs-nav{display:none}.mobile-docs-nav{display:block}.mobile-docs-nav summary{cursor:pointer;font-weight:650;padding:8px 0}.mobile-docs-nav summary:focus-visible{outline:2px solid var(--brand);outline-offset:3px}.mobile-docs-nav[open] summary{margin-bottom:12px}}
+</style>

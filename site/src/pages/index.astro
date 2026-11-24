@@ -1,38 +1,75 @@
 ---
-import '../styles.css';
-import Hero from '../components/hero.astro';
+import Layout from '../layouts/site.astro';
 const base = import.meta.env.BASE_URL.replace(/\/$/, '') + '/';
----
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Boundra makes domain boundaries explicit with a Rust architecture checker and schema-backed TypeScript contracts.">
-<title>Boundra — Domain boundaries, defined.</title>
-<link rel="icon" href={`${base}boundra-mark.svg`} type="image/svg+xml">
+const docs = `${base}docs/`;
+const commands = `pnpm add boundra zod
+pnpm exec boundra init --name my-app
+pnpm exec boundra create-domain order
+pnpm exec boundra create-domain billing
+pnpm exec boundra add-dependency billing/order
+pnpm exec boundra check-boundaries`;
+const tree = `domains/
+  order/
+    client/
+    server/
+    shared/
+      public.ts
+  billing/
+    client/
+    server/
+    shared/`;
+const contract = `import { defineQuery } from "boundra";
+import { z } from "zod";
 
-</head>
-<body>
-<a class="skip" href="#main">Skip to content</a>
-<header class="shell nav"><a class="brand" href={base}><img src={`${base}boundra-mark.svg`} alt="" width="36" height="36">Boundra</a><nav aria-label="Main"><a href="#how">How it works</a><a href="#adoption">Adoption</a><a href="https://github.com/Oddmash/boundra/blob/main/docs/user-guide.md">Docs</a><a class="nav-github" href="https://github.com/Oddmash/boundra">GitHub</a></nav></header>
-<main id="main">
-<Hero />
-<section class="proof"><div class="shell proof-grid"><div><strong>6</strong><span>boundary rules</span></div><div><strong>4</strong><span>native CLI targets</span></div><div><strong>2</strong><span>independent adoption paths</span></div></div></section>
-<section id="how" class="shell section"><div class="section-head"><p class="eyebrow">HOW IT WORKS</p><h2>Structure you can verify.</h2><p>Define domains, declare allowed relationships, and check them against your source. The runtime handles schema validation at the application boundary.</p></div><div class="features"><article><span class="tag">01 / ARCHITECTURE</span><h3>Declare the boundary.</h3><p>Each domain has layer directories, public entry points and a manifest that specifies its dependencies.</p><pre><code>domains/order/
-  client/
-  server/
-  shared/
-  domain manifest</code></pre></article><article><span class="tag">02 / STATIC ANALYSIS</span><h3>Catch drift in CI.</h3><p>Report forbidden layer imports, undeclared dependencies and internal cross-domain imports.</p><pre><code>pnpm exec boundra \
-  check-boundaries \
-  --format json</code></pre></article><article><span class="tag">03 / CONTRACTS</span><h3>Validate both directions.</h3><p>Define input and result schemas, then connect your own transport and API implementation.</p><pre><code>{`defineQuery({
+export const getOrderQuery = defineQuery({
   name: "get-order",
-  input: inputSchema,
-  result: resultSchema
-})`}</code></pre></article></div></section>
-<section id="adoption" class="adoption"><div class="shell section"><div class="section-head"><p class="eyebrow">ADOPT INCREMENTALLY</p><h2>Start with one domain.</h2><p>Keep your existing framework, build, and backend. Try a single domain before expanding the policy across a repository.</p></div><div class="flow"><ol><li><b>Initialize</b><code>boundra init --name my-app</code></li><li><b>Scaffold</b><code>boundra create-domain order</code></li><li><b>Generate a contract</b><code>boundra generate query order/get-order</code></li><li><b>Check and visualize</b><code>boundra check-boundaries</code></li></ol><aside><h3>When Boundra fits</h3><p>Use it when multiple domains and entry points need consistent dependency policy. A small app or a project already well governed by Nx or ESLint may need little more.</p><h3>What it is not</h3><p>Boundra does not replace authorization, a backend framework, a bundler, or runtime integration tests. Static analysis is limited to supported source patterns and configured domains.</p><a href="https://github.com/Oddmash/boundra/blob/main/docs/product-positioning.md">Read the full trade-off analysis</a></aside></div></div></section>
-<section class="shell section final"><p class="eyebrow">BUILD WITH BOUNDARIES</p><h2>Make the rules part of the codebase.</h2><p>Read the practical guide, review the example workspace, or explore the CLI specification.</p><div class="actions"><a class="primary" href="https://github.com/Oddmash/boundra/blob/main/docs/user-guide.md">User guide</a><a class="secondary" href="https://github.com/Oddmash/boundra/tree/main/examples/order-billing">Example workspace</a></div><div class="locales"><a href="https://github.com/Oddmash/boundra/blob/main/docs/user-guide.ko.md" lang="ko">한국어</a><a href="https://github.com/Oddmash/boundra/blob/main/docs/user-guide.ja.md" lang="ja">日本語</a><a href="https://github.com/Oddmash/boundra/blob/main/docs/user-guide.zh-cn.md" lang="zh-CN">简体中文</a></div></section>
-</main>
-<footer class="shell footer"><a class="brand" href={base}><img src={`${base}boundra-mark.svg`} alt="" width="28" height="28">Boundra</a><span>Built by <a href="https://github.com/Oddmash">Oddmash</a> · MIT</span><a href="https://www.npmjs.com/package/boundra">npm</a></footer>
-</body>
-</html>
+  input: z.object({ orderId: z.string().min(1) }),
+  result: z.object({ orderId: z.string(), status: z.string() }),
+});`;
+const sections = [
+  ['Getting started', 'Install Boundra and create your first domains.', 'user-guide/'],
+  ['Boundary rules', 'Understand BR-001 through BR-006, public APIs and dependencies.', 'boundary-rules/'],
+  ['Contracts', 'Define queries, mutations and routes, then connect your transport.', 'contract-schema-spec/'],
+  ['Framework integration', 'Use Boundra alongside Vite or Next.js.', 'frameworks/'],
+  ['Configuration', 'Configure domain discovery, paths, aliases and capabilities.', 'config-spec/'],
+  ['Continuous integration', 'Run the checker before merge and require meaningful scan coverage.', 'ci-integration/'],
+];
+---
+<Layout title="Boundra | Domain boundaries for TypeScript" description="Check TypeScript domain imports and validate application contracts with Boundra.">
+  <section class="hero shell">
+    <div class="hero-copy">
+      <p class="version">Open source · TypeScript and Rust</p>
+      <h1>Enforce domain boundaries in TypeScript.</h1>
+      <p class="lead">Boundra checks imports between domains and validates input and output contracts. Add it to your existing application without replacing your framework.</p>
+      <div class="actions"><a class="button primary" href={`${docs}user-guide/`}>Get started <span aria-hidden="true">→</span></a><a class="button secondary" href={docs}>Read documentation</a></div>
+      <p class="requirements">Node.js 20+ · MIT license · CLI and runtime can be used separately</p>
+    </div>
+    <div class="code-panel hero-code">
+      <div class="code-caption"><span>domains/billing/server/invoice.ts</span><span>TypeScript</span></div>
+      <pre><code><span class="code-label">Allowed</span>{'\n'}<span class="code-keyword">import</span> {'{ getOrderQuery }'} <span class="code-keyword">from</span>{'\n'}  <span class="code-string">"@domains/order/shared/public"</span>;{'\n\n'}<span class="code-label">Disallowed</span>{'\n'}<span class="code-keyword">import</span> {'{ orderService }'} <span class="code-keyword">from</span>{'\n'}  <span class="code-string">"@domains/order/server/internal"</span>;</code></pre>
+      <div class="diagnostic"><strong>BR-004</strong><span>Cross-domain internal import. Use the target domain's public API.</span></div>
+      <p class="panel-note">Illustration of the boundary rule. Imports also require a declared dependency.</p>
+    </div>
+  </section>
+  <section class="shell content-section" id="quickstart">
+    <div class="section-heading"><h2>Set up your first domains</h2><p>Start with an existing TypeScript project. Adopt Boundra one slice at a time.</p></div>
+    <div class="walkthrough">
+      <div><h3>1. Install and initialize</h3><p>The npm package includes a launcher for the native CLI. It downloads and verifies the matching platform binary on first use.</p><div class="code-panel"><div class="code-caption">Terminal</div><pre><code>{commands}</code></pre></div><a class="text-link" href={`${docs}cli-install/`}>Installation and supported platforms →</a></div>
+      <div><h3>2. Organize domain code</h3><p>The CLI generates a manifest and layer directories. Billing can use order's public API because the dependency is declared.</p><div class="file-tree"><pre><code>{tree}</code></pre></div><a class="text-link" href={`${docs}domain-manifest-spec/`}>Domain manifest reference →</a></div>
+    </div>
+  </section>
+  <section class="shell content-section split-section">
+    <div><h2>Validate a contract</h2><p>Define the shape of a request and its result once. Boundra validates both ends of a call using your schemas.</p><p>Keep your existing backend and routing. Connect the runtime to a local transport or your own HTTP adapter.</p><a class="text-link" href={`${docs}user-guide/#4-implement-a-real-contract`}>Walk through a working contract →</a></div>
+    <div class="code-panel"><div class="code-caption">domains/order/shared/contracts/get-order.ts</div><pre><code>{contract}</code></pre></div>
+  </section>
+  <section class="shell content-section split-section" id="ci">
+    <div><h2>Run the checker before merge</h2><p>Add a boundary check to your CI. The CLI produces machine-readable violations and returns a nonzero exit code when checks fail.</p><a class="text-link" href={`${docs}ci-integration/`}>CI configuration and exit codes →</a></div>
+    <div class="code-panel"><div class="code-caption">Terminal</div><pre><code>pnpm exec boundra check-boundaries --format json</code></pre></div>
+  </section>
+  <section class="shell content-section" id="documentation">
+    <div class="section-heading"><h2>Documentation</h2><p>Read the full guides and API references on this site.</p></div>
+    <div class="doc-list">{sections.map(([title, description, href]) => <a href={`${docs}${href}`}><div><h3>{title}</h3><p>{description}</p></div><span aria-hidden="true">→</span></a>)}</div>
+    <a class="text-link" href={docs}>View all documentation →</a>
+  </section>
+  <section class="shell content-section fit-section"><h2>Is Boundra right for your project?</h2><p>Use it when domain APIs and dependency directions need to be explicit. It does not replace authorization, routing, persistence, a bundler, or application tests.</p><a class="text-link" href={`${docs}product-positioning/`}>Compare adoption options and limitations →</a></section>
+</Layout>
