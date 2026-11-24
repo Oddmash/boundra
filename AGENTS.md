@@ -166,3 +166,7 @@ ADR 위치: `docs/adr/`
   GitHub Release 본문은 해당 파일을 그대로 사용한다.
 - PR은 기본적으로 ready 상태로 생성한다. 사용자가 명시적으로 요청한
   경우에만 draft PR을 생성한다.
+
+## Agent contribution attribution
+
+Follow the [Oddmash agent attribution convention](https://github.com/Oddmash/.github/blob/main/AGENTS.md#agent-contribution-attribution). When a commit materially incorporates a verified finding or recommendation from Reviewer, Impact, Triage, QA, Release, Docs, or Architect, append the canonical `Co-authored-by` trailer for each actual contributing GitHub account. Deduplicate trailers, preserve human authorship and record the source role or discussion for shared identities. Do not credit unused advice or rewrite published history.
