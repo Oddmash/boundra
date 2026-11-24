@@ -139,7 +139,7 @@ button:focus-visible {
   min-height: 46px;
   padding: 10px 18px;
   border: 1px solid var(--line);
-  border-radius: 5px;
+  border-radius: 8px;
   font-weight: 650;
   text-decoration: none;
 }
@@ -165,7 +165,7 @@ button:focus-visible {
 }
 .code-panel {
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   min-width: 0;
   overflow: hidden;
   background: var(--surface);
@@ -365,7 +365,7 @@ button:focus-visible {
   padding: 3px 8px;
   line-height: 1.6;
   min-height: 27px;
-  border-radius: 3px;
+  border-radius: 6px;
   overflow-wrap: anywhere;
 }
 .nav-group a:hover,
@@ -436,7 +436,7 @@ html[lang="ko"] .doc-content [data-kowrap="applied"] {
   overflow: auto;
   background: #f5f5f4;
   border: 1px solid var(--line);
-  border-radius: 5px;
+  border-radius: 8px;
   padding: 16px;
   font: 13px/1.7 var(--mono);
   white-space: pre;
@@ -452,7 +452,7 @@ html[lang="ko"] .doc-content [data-kowrap="applied"] {
 .doc-content code:not(pre code) {
   font: 0.88em var(--mono);
   background: #f5f5f4;
-  border-radius: 3px;
+  border-radius: 6px;
   padding: 2px 4px;
 }
 .doc-content table {
