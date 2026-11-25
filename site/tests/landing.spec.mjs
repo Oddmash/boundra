@@ -33,6 +33,28 @@ const assertReflow = async (page) => {
   expect(reflow.overflowing, JSON.stringify(reflow)).toEqual([]);
 };
 
+const assertSceneGeometry = async (page) => {
+  const geometry = await page.locator("[data-active=true]").evaluate(scene => {
+    const route = scene.querySelector(".route");
+    const track = scene.querySelector(".route-track");
+    const bounds = route.getBoundingClientRect();
+    const center = selector => {
+      const rect = scene.querySelector(selector).getBoundingClientRect();
+      return (rect.top + rect.height / 2 - bounds.top) / bounds.height * 100;
+    };
+    return {
+      startError: Math.abs(track.getPointAtLength(0).y - center(".domain:not(.target) .selected")),
+      endError: Math.abs(track.getPointAtLength(track.getTotalLength()).y - center(".target .selected")),
+      rows: [...scene.querySelectorAll(".domain:not(.target) .layer")].map(node => node.textContent),
+      targetRows: [...scene.querySelectorAll(".target .layer")].map(node => node.textContent),
+    };
+  });
+  expect(geometry.rows).toEqual(["client", "shared", "server"]);
+  expect(geometry.targetRows).toEqual(["client", "shared/public", "server/internal"]);
+  expect(geometry.startError).toBeLessThan(1);
+  expect(geometry.endError).toBeLessThan(1);
+};
+
 test("reflow diagnostics detect content clipped on the left", async ({
   page,
 }) => {
@@ -79,6 +101,12 @@ for (const width of [1440, 768, 390, 320]) {
     await page.goto("./");
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     await expect(page.locator("[data-active=true] .rule")).toHaveText("BR-001");
+    await expect(page.locator(".boundary-stage")).toHaveAttribute("data-ready", "true");
+    await assertSceneGeometry(page);
+    if (width >= 921) {
+      const bottom = await page.locator(".hero-band").evaluate(element => element.getBoundingClientRect().bottom);
+      expect(bottom).toBeGreaterThanOrEqual(899);
+    }
     await page.screenshot({
       path: testInfo.outputPath("landing.png"),
       fullPage: true,
@@ -89,6 +117,7 @@ for (const width of [1440, 768, 390, 320]) {
     for (const rule of ["BR-004", "BR-006", "PASS"]) {
       await next.press("Enter");
       await expect(page.locator("[data-active=true] .rule")).toHaveText(rule);
+      await assertSceneGeometry(page);
       await assertReflow(page);
     }
     await expect(page.locator("[data-active=true] [data-scene-title]")).toHaveText("Allowed by boundary rules");
