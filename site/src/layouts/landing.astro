@@ -333,7 +333,7 @@ const scenes = [
   .landing .actions { margin-block: 30px 16px; }
   .hero .primary { --om-semantic-color-action:#f4f2ed; --om-semantic-color-on-action:#171716; --om-semantic-color-action-hover:#ddd8d0; --om-semantic-color-border:#f4f2ed; }
   .hero .secondary { --om-semantic-color-text:#f4f2ed; --om-semantic-color-border:#6d6860; --om-semantic-color-surface:transparent; --om-semantic-color-bg:#292724; }
-  .hero a:focus-visible, .stage-controls button:focus-visible { outline: 2px solid #ffbf91; outline-offset: 4px; }
+  .hero a:focus-visible, .stage-controls :global(button:focus-visible) { outline: 2px solid #ffbf91; outline-offset: 4px; }
   .boundary-stage { position:relative; min-width:0; background:radial-gradient(ellipse at 50% 33%,#29231e 0,#1a1917 45%,#141413 80%); border:1px solid #39342e; border-radius:22px; padding:clamp(15px,2.3vw,28px); box-shadow:0 25px 75px #0005; --input-offset:0; --check-progress:1; --decision-offset:0; }
   .hero-proof { color:#b4aea6; max-width:46ch; font-size:14px; line-height:1.6; margin:10px 0 0; }
   .stage-top { display:flex; justify-content:space-between; gap:8px; align-items:center; color:#d5d0c8; font:12px/1.5 var(--mono); margin-bottom:20px; min-height:44px; }
