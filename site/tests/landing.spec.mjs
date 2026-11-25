@@ -62,12 +62,39 @@ const assertSceneGeometry = async (page) => {
       selectedTrack: scene.querySelector(`[data-branch="${selected}"]`).getAttribute("d"),
       accepted: scene.classList.contains("accepted"),
       count: scene.querySelectorAll('[data-selected="true"]').length,
+      phase: scene.closest(".boundary-stage").dataset.phase,
+      wires: [...scene.querySelectorAll(".wire-signal")].map(path => {
+        const viewBox = path.ownerSVGElement.viewBox.baseVal;
+        const rect = path.ownerSVGElement.getBoundingClientRect();
+        const matrix = path.getScreenCTM();
+        const style = getComputedStyle(path);
+        return {
+          widthError: Math.abs(viewBox.width - rect.width),
+          heightError: Math.abs(viewBox.height - rect.height),
+          scaleError: Math.max(Math.abs(matrix.a - 1), Math.abs(matrix.d - 1)),
+          lengthError: Math.abs(parseFloat(path.style.getPropertyValue("--wire-length")) - path.getTotalLength()),
+          vectorEffect: style.vectorEffect,
+          dash: style.strokeDasharray,
+          offset: parseFloat(style.strokeDashoffset),
+        };
+      }),
     };
   });
   expect(geometry.errors.every(error => error <= 1.5), JSON.stringify(geometry)).toBe(true);
   expect(geometry.count).toBe(1);
   expect(geometry.selected).toBe(geometry.accepted ? "allowed" : "blocked");
   expect(geometry.signal).toBe(geometry.selectedTrack);
+  for (const wire of geometry.wires) {
+    expect(wire.widthError).toBeLessThan(0.1);
+    expect(wire.heightError).toBeLessThan(0.1);
+    expect(wire.scaleError).toBeLessThan(0.01);
+    expect(wire.lengthError).toBeLessThan(0.1);
+    expect(wire.vectorEffect).toBe("none");
+    if (geometry.phase === "result") {
+      expect(wire.dash).toBe("none");
+      expect(wire.offset).toBe(0);
+    }
+  }
 };
 
 test("reflow diagnostics detect content clipped on the left", async ({
@@ -174,12 +201,22 @@ test("the boundary scan routes the result in one synchronized sequence", async (
       for (const record of records) {
         const element = record.target;
         if (!(element instanceof HTMLElement) || !element.hasAttribute("data-boundary-stage")) continue;
+        const scene = element.querySelector("[data-active=true]");
+        if (!scene) continue;
+        const scanSignal = scene.querySelector(".scan-signal");
+        const decisionSignal = scene.querySelector(".decision-signal");
+        const decisionStyle = getComputedStyle(decisionSignal);
         window.boundraTrace.push({
           phase: element.dataset.phase,
-          scene: element.querySelector("[data-active=true]")?.dataset.scene,
+          scene: scene.dataset.scene,
           input: Number(element.style.getPropertyValue("--input-offset")),
           output: Number(element.style.getPropertyValue("--decision-offset")),
           check: Number(element.style.getPropertyValue("--check-progress")),
+          scanDash: getComputedStyle(scanSignal).strokeDasharray,
+          outputDash: decisionStyle.strokeDasharray,
+          outputVisible: decisionStyle.visibility === "visible",
+          outputLength: decisionSignal.getTotalLength(),
+          outputOffset: parseFloat(decisionStyle.strokeDashoffset),
         });
       }
     });
@@ -201,9 +238,15 @@ test("the boundary scan routes the result in one synchronized sequence", async (
   expect(decision).toBeDefined();
   expect(checking.input).toBe(0);
   expect(checking.output).toBe(100);
+  expect(checking.scanDash).toBe("none");
+  expect(checking.outputVisible).toBe(false);
   expect(decision.input).toBe(0);
   expect(decision.check).toBe(1);
-  expect(states.at(-1)).toEqual({ phase: "result", scene: "0", input: 0, output: 0, check: 1 });
+  expect(decision.outputVisible).toBe(true);
+  expect(decision.outputDash).not.toBe("none");
+  expect(Math.abs(parseFloat(decision.outputDash) - decision.outputLength)).toBeLessThan(0.1);
+  expect(Math.abs(decision.outputOffset - decision.outputLength * decision.output / 100)).toBeLessThan(0.1);
+  expect(states.at(-1)).toMatchObject({ phase: "result", scene: "0", input: 0, output: 0, check: 1, scanDash: "none", outputDash: "none", outputVisible: true, outputOffset: 0 });
   await expect(page.locator('[data-active=true] [data-selected="true"]')).toHaveAttribute("data-outcome", "blocked");
   await expect(page.locator("[data-active=true] [data-scene-title]")).toBeVisible();
 
@@ -232,6 +275,24 @@ test("the boundary scan routes the result in one synchronized sequence", async (
   await expect(stage).toHaveAttribute("data-running", "false");
   await page.waitForTimeout(3600);
   await expect(rule).toHaveText("BR-004");
+});
+
+test("wire geometry follows viewport changes without breaking the result trace", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("./");
+  await expect(page.locator(".boundary-stage")).toHaveAttribute("data-geometry-ready", "true");
+  await assertSceneGeometry(page);
+  for (const width of [320, 768, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await expect.poll(() => page.locator("[data-active=true] .decision-wire svg").evaluate(svg => {
+      const bounds = svg.getBoundingClientRect();
+      const viewBox = svg.viewBox.baseVal;
+      return Math.max(Math.abs(bounds.width - viewBox.width), Math.abs(bounds.height - viewBox.height));
+    })).toBeLessThan(0.1);
+    await assertSceneGeometry(page);
+    await assertReflow(page);
+  }
 });
 
 for (const [route, lang, name, start, suffix] of [
