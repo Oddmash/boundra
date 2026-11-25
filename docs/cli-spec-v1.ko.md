@@ -65,7 +65,7 @@ Import를 분석하고 경계 규칙 위반을 감지합니다.
 
 옵션:
 - `--root <path>` (기본값: `.`)
-- `--format text|json` (기본값: `text`)
+- `--format text|json|github|sarif` (기본값: `text`)
 - `--min-domains <positive integer>` (선택 사항, `--min-domains=<n>`도 허용)
 
 스캔 범위 보고:
