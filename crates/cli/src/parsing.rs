@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use crate::commands::add_dependency::AddDependencyOptions;
+use crate::commands::baseline::{BaselineAction, BaselineOptions};
 use crate::commands::check_boundaries::CheckBoundariesOptions;
 use crate::commands::create_domain::CreateDomainOptions;
 use crate::commands::generate::{GenerateKind, GenerateOptions};
@@ -12,6 +13,7 @@ use crate::util::is_kebab_case;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) enum Command {
     AddDependency(AddDependencyOptions),
+    Baseline(BaselineOptions),
     CheckBoundaries(CheckBoundariesOptions),
     CreateDomain(CreateDomainOptions),
     GraphDomains(GraphDomainsOptions),
@@ -48,10 +50,72 @@ pub(crate) fn parse_command(args: &[String]) -> Result<Command, String> {
             Ok(Command::Generate(options))
         }
         "init" => Ok(Command::Init(parse_init_options(&args[1..])?)),
+        "baseline" => Ok(Command::Baseline(parse_baseline_options(&args[1..])?)),
         "help" | "--help" | "-h" => Ok(Command::Help),
         "--version" | "-V" => Ok(Command::Version),
         _ => Err(format!("unknown command: {command}")),
     }
+}
+
+fn parse_baseline_options(args: &[String]) -> Result<BaselineOptions, String> {
+    let action = match args.first().map(String::as_str) {
+        Some("create") => BaselineAction::Create,
+        Some("check") => BaselineAction::Check,
+        _ => return Err("expected baseline create or check".to_string()),
+    };
+    let mut options = BaselineOptions {
+        action,
+        root: PathBuf::from("."),
+        baseline: None,
+        format: if action == BaselineAction::Create {
+            OutputFormat::Json
+        } else {
+            OutputFormat::Text
+        },
+    };
+    let mut index = 1;
+    while index < args.len() {
+        let arg = &args[index];
+        let (key, value) = match arg.split_once('=') {
+            Some(pair) => pair,
+            None => {
+                if !matches!(arg.as_str(), "--root" | "--baseline" | "--format") {
+                    return Err(format!("unknown option: {arg}"));
+                }
+                index += 1;
+                (
+                    arg.as_str(),
+                    args.get(index)
+                        .map(String::as_str)
+                        .ok_or_else(|| format!("missing value for {arg}"))?,
+                )
+            }
+        };
+        if value.is_empty() || value.starts_with("--") {
+            return Err(format!("missing value for {key}"));
+        }
+        match key {
+            "--root" => options.root = PathBuf::from(value),
+            "--baseline" => options.baseline = Some(PathBuf::from(value)),
+            "--format" => options.format = parse_output_format(value)?,
+            _ => return Err(format!("unknown option: {key}")),
+        }
+        index += 1;
+    }
+    match action {
+        BaselineAction::Create
+            if options.baseline.is_some() || options.format != OutputFormat::Json =>
+        {
+            return Err(
+                "baseline create emits JSON to stdout; redirect it to the intended file".into(),
+            )
+        }
+        BaselineAction::Check if options.baseline.is_none() => {
+            return Err("baseline check requires --baseline <path>".into())
+        }
+        _ => {}
+    }
+    Ok(options)
 }
 
 fn parse_init_options(args: &[String]) -> Result<InitOptions, String> {
@@ -189,7 +253,9 @@ fn parse_check_boundaries_options(args: &[String]) -> Result<CheckBoundariesOpti
 fn parse_min_domains(value: &str) -> Result<usize, String> {
     match value.parse::<usize>() {
         Ok(count) if count > 0 => Ok(count),
-        _ => Err(format!("invalid --min-domains value: {value}; expected a positive integer")),
+        _ => Err(format!(
+            "invalid --min-domains value: {value}; expected a positive integer"
+        )),
     }
 }
 
