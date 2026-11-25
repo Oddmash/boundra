@@ -91,7 +91,8 @@ for (const width of [1440, 768, 390, 320]) {
       await expect(page.locator("[data-active=true] .rule")).toHaveText(rule);
       await assertReflow(page);
     }
-    await expect(page.getByText("Allowed by boundary rules", { exact: true })).toBeVisible();
+    await expect(page.locator("[data-active=true] [data-scene-title]")).toHaveText("Allowed by boundary rules");
+    await expect(page.getByRole("status")).toHaveText("Allowed by boundary rules");
     await page.screenshot({ path: testInfo.outputPath("allowed-import.png"), fullPage: true });
     expect(
       await page.evaluate(() =>
