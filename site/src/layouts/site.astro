@@ -1,13 +1,17 @@
 ---
 import '../styles.css';
+import PlatformLinks from '../components/platform-links.astro';
+import { docsHome, docPath } from '../docs-nav';
 import { landingCopy, locales, htmlLanguage, landingPath, guidePath, type LandingLocale } from '../landing-copy';
-const { title, description = 'Boundra documentation for TypeScript applications.', lang = 'en', landingLocale } = Astro.props as { title: string; description?: string; lang?: string; landingLocale?: LandingLocale };
+const { title, description = 'Boundra documentation for TypeScript applications.', lang = 'en', landingLocale, documentSlug = '' } = Astro.props as { title: string; description?: string; lang?: string; landingLocale?: LandingLocale; documentSlug?: string };
 const base = import.meta.env.BASE_URL.replace(/\/$/, '') + '/';
 const docs = `${base}docs/`;
 const locale = landingLocale ?? (lang === 'zh-CN' || lang === 'zh-cn' ? 'zh-cn' : lang === 'ko' || lang === 'ja' ? lang : 'en');
 const t = landingCopy[locale];
 const home = landingPath(base, locale);
 const guide = guidePath(base, locale);
+const docsUrl = docsHome(base, locale);
+const alternate = (item: LandingLocale) => landingLocale ? landingPath(base,item) : docPath(base,documentSlug,item) ?? docsHome(base,item);
 ---
 <!doctype html>
 <html lang={lang}>
@@ -19,9 +23,11 @@ const guide = guidePath(base, locale);
   </head>
   <body class:list={[{'landing-page': !!landingLocale}]}>
     <a class="skip" href="#main">{t.skip}</a>
-    <header class="site-header"><div class="shell nav"><a class="brand" href={home}><img src={`${base}boundra-mark.svg`} width="32" height="32" alt="" />Boundra</a><nav aria-label={t.nav}><a href={guide}>{t.guide}</a><a href={docs}>{t.navDocs}{locale !== 'en' && ' (EN)'}</a><a href={`${docs}example/`}>{t.example}{locale !== 'en' && ' (EN)'}</a><a href="https://github.com/Oddmash/boundra">GitHub <span aria-hidden="true">↗</span></a>{landingLocale && <details class="locale-menu"><summary aria-label={t.language}>{t.languageName}</summary><div class="locale-options">{locales.map(item => <a href={landingPath(base,item)} lang={htmlLanguage(item)} hreflang={htmlLanguage(item)} aria-current={item === locale ? 'page' : undefined}>{landingCopy[item].languageName}</a>)}</div></details>}</nav></div></header>
+    <header class="site-header"><div class="shell nav"><a class="brand" href={home}><img src={base + 'boundra-mark.svg'} width="32" height="32" alt="" />Boundra</a><nav aria-label={t.nav}><a class="docs-header-link" href={docsUrl} aria-current={!landingLocale ? 'page' : undefined}>{t.navDocs}</a><PlatformLinks/><div class="language-select" data-language-picker data-om-theme={landingLocale ? 'dark' : 'light'} hidden></div><details class="locale-menu" data-language-fallback data-label={t.language} data-current={locale}><summary aria-label={t.language}>{t.languageName}</summary><div class="locale-options">{locales.map(item => <a href={alternate(item)} lang={htmlLanguage(item)} hreflang={htmlLanguage(item)} data-locale={item} aria-current={item === locale ? 'page' : undefined}>{landingCopy[item].languageName}</a>)}</div></details></nav></div></header>
     <main id="main"><slot /></main>
-    <footer class="site-footer"><div class="shell footer"><a class="brand" href={home}><img src={`${base}boundra-mark.svg`} alt="" width="26" height="26" />Boundra</a><span>{t.openSource}</span><nav aria-label={t.footerNav}><a href={docs}>{t.docsTitle}{locale !== 'en' && ' (EN)'}</a><a href="https://www.npmjs.com/package/boundra">npm</a><a href="https://github.com/Oddmash/boundra">{t.source}</a></nav></div></footer>
+    <footer class="site-footer"><div class="shell footer"><a class="brand" href={home}><img src={`${base}boundra-mark.svg`} alt="" width="26" height="26" />Boundra</a><span>{t.openSource}</span><nav aria-label={t.footerNav}><a href={docsUrl}>{t.docsTitle}</a><a href="https://www.npmjs.com/package/boundra">npm</a><a href="https://github.com/Oddmash/boundra">{t.source}</a></nav></div></footer>
+    <div id="copy-toast" data-om-theme={landingLocale ? 'dark' : 'light'}></div>
+    <script>import '../site-ui';</script>
   </body>
 </html>
 <style>
@@ -29,10 +35,13 @@ const guide = guidePath(base, locale);
   .landing-page .site-header .brand,.landing-page .site-header nav a { color:#f4f2ed; }
   .landing-page .site-header nav a:hover { color:#ffb07d; }
   .landing-page .site-header :is(a,summary):focus-visible { outline:2px solid #ffbf91; outline-offset:3px; }
-  .locale-menu { position:relative; color:#f4f2ed; font-size:14px; }
+  .docs-header-link { padding:8px 10px; border-radius:8px; transition:background-color 150ms ease,color 150ms ease; }
+  .docs-header-link:hover,.docs-header-link[aria-current="page"] { background:color-mix(in srgb,currentColor 8%,transparent); }
+  .locale-menu { position:relative; color:inherit; font-size:14px; }
   .locale-menu summary { cursor:pointer; border:1px solid #666059; border-radius:7px; padding:7px 10px; min-height:36px; white-space:nowrap; }
-  .locale-options { position:absolute; z-index:10; right:0; top:calc(100% + 7px); background:#22201e; border:1px solid #655d54; border-radius:8px; padding:5px; min-width:130px; }
+  .locale-options { position:absolute; z-index:10; right:0; top:calc(100% + 7px); background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:5px; min-width:130px; }
+  .landing-page .locale-options { background:#22201e; border-color:#655d54; }
   .locale-options a { display:flex !important; padding:5px 10px; white-space:nowrap; border-radius:4px; }
-  .locale-options a[aria-current="page"] { background:#40332a; color:#ffb07d !important; }
+  .locale-options a[aria-current="page"] { background:color-mix(in srgb,currentColor 10%,transparent); }
   @media(max-width:720px) { .locale-options { position:static; margin-top:7px; } }
 </style>
