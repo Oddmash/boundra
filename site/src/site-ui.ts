@@ -66,7 +66,7 @@ for (const pre of document.querySelectorAll<HTMLPreElement>('.doc-content pre, .
   shell.className = 'copy-code-shell';
   const action = document.createElement('div');
   action.className = 'copy-code-action';
-  action.dataset.omTheme = 'light';
+  action.dataset.omTheme = pre.classList.contains('astro-code') ? 'dark' : 'light';
   pre.before(shell);
   shell.append(pre, action);
   const root = createRoot(action);
