@@ -25,6 +25,7 @@ pub fn run(args: &[String]) -> i32 {
     match command {
         Command::AddDependency(options) => commands::add_dependency::run(&options),
         Command::Baseline(options) => commands::baseline::run(&options),
+        Command::Changed(options) => commands::changed::run(&options),
         Command::CheckBoundaries(options) => commands::check_boundaries::run(&options),
         Command::CreateDomain(options) => commands::create_domain::run(&options),
         Command::GraphDomains(options) => commands::graph_domains::run(&options),
@@ -53,6 +54,7 @@ fn print_help() {
     println!();
     println!("Usage:");
     println!("  boundra add-dependency <domain>/<dependency> [--root <path>]");
+    println!("  boundra check-changed --base <ref> [--root <path>] [--format text|json]");
     println!(
         "  boundra baseline create|check [--root <path>] [--baseline <path>] [--format text|json]"
     );
