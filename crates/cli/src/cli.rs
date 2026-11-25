@@ -33,6 +33,7 @@ pub fn run(args: &[String]) -> i32 {
         Command::Generate(options) => commands::generate::run(&options),
         Command::Init(options) => commands::init::run(&options),
         Command::Migrate(options) => commands::migrate::run(&options),
+        Command::Mcp(root) => commands::mcp::run(&root),
         Command::Help => {
             print_help();
             0
@@ -61,6 +62,7 @@ pub(crate) const HELP_COMMANDS: &[&str] = &[
     "graph-domains [--root <path>] [--format mermaid|dot|json|html] [--output <path>]",
     "generate route|query|mutation|resource <domain>/<name> [--root <path>]",
     "completions bash|zsh|fish",
+    "mcp --root <path>",
     "help",
     "--help",
     "--version",
