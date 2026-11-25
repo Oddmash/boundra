@@ -159,3 +159,7 @@ import を分析し、境界ルール違反を検出します。
   }
 }
 ```
+
+## 明示的な違反ベースライン
+
+`boundra baseline create [--root <path>]` はバージョン付き JSON を標準出力に生成します。`boundra baseline check --baseline <path> [--root <path>] [--format text|json]` は完全検査後、新規・既存・解決済み違反を分類します。ルール、相対パス、import、出現回数を比較し、行の移動は無視します。名前変更は新規と解決として扱います。終了コード 0 は新規なし、1 は新規違反、2 は不正なベースライン、検査失敗またはドメイン範囲の減少です。通常の `check-boundaries` は自動的に適用しません。
