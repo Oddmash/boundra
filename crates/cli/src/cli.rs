@@ -1,5 +1,7 @@
 use crate::commands;
-use crate::output::{print_error, print_error_json, CliDiagnostic};
+use crate::output::{
+    print_error, print_error_json, print_github_error, print_sarif_error, CliDiagnostic,
+};
 use crate::parsing::{parse_command, Command};
 
 pub fn run(args: &[String]) -> i32 {
@@ -21,7 +23,11 @@ pub fn run(args: &[String]) -> i32 {
                 "run 'boundra --help' to see valid commands and options",
             )
             .with_context("command", command);
-            if requests_json(args) {
+            if command == "check-boundaries" && requests_format(args, "sarif") {
+                print_sarif_error(&diagnostic);
+            } else if command == "check-boundaries" && requests_format(args, "github") {
+                print_github_error(&diagnostic);
+            } else if requests_format(args, "json") {
                 print_error_json(command, &diagnostic);
             } else {
                 print_error(&diagnostic);
@@ -50,10 +56,12 @@ pub fn run(args: &[String]) -> i32 {
     }
 }
 
-fn requests_json(args: &[String]) -> bool {
+fn requests_format(args: &[String], format: &str) -> bool {
     args.windows(2)
-        .any(|pair| pair[0] == "--format" && pair[1] == "json")
-        || args.iter().any(|arg| arg == "--format=json")
+        .any(|pair| pair[0] == "--format" && pair[1] == format)
+        || args
+            .iter()
+            .any(|arg| arg.strip_prefix("--format=") == Some(format))
 }
 
 fn print_help() {
@@ -81,7 +89,7 @@ fn command_usage(command: &str) -> Option<&'static str> {
     match command {
         "add-dependency" => Some("add-dependency <domain>/<dependency> [--root <path>]"),
         "check-boundaries" => {
-            Some("check-boundaries [--root <path>] [--format text|json] [--min-domains <n>]")
+            Some("check-boundaries [--root <path>] [--format text|json|github|sarif] [--min-domains <n>]")
         }
         "create-domain" => Some("create-domain <name> [--path <parent-path>] [--root <path>]"),
         "init" => Some("init [--root <path>] [--name <kebab-case>]"),
