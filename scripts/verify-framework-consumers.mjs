@@ -52,7 +52,7 @@ export const readOrder = () => createBoundraClient(async () => ({id: "order-1", 
   await write("domains/commerce/order/server/internal.ts", "export const internal = 1;\n");
   await write("domains/commerce/order/server/public.ts", `import { implementQuery } from "boundra";
 import { query } from "../shared/public";
-export const orderImplementation = implementQuery(query, ({id}) => ({id, status: "ready"}));
+export const orderImplementation = implementQuery(query, ({id}) => ({id, status: "ready" as const}));
 `);
   await write("domains/billing/shared/public.ts", 'export { query } from "@domains/commerce/order/shared/public";\n');
   await write("apps/next/app/layout.tsx", 'import type { ReactNode } from "react";\nexport default function Layout({children}: {children: ReactNode}) { return <html lang="en"><body>{children}</body></html>; }');
