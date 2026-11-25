@@ -39,7 +39,7 @@ const sections = [
   [docCopy[locale].example, docCopy[locale].exampleIntro, 'example'],
   [t.docRules, t.docRulesDesc, 'boundary-rules'],
   [t.docContracts, t.docContractsDesc, 'contract-schema-spec'],
-  [t.docFramework, t.docFrameworkDesc, 'frameworks'],
+  [t.docFramework, t.docFrameworkDesc, 'framework-conformance'],
   [t.docConfig, t.docConfigDesc, 'config-spec'],
   [t.docCI, t.docCIDesc, 'ci-integration'],
 ].flatMap(([title, description, slug]) => {
@@ -48,11 +48,13 @@ const sections = [
 });
 const story = ({"en":{"chapter1":"Layer boundaries","chapter2":"Public interfaces","chapter3":"Declared dependencies","blocked":"Violation detected","fixed":"Correction verified","pass1":"Shared contract, valid import","pass1Desc":"The client imports the shared contract instead of server implementation.","pass2":"Public interface, valid import","pass2Desc":"Billing accesses the declared public API instead of order’s internal implementation.","story":"Boundra checks imports against layer rules, public entry points and the dependency manifest before a change merges."},"ko":{"chapter1":"계층 경계","chapter2":"공개 인터페이스","chapter3":"선언된 의존성","blocked":"위반 감지","fixed":"수정 검증 완료","pass1":"공유 계약으로 변경","pass1Desc":"클라이언트가 서버 구현 대신 공유 계약을 가져옵니다.","pass2":"공개 인터페이스로 변경","pass2Desc":"billing이 order의 내부 구현 대신 선언된 공개 API에 접근합니다.","story":"Boundra는 import를 계층 규칙, 공개 진입점과 의존성 선언에 대조해 병합 전에 검사합니다."},"ja":{"chapter1":"レイヤー境界","chapter2":"公開インターフェース","chapter3":"宣言済みの依存関係","blocked":"違反を検出","fixed":"修正を確認","pass1":"共有契約による有効な import","pass1Desc":"クライアントはサーバー実装ではなく共有契約を import します。","pass2":"公開インターフェースへの修正","pass2Desc":"billing は order の内部実装ではなく宣言済みの公開 API にアクセスします。","story":"Boundra はマージ前に import をレイヤールール、公開エントリーポイント、依存関係の宣言と照合します。"},"zh-cn":{"chapter1":"分层边界","chapter2":"公开接口","chapter3":"已声明的依赖关系","blocked":"检测到违规","fixed":"修正已验证","pass1":"共享契约，有效的 import","pass1Desc":"客户端导入共享契约，而不是服务端实现。","pass2":"公开接口，有效的 import","pass2Desc":"billing 访问 order 声明的公开 API，而不是内部实现。","story":"Boundra 在合并前根据分层规则、公开入口和依赖清单检查 import。"}})[locale];
 const flow = ({
-  en: ['Import scan', 'Boundary rules', 'Decision'],
-  ko: ['Import 검사', '경계 규칙', '검사 결과'],
-  ja: ['Import 検査', '境界ルール', '検査結果'],
-  'zh-cn': ['Import 扫描', '边界规则', '检查结果'],
+  en: { source: 'Source change', revised: 'Revised change', checker: 'Boundary inspector', blocked: 'Blocked', allowed: 'Allowed', scan: 'Scanning source', check: 'Evaluating rule', decision: 'Routing result', complete: 'Check complete', pending: 'Awaiting the boundary check result' },
+  ko: { source: '소스 변경', revised: '수정된 변경', checker: '경계 검사기', blocked: '차단', allowed: '허용', scan: '소스 검사 중', check: '규칙 검증 중', decision: '결과 전달 중', complete: '검사 완료', pending: '경계 검사 결과를 기다리는 중' },
+  ja: { source: 'ソース変更', revised: '修正後の変更', checker: '境界チェッカー', blocked: '拒否', allowed: '許可', scan: 'ソースを検査中', check: 'ルールを検証中', decision: '結果を転送中', complete: '検査完了', pending: '境界チェックの結果を待機中' },
+  'zh-cn': { source: '源代码变更', revised: '修正后的变更', checker: '边界检查器', blocked: '阻止', allowed: '允许', scan: '正在扫描源代码', check: '正在验证规则', decision: '正在传递结果', complete: '检查完成', pending: '等待边界检查结果' },
 })[locale];
+const blockedBranch = 'M50 0 V12 Q50 20 42 20 H33 Q25 20 25 28 V40';
+const allowedBranch = 'M50 0 V12 Q50 20 58 20 H67 Q75 20 75 28 V40';
 const scenes = [
   { chapter: story.chapter1, rule: 'BR-001', title: t.rule1Title, description: t.rule1Desc, source: 'order', sourceLayer: 'client', target: 'order', targetLayer: 'server/internal', path: 'domains/order/client/use-order.ts', symbol: 'orderService', imported: '@domains/order/server/internal', dependency: '[]', allowed: false },
   { chapter: story.chapter1, rule: 'PASS', title: story.pass1, description: story.pass1Desc, source: 'order', sourceLayer: 'client', target: 'order', targetLayer: 'shared/public', path: 'domains/order/client/use-order.ts', symbol: 'getOrderQuery', imported: '@domains/order/shared/public', dependency: '[]', allowed: true },
@@ -72,33 +74,61 @@ const scenes = [
       <div class="actions"><a class="button primary" href={guide}>{t.start} <span aria-hidden="true">→</span></a><a class="button secondary" href={docs}>{t.docs}</a></div>
       <p class="requirements">{t.requirements}</p>
     </div>
-    <div class="boundary-stage" data-boundary-stage data-pause={t.pause} data-resume={t.resume}>
-      <div class="stage-top"><span>{t.check}</span><div class="stage-controls"><button type="button" data-play hidden aria-label={t.pause} title={t.pause}><span aria-hidden="true">Ⅱ</span></button><button type="button" data-next hidden aria-label={t.next} title={t.next}><span aria-hidden="true">→</span></button></div></div>
-      <div class="pipeline" aria-hidden="true">
-        {flow.map((label, index) => <div class="pipeline-step"><span class="pipeline-indicator"></span><span>{label}</span>{index < 2 && <span class="pipeline-arrow">›</span>}</div>)}
+    <div class="boundary-stage" data-boundary-stage data-pause={t.pause} data-resume={t.resume} data-phase="result" data-phase-copy={JSON.stringify({ scan: flow.scan, checking: flow.check, decision: flow.decision, result: flow.complete })}>
+      <div class="stage-top">
+        <div class="stage-command"><span aria-hidden="true">$</span><span>boundra check-boundaries</span></div>
+        <div class="stage-controls"><button type="button" data-play hidden aria-label={t.pause} title={t.pause}><span aria-hidden="true">Ⅱ</span></button><button type="button" data-next hidden aria-label={t.next} title={t.next}><span aria-hidden="true">→</span></button></div>
       </div>
       <div class="scene-stack">
         {scenes.map((scene, index) => (
-          <div class:list={['scene', { accepted: scene.allowed }]} data-scene={index} data-active={index === 0 ? 'true' : 'false'}>
-            <div class="scene-chapter"><strong>{scene.chapter}</strong><span class="scene-state">{scene.allowed ? story.fixed : story.blocked}</span></div>
-            <div class="scene-map" aria-hidden="true">
-              <div class="domain"><span class="domain-name">{scene.source}</span>{['client', 'shared', 'server'].map(layer => <span class:list={['layer', { selected: layer === scene.sourceLayer }]}>{layer}</span>)}</div>
-              <div class="route">
-                <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-                  <path class="route-track" d="M0 50 H100" />
-                  <path class="route-signal" d={scene.allowed ? 'M0 50 H100' : 'M0 50 H50'} pathLength="100" />
-                  <path class="route-packet" d={scene.allowed ? 'M0 50 H100' : 'M0 50 H50'} pathLength="100" />
-                </svg>
-                <div class="gate"><img src={base + 'boundra-mark.svg'} width="30" height="30" alt="" /><span>{scene.allowed ? 'OK' : scene.rule}</span></div>
-              </div>
-              <div class="domain target"><span class="domain-name">{scene.target}</span>{['client', 'shared/public', 'server/internal'].map(layer => <span class:list={['layer', { selected: layer === scene.targetLayer }]}>{layer}</span>)}</div>
+          <div class:list={['scene', { accepted: scene.allowed }]} data-scene={index} data-active={index === 0 ? 'true' : 'false'} aria-hidden={index !== 0 ? 'true' : undefined}>
+            <div class="scene-code">
+              <div class="source-caption"><strong>{scene.allowed ? flow.revised : flow.source}</strong><span class="source-tag">{scene.source}/{scene.sourceLayer}</span></div>
+              <span class="preview-path">{scene.path}</span>
+              <pre><code><span class="syntax-keyword">import</span> {'{ ' + scene.symbol + ' }'} <span class="syntax-keyword">from</span>{'\n'}  <span class:list={['syntax-string', { revised: index === 1 || index === 3 }]}>{'"' + scene.imported + '"'}</span>;</code></pre>
+              <div class="manifest-line"><span>{scene.source}/domain.json</span><code class:list={[{ revised: index === 5 }]}>"dependsOn": {scene.dependency}</code></div>
             </div>
-            <div class="scene-code"><span class="preview-path">{scene.path}</span><pre><code><span class="syntax-keyword">import</span> {'{ ' + scene.symbol + ' }'} <span class="syntax-keyword">from</span>{'\n'}  <span class="syntax-string">{'"' + scene.imported + '"'}</span>;</code></pre><div class="manifest-line"><span>{scene.source}/domain.json</span><code>"dependsOn": {scene.dependency}</code></div></div>
-            <div class="scene-result"><span class="rule">{scene.rule}</span><div><strong data-scene-title>{scene.title}</strong><p>{scene.description}</p></div></div>
+            <div class="scan-wire" aria-hidden="true">
+              <svg viewBox="0 0 100 40" preserveAspectRatio="none">
+                <path class="wire-track" d="M50 0 V40" />
+                <path class="wire-signal scan-signal" d="M50 0 V40" pathLength="100" />
+              </svg>
+            </div>
+            <div class="checker">
+              <div class="checker-mark"><img src={base + 'boundra-mark.svg'} width="28" height="28" alt="" /></div>
+              <div class="checker-copy"><span>{flow.checker}</span><strong>{scene.chapter}</strong></div>
+              <code class="checker-rule">{scenes[index - index % 2].rule}</code>
+              <div class="check-meter" aria-hidden="true"><span></span></div>
+            </div>
+            <div class="decision-wire" aria-hidden="true">
+              <svg viewBox="0 0 100 40" preserveAspectRatio="none">
+                <path class="wire-track" data-branch="blocked" d={blockedBranch} />
+                <path class="wire-track" data-branch="allowed" d={allowedBranch} />
+                <path class="wire-signal decision-signal" d={scene.allowed ? allowedBranch : blockedBranch} pathLength="100" />
+              </svg>
+            </div>
+            <div class="decision-grid">
+              <div class="outcome-cell">
+                <div class="outcome blocked" data-outcome="blocked" data-selected={String(!scene.allowed)}>
+                  <span class="outcome-icon" aria-hidden="true"><svg viewBox="0 0 16 16" width="16" height="16"><path d="m5 5 6 6M11 5l-6 6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
+                  <strong>{flow.blocked}</strong><code>{scenes[index - index % 2].rule}</code>
+                </div>
+              </div>
+              <div class="outcome-cell">
+                <div class="outcome allowed" data-outcome="allowed" data-selected={String(scene.allowed)}>
+                  <span class="outcome-icon" aria-hidden="true"><svg viewBox="0 0 16 16" width="16" height="16"><path d="m4 8 2.7 2.7L12 5.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                  <strong>{flow.allowed}</strong><code>PASS</code>
+                </div>
+              </div>
+            </div>
+            <div class="scene-summary">
+              <div class="scene-result"><span class="rule">{scene.rule}</span><div><strong data-scene-title>{scene.title}</strong><p>{scene.description}</p></div></div>
+              <div class="scene-pending" aria-hidden="true">{flow.pending}</div>
+            </div>
           </div>
         ))}
       </div>
-      <p class="preview-note">{t.note}</p>
+      <div class="stage-footer"><span class="stage-phase" data-phase-label>{flow.complete}</span><p class="preview-note">{t.note}</p></div>
       <p class="sr-only" data-status role="status"></p>
     </div>
   </section></div>
@@ -127,43 +157,38 @@ const scenes = [
 </Layout>
 
 <script>
+  type ScanPhase = 'scan' | 'checking' | 'decision' | 'result';
+  const inputEnd = 620;
+  const checkEnd = 1060;
+  const decisionEnd = 1690;
+  const clamp = (value: number) => Math.min(1, Math.max(0, value));
+
   for (const stage of document.querySelectorAll<HTMLElement>('[data-boundary-stage]')) {
     const scenes = Array.from(stage.querySelectorAll<HTMLElement>('[data-scene]'));
     const play = stage.querySelector<HTMLButtonElement>('[data-play]')!;
     const next = stage.querySelector<HTMLButtonElement>('[data-next]')!;
     const status = stage.querySelector<HTMLElement>('[data-status]')!;
+    const phaseLabel = stage.querySelector<HTMLElement>('[data-phase-label]')!;
+    const labels = JSON.parse(stage.dataset.phaseCopy!) as Record<ScanPhase, string>;
     const reduced = matchMedia('(prefers-reduced-motion: reduce)');
     let current = 0;
     let paused = false;
     let visible = false;
-    let timer: number | undefined;
-    const clear = () => {
-      if (timer !== undefined) window.clearTimeout(timer);
-      timer = undefined;
-      stage.dataset.running = 'false';
-    };
-    const measureRoutes = () => {
-      for (const scene of scenes) {
-        const route = scene.querySelector<HTMLElement>('.route')!;
-        const svg = route.querySelector('svg')!;
-        const source = scene.querySelector<HTMLElement>('.domain:not(.target) .selected')!;
-        const target = scene.querySelector<HTMLElement>('.target .selected')!;
-        const bounds = route.getBoundingClientRect();
-        if (!bounds.width || !bounds.height) continue;
-        const centerY = (element: HTMLElement) => {
-          const rect = element.getBoundingClientRect();
-          return ((rect.top + rect.height / 2 - bounds.top) / bounds.height) * 100;
-        };
-        const from = centerY(source);
-        const to = centerY(target);
-        const entry = 'M0 ' + from + ' C22 ' + from + ' 25 50 50 50';
-        const exit = ' C75 50 78 ' + to + ' 100 ' + to;
-        svg.querySelector('.route-track')!.setAttribute('d', entry + exit);
-        const signal = entry + (scene.classList.contains('accepted') ? exit : '');
-        svg.querySelector('.route-signal')!.setAttribute('d', signal);
-        svg.querySelector('.route-packet')!.setAttribute('d', signal);
+    let elapsed = 0;
+    let last: number | undefined;
+    let frame: number | undefined;
+
+    const render = () => {
+      const phase: ScanPhase = elapsed < inputEnd ? 'scan' : elapsed < checkEnd ? 'checking' : elapsed < decisionEnd ? 'decision' : 'result';
+      if (stage.dataset.phase !== phase) {
+        stage.dataset.phase = phase;
+        phaseLabel.textContent = labels[phase];
       }
+      stage.style.setProperty('--input-offset', String(100 * (1 - clamp(elapsed / inputEnd))));
+      stage.style.setProperty('--check-progress', String(clamp((elapsed - inputEnd) / (checkEnd - inputEnd))));
+      stage.style.setProperty('--decision-offset', String(100 * (1 - clamp((elapsed - checkEnd) / (decisionEnd - checkEnd)))));
     };
+
     const renderControls = () => {
       play.hidden = reduced.matches;
       next.hidden = !reduced.matches && !paused;
@@ -172,33 +197,71 @@ const scenes = [
       play.title = name;
       play.querySelector('span')!.textContent = paused ? '▶' : 'Ⅱ';
     };
+
     const select = (index: number, manual = false) => {
       current = index % scenes.length;
-      measureRoutes();
-      for (const [i, scene] of scenes.entries()) scene.dataset.active = String(i === current);
+      elapsed = manual ? decisionEnd : 0;
+      for (const [i, scene] of scenes.entries()) {
+        scene.dataset.active = String(i === current);
+        if (i === current) scene.removeAttribute('aria-hidden');
+        else scene.setAttribute('aria-hidden', 'true');
+      }
+      render();
       if (manual) status.textContent = scenes[current].querySelector('[data-scene-title]')!.textContent;
     };
+
+    const stop = () => {
+      if (frame !== undefined) cancelAnimationFrame(frame);
+      frame = last = undefined;
+      stage.dataset.running = 'false';
+    };
+
+    const tick = (now: number) => {
+      if (last !== undefined) elapsed += Math.min(now - last, 100);
+      last = now;
+      const duration = scenes[current].classList.contains('accepted') ? 3100 : 3500;
+      if (elapsed >= duration) select(current + 1);
+      else render();
+      frame = requestAnimationFrame(tick);
+    };
+
     const schedule = () => {
-      clear();
+      stop();
       if (!reduced.matches && !paused && visible && !document.hidden) {
         stage.dataset.running = 'true';
-        timer = window.setTimeout(() => {
-          select(current + 1);
-          schedule();
-        }, scenes[current].classList.contains('accepted') ? 2400 : 2800);
+        frame = requestAnimationFrame(tick);
       }
     };
-    play.addEventListener('click', () => { paused = !paused; renderControls(); schedule(); });
-    next.addEventListener('click', () => { paused = true; select(current + 1, true); renderControls(); schedule(); });
+
+    play.addEventListener('click', () => {
+      paused = !paused;
+      renderControls();
+      schedule();
+    });
+
+    next.addEventListener('click', () => {
+      if (!reduced.matches) paused = true;
+      select(current + 1, true);
+      renderControls();
+      schedule();
+    });
+
     document.addEventListener('visibilitychange', schedule);
-    reduced.addEventListener('change', () => { renderControls(); schedule(); });
-    const observer = new IntersectionObserver(([entry]) => { visible = entry.isIntersecting && entry.intersectionRatio >= 0.35; schedule(); }, { threshold: [0, 0.35] });
+    reduced.addEventListener('change', () => {
+      elapsed = reduced.matches ? decisionEnd : 0;
+      render();
+      renderControls();
+      schedule();
+    });
+    const observer = new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting && entry.intersectionRatio >= 0.35;
+      schedule();
+    }, { threshold: [0, 0.35] });
     observer.observe(stage);
-    const resize = new ResizeObserver(measureRoutes);
-    resize.observe(stage);
-    measureRoutes();
-    window.addEventListener('pagehide', clear);
+    window.addEventListener('pagehide', stop);
     window.addEventListener('pageshow', schedule);
+    elapsed = reduced.matches ? decisionEnd : 0;
+    render();
     stage.dataset.ready = 'true';
     renderControls();
   }
@@ -223,60 +286,71 @@ const scenes = [
   .hero .secondary { color: #f4f2ed; border-color: #6d6860; }
   .hero .secondary:hover { background: #292724; }
   .hero a:focus-visible, .stage-controls button:focus-visible { outline: 2px solid #ffbf91; outline-offset: 4px; }
-  .boundary-stage { position: relative; min-width: 0; background: radial-gradient(ellipse at 50% 35%, #29221d 0, #1a1917 40%, #141413 75%); border: 1px solid #38332e; border-radius: 22px; padding: clamp(15px, 2.3vw, 28px); box-shadow: 0 25px 75px #0005; }
-  .stage-top { display:flex; justify-content:space-between; gap:8px; align-items:center; color:#d5d0c8; font: 13px/1.5 var(--mono); margin-bottom:18px; min-height:36px; }
-  .stage-controls { display:flex; gap:8px; flex-wrap:wrap; }
-  .stage-controls button { width:36px; height:36px; border-radius:50%; background:transparent; border:1px solid #524e48; color:#c3beb6; font-size:16px; cursor:pointer; }
+  .boundary-stage { position:relative; min-width:0; background:radial-gradient(ellipse at 50% 33%,#29231e 0,#1a1917 45%,#141413 80%); border:1px solid #39342e; border-radius:22px; padding:clamp(15px,2.3vw,28px); box-shadow:0 25px 75px #0005; --input-offset:0; --check-progress:1; --decision-offset:0; }
+  .hero-proof { color:#b4aea6; max-width:46ch; font-size:14px; line-height:1.6; margin:10px 0 0; }
+  .stage-top { display:flex; justify-content:space-between; gap:8px; align-items:center; color:#d5d0c8; font:12px/1.5 var(--mono); margin-bottom:20px; min-height:30px; }
+  .stage-command { display:flex; align-items:baseline; gap:8px; min-width:0; overflow-wrap:anywhere; }
+  .stage-command > span:first-child { color:#ffab7d; font-weight:700; }
+  .stage-controls { display:flex; gap:6px; flex:none; }
+  .stage-controls button { width:30px; height:30px; border-radius:7px; background:transparent; border:1px solid #524e48; color:#c3beb6; font-size:14px; display:grid; place-items:center; cursor:pointer; }
   .stage-controls button:hover { border-color:#ff9c61; background:#332a24; }
   .stage-controls button[hidden] { display:none; }
-  .scene-stack { display:grid; grid-template-columns:minmax(0,1fr); }
-  .pipeline { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:5px; margin:0 0 18px; padding:10px 8px; border:1px solid #38332e; border-radius:8px; background:#171614; }
-  .pipeline-step { display:flex; min-width:0; align-items:center; gap:5px; color:#d5cec3; font-size:clamp(10px,1vw,12px); line-height:1.4; }
-  .pipeline-indicator { flex:none; width:6px; height:6px; border-radius:50%; background:#ff9c61; opacity:.8; }
-  .pipeline-arrow { margin-left:auto; color:#786e64; font-size:16px; line-height:1; }
-  .scene { grid-area:1/1; visibility:hidden; min-width:0; display:grid; grid-template-rows: auto auto auto 1fr; gap:18px; --signal:#ffad87; --result:#f4c1ad; }
+  .scene-stack { display:grid; grid-template-columns:minmax(0,1fr); grid-template-rows:auto 34px auto 44px auto auto; }
+  .scene { grid-area:1/1/span 6; visibility:hidden; min-width:0; display:grid; grid-template-rows:auto 34px auto 44px auto auto; grid-template-rows:subgrid; row-gap:0; --signal:#ffad87; --result:#f4c1ad; }
   .scene[data-active="true"] { visibility:visible; }
-  .scene-chapter { display:flex; justify-content:space-between; align-items:baseline; gap:8px; flex-wrap:wrap; font-size:13px; color:#eee7de; }
-  .scene-state { font-size:12px; color:var(--result); }
-  .hero-proof { color:#b4aea6; max-width:46ch; font-size:14px; line-height:1.6; margin:10px 0 0; }
   .scene.accepted { --signal:#a2d9b2; --result:#c2e7cb; }
-  .scene-map { display:grid; grid-template-columns:minmax(0,1fr) minmax(76px,.45fr) minmax(0,1fr); align-items:center; min-width:0; }
-  .domain { position:relative; z-index:1; display:grid; grid-template-rows:auto repeat(3, minmax(34px, auto)); gap:8px; min-width:0; padding:14px; background:#22201e; border:1px solid #504a43; border-radius:12px; overflow-wrap:anywhere; font:12px/1.4 var(--mono); }
-  .domain-name { color:#eee7de; font-size:15px; font-weight:700; margin-bottom:4px; }
-  .layer { display:flex; align-items:center; color:#b4aea6; border:1px solid #3c3935; border-radius:5px; padding:8px 6px; }
-  .layer.selected { background:#372b25; border-color:#e28c5d; color:#ffdcbd; font-weight:650; }
-  .target .layer.selected { border-color:var(--signal); color:var(--result); background:#292624; }
-  .route { display:grid; place-items:center; height:100%; min-height:76px; position:relative; }
-  .route svg { position:absolute; width:100%; height:100%; inset:0; overflow:visible; }
-  .route-track,.route-signal,.route-packet { fill:none; stroke-width:2; vector-effect:non-scaling-stroke; }
-  .route-track { stroke:#66564b; stroke-dasharray:3 5; }
-  .route-signal { stroke:var(--signal); stroke-linecap:round; opacity:.35; }
-  .route-packet { stroke:var(--signal); stroke-linecap:round; stroke-width:3; stroke-dasharray:10 90; stroke-dashoffset:100; opacity:0; filter:drop-shadow(0 0 3px var(--signal)); }
-  .gate { z-index:1; display:grid; justify-items:center; gap:4px; padding:7px 5px; min-width:58px; border:1px solid var(--signal); background:#1c1917; border-radius:10px; color:var(--result); font:10px var(--mono); }
-  .gate img { border-radius:4px; }
-  .scene-code { background:#171614; border:1px solid #39342f; border-radius:10px; padding:12px; min-width:0; }
-  .preview-path { display:block; color:#bdb7ae; font:11px/1.5 var(--mono); overflow-wrap:anywhere; border-bottom:1px solid #3b3630; padding-bottom:9px; }
-  .scene pre { margin: 10px 0 0; font:clamp(11px,1.1vw,13px)/1.7 var(--mono); white-space:pre-wrap; overflow-wrap:anywhere; }
-  .manifest-line { display:flex; gap:8px; justify-content:space-between; flex-wrap:wrap; border-top:1px solid #39342f; padding-top:9px; margin-top:12px; font:11px/1.5 var(--mono); color:#bdb7ae; overflow-wrap:anywhere; }
-  .manifest-line code { color:var(--result); }
+  .scene-code { background:#151514; border:1px solid #474039; border-radius:10px; padding:14px; min-width:0; }
+  .boundary-stage[data-phase="scan"] .scene[data-active="true"] .scene-code { border-color:#c27e55; }
+  .source-caption { display:flex; justify-content:space-between; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:9px; color:#eee7de; font-size:13px; line-height:1.5; }
+  .source-tag { color:#bcafa2; font:10px/1.5 var(--mono); border:1px solid #454039; border-radius:4px; padding:2px 5px; }
+  .accepted .source-caption strong { color:var(--result); }
+  .preview-path { display:block; color:#bdb7ae; font:11px/1.5 var(--mono); overflow-wrap:anywhere; border-bottom:1px solid #38342f; padding:0 0 8px; }
+  .scene pre { margin:10px 0 0; font:clamp(11px,1.05vw,13px)/1.7 var(--mono); white-space:pre-wrap; overflow-wrap:anywhere; }
   .syntax-keyword { color:#d5b7ff; }
   .syntax-string { color:#ffd09e; }
-  .scene-result { border-top:1px solid #4b4038; padding-top:14px; display:flex; gap:12px; align-items:flex-start; color:var(--result); font-size:14px; line-height:1.5; min-width:0; }
-  .scene-result .rule { padding:5px 7px; border:1px solid var(--signal); border-radius:5px; font:12px var(--mono); flex:none; }
-  .scene-result strong { font-weight:700; }
-  .scene-result p { color:#d2ccc3; margin:3px 0 0; }
-  .preview-note { margin:22px 0 0; font-size:12px; line-height:1.55; color:#bcb6ad; }
+  .manifest-line { display:flex; gap:5px; justify-content:space-between; flex-wrap:wrap; border-top:1px solid #39342f; padding-top:9px; margin-top:10px; font:11px/1.5 var(--mono); color:#bdb7ae; overflow-wrap:anywhere; }
+  .manifest-line code { color:#e7d7c8; }
+  .scene .revised { color:#b8e8c6; background:#a2d9b216; border-radius:3px; box-decoration-break:clone; -webkit-box-decoration-break:clone; }
+  .scan-wire,.decision-wire { min-width:0; min-height:0; position:relative; }
+  .scan-wire svg,.decision-wire svg { display:block; position:absolute; width:100%; height:100%; inset:0; overflow:visible; }
+  .wire-track,.wire-signal { fill:none; stroke-width:1.5; vector-effect:non-scaling-stroke; stroke-linecap:round; stroke-linejoin:round; }
+  .wire-track { stroke:#514942; }
+  .wire-signal { stroke-width:2.3; stroke-dasharray:100; }
+  .scan-signal { stroke:#ffac78; stroke-dashoffset:var(--input-offset); }
+  .decision-signal { stroke:var(--signal); stroke-dashoffset:var(--decision-offset); }
+  .checker { position:relative; min-width:0; display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:10px; background:#211e1a; border:1px solid #504234; border-radius:10px; padding:13px 14px; overflow:hidden; }
+  .checker-mark { display:grid; place-items:center; width:38px; height:38px; border-radius:7px; background:#33281e; border:1px solid #62472f; }
+  .checker-mark img { display:block; border-radius:4px; }
+  .checker-copy { min-width:0; display:grid; gap:2px; line-height:1.35; overflow-wrap:anywhere; }
+  .checker-copy > span { font-size:11px; color:#c7b8a9; }
+  .checker-copy > strong { color:#f5e7d8; font-size:clamp(13px,1.2vw,16px); font-weight:650; }
+  .checker-rule { font:11px/1.5 var(--mono); white-space:nowrap; padding:4px 6px; color:#ffd5b8; border:1px solid #79593f; border-radius:5px; background:#31261d; }
+  .check-meter { position:absolute; inset:auto 0 0; height:2px; background:#3b332b; }
+  .check-meter span { display:block; width:100%; height:100%; background:#ffac78; transform:scaleX(var(--check-progress)); transform-origin:0 50%; }
+  .boundary-stage[data-phase="checking"] .scene[data-active="true"] .checker { border-color:#e49b6b; box-shadow:0 0 20px #ff9c6118; }
+  .boundary-stage[data-phase="decision"] .scene[data-active="true"] .checker,.boundary-stage[data-phase="result"] .scene[data-active="true"] .checker { border-color:#957257; }
+  .decision-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .outcome-cell { padding-inline:6px; min-width:0; display:flex; }
+  .outcome { min-width:0; flex:1; display:grid; grid-template-columns:auto minmax(0,1fr); gap:3px 8px; align-items:center; border:1px solid #4a4540; border-radius:9px; padding:11px; background:#1b1a18; color:#adaba7; }
+  .outcome-icon { grid-row:1/3; width:28px; height:28px; display:grid; place-items:center; border:1px solid #66615a; border-radius:50%; }
+  .outcome strong { font-size:13px; line-height:1.25; overflow-wrap:anywhere; }
+  .outcome code { font:11px/1.3 var(--mono); color:#bcb5ac; }
+  .boundary-stage[data-phase="result"] .scene[data-active="true"] .outcome[data-selected="true"] { border-color:var(--signal); background:#27221e; color:var(--result); box-shadow:0 0 14px color-mix(in srgb,var(--signal) 10%,transparent); }
+  .boundary-stage[data-phase="result"] .scene[data-active="true"] .outcome[data-selected="true"] :is(code,.outcome-icon) { color:var(--result); border-color:var(--signal); }
+  .boundary-stage[data-phase="result"] .scene[data-active="true"].accepted .outcome[data-selected="true"] { background:#1b2820; }
+  .scene-summary { min-width:0; display:grid; grid-template-columns:minmax(0,1fr); margin-top:16px; border-top:1px solid #474039; padding-top:12px; }
+  .scene-result { grid-area:1/1; display:flex; gap:10px; align-items:flex-start; color:var(--result); font-size:14px; line-height:1.5; min-width:0; }
+  .scene-result .rule { padding:4px 6px; border:1px solid var(--signal); border-radius:5px; font:11px/1.3 var(--mono); flex:none; }
+  .scene-result > div { min-width:0; }
+  .scene-result strong { font-weight:700; overflow-wrap:anywhere; }
+  .scene-result p { color:#d2ccc3; margin:3px 0 0; font-size:13px; overflow-wrap:anywhere; }
+  .scene-pending { grid-area:1/1; align-self:start; color:#bcb6ad; font-size:12px; visibility:hidden; }
+  .boundary-stage:not([data-phase="result"]) .scene-result { visibility:hidden; }
+  .boundary-stage:not([data-phase="result"]) .scene[data-active="true"] .scene-pending { visibility:visible; }
+  .stage-footer { display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:4px 12px; margin-top:16px; border-top:1px solid #37322d; padding-top:11px; }
+  .stage-phase { color:#e6c4a8; font:11px/1.5 var(--mono); }
+  .preview-note { margin:0; font-size:11px; line-height:1.55; color:#bcb6ad; }
   .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
-  @media (prefers-reduced-motion: no-preference) {
-    .boundary-stage[data-running="true"] .scene[data-active="true"] .route-packet { opacity:1; animation: import-packet 1050ms linear infinite; }
-    .boundary-stage[data-running="true"] .scene[data-active="true"] .gate { animation: gate-pulse 1050ms ease-out infinite; }
-    .boundary-stage[data-running="true"] .pipeline-indicator { animation: pipeline-pulse 1050ms linear infinite; }
-    .boundary-stage[data-running="true"] .pipeline-step:nth-child(2) .pipeline-indicator { animation-delay:180ms; }
-    .boundary-stage[data-running="true"] .pipeline-step:nth-child(3) .pipeline-indicator { animation-delay:360ms; }
-    @keyframes import-packet { from { stroke-dashoffset:100; } to { stroke-dashoffset:0; } }
-    @keyframes gate-pulse { 0%,35%,100% { box-shadow:0 0 0 transparent; } 55% { box-shadow:0 0 14px -3px var(--signal); } }
-    @keyframes pipeline-pulse { 0%,100% { opacity:.5; } 35% { opacity:1; box-shadow:0 0 7px #ff9c61; } 70% { opacity:.5; } }
-  }
   .landing .content-section { border-top:1px solid var(--landing-border); padding-block:clamp(44px,6vw,78px); }
   .landing .content-section h2 { font-size:clamp(30px,3.8vw,46px); letter-spacing:-.045em; }
   .landing .section-heading { margin-bottom:32px; }
@@ -290,15 +364,20 @@ const scenes = [
     .landing .hero h1 { max-width:720px; }
   }
   @media(max-width:430px) {
-    .scene-map { grid-template-columns:minmax(0,1fr) minmax(56px,.35fr) minmax(0,1fr); }
-    .domain { padding:7px; gap:5px; font-size:10px; grid-template-rows:auto repeat(3, minmax(29px, auto)); }
-    .domain-name { font-size:13px; }
-    .layer { padding:6px 3px; }
-    .gate { min-width:48px; padding:5px 2px; font-size:9px; }
-    .scene-result { gap:8px; font-size:13px; }
-    .scene { gap:16px; }
-    .pipeline { padding:8px 5px; gap:3px; }
-    .pipeline-step { gap:3px; }
-    .pipeline-indicator { width:5px; height:5px; }
+    .scene-stack { grid-template-rows:auto 27px auto 35px auto auto; }
+    .scene { grid-template-rows:auto 27px auto 35px auto auto; grid-template-rows:subgrid; }
+    .scene-code { padding:10px; }
+    .checker { padding:10px; gap:7px; }
+    .checker-mark { width:31px; height:31px; }
+    .checker-mark img { width:23px; height:23px; }
+    .checker-rule { padding:4px; font-size:10px; }
+    .outcome-cell { padding-inline:3px; }
+    .outcome { padding:8px 6px; gap:2px 5px; }
+    .outcome-icon { width:21px; height:21px; }
+    .outcome-icon svg { width:12px; height:12px; }
+    .outcome strong { font-size:12px; }
+    .outcome code { font-size:10px; }
+    .scene-result { gap:7px; font-size:13px; }
+    .stage-top { font-size:11px; margin-bottom:12px; }
   }
 </style>
