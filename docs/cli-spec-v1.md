@@ -176,3 +176,16 @@ ORM code.
   }
 }
 ```
+
+## Explicit violation baseline
+
+`boundra baseline create [--root <path>]` prints a versioned JSON snapshot to
+stdout. Redirect it to a file intentionally; existing files are never modified
+by the CLI. `boundra baseline check --baseline <path> [--root <path>]
+[--format text|json]` performs a full scan and classifies new, existing and
+resolved violations. A fingerprint consists of the rule, relative source file,
+and import specifier, with occurrence counts. Line changes are ignored; renames
+are conservatively treated as new violations and resolved old entries.
+Exit 0 permits existing violations only, 1 indicates new violations, and 2
+rejects malformed baselines, failed scans or decreased analyzed domain coverage.
+The standard `check-boundaries` command is unchanged and never uses a baseline implicitly.
