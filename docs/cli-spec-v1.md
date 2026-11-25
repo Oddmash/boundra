@@ -186,3 +186,14 @@ resolution guidance. JSON contains `rule`, `title`, `description`, `reason`,
 `invalid_example`, `valid_example`, `suggestion`, and `meta.command`. Unknown
 rules and invalid options return exit code 2; JSON requests retain structured
 errors. This describes the rule, not the result of a project-specific scan.
+
+## 5. Watch mode
+
+`boundra watch [--root <path>] [--format text|json] [--interval-ms <n>]
+[--min-domains <n>] [--once]` runs a full boundary check immediately and then
+polls with a default 1,500 ms delay (minimum 250 ms). It serializes scans and
+emits only changed results, so bursts are coalesced and all source, config,
+manifest and alias changes are evaluated without caching. Stop with Ctrl+C.
+JSON emits one compact event per line: `event`, `exit_code`, `report` (the
+ordinary check output) and `meta.command`. `--once` returns the check exit code;
+continuous watch keeps running through violations and configuration errors.
