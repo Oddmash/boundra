@@ -12,22 +12,27 @@ const { title, slug = '', headings = [], lang = 'en' } = Astro.props;
 </Layout>
 <script>
   if (document.documentElement.lang === 'ko') {
-    const { mountKowrap } = await import('@oddmash/kowrap/dom');
-    const controllers: ReturnType<typeof mountKowrap>[] = [];
-    const candidates = document.querySelectorAll<HTMLElement>('.doc-content h1, .doc-content h2, .doc-content h3, .doc-content p');
-    for (const element of candidates) {
-      const text = element.textContent ?? '';
-      if (!/[가-힣]/.test(text) || text.length > 160 || element.querySelector('code, pre, img, br, button, input')) continue;
-      try {
-        controllers.push(mountKowrap(element, { inline: true, strategy: 'balanced' }));
-        element.dataset.kowrap = 'applied';
-      } catch {
-        element.dataset.kowrap = 'fallback';
+    const juliya = await import('@oddmash/juliya/dom').catch(() => null);
+    if (juliya) {
+      const { mountKowrap } = juliya;
+      const controllers: ReturnType<typeof mountKowrap>[] = [];
+      const candidates = document.querySelectorAll<HTMLElement>('.doc-content h1, .doc-content h2, .doc-content h3, .doc-content p');
+      for (const element of candidates) {
+        const text = element.textContent ?? '';
+        if (!/[가-힣]/.test(text) || text.length > 160 || element.querySelector('code, pre, img, br, button, input')) continue;
+        try {
+          controllers.push(mountKowrap(element, { inline: true, strategy: 'balanced', locale: 'ko' }));
+          element.dataset.juliya = 'applied';
+        } catch {
+          element.dataset.juliya = 'fallback';
+        }
       }
+      window.addEventListener('pagehide', (event) => {
+        if (!event.persisted) for (const controller of controllers) controller.destroy();
+      });
+    } else {
+      document.documentElement.dataset.juliya = 'fallback';
     }
-    window.addEventListener('pagehide', (event) => {
-      if (!event.persisted) for (const controller of controllers) controller.destroy();
-    });
   }
 </script>
 <style>

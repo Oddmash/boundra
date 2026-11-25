@@ -419,7 +419,7 @@ html[lang="ko"] .doc-content :is(h1, h2, h3, p, li) {
   word-break: keep-all;
   overflow-wrap: anywhere;
 }
-html[lang="ko"] .doc-content [data-kowrap="applied"] {
+html[lang="ko"] .doc-content [data-juliya="applied"] {
   text-wrap: wrap;
 }
 .lead,
