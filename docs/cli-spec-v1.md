@@ -176,3 +176,13 @@ ORM code.
   }
 }
 ```
+
+## 4. Rule explanations
+
+`boundra explain BR-001 [--format text|json]` explains a built-in boundary
+rule without loading a workspace. Rule codes BR-001 through BR-006 are accepted
+case-insensitively. Text includes the cause, valid and invalid examples, and
+resolution guidance. JSON contains `rule`, `title`, `description`, `reason`,
+`invalid_example`, `valid_example`, `suggestion`, and `meta.command`. Unknown
+rules and invalid options return exit code 2; JSON requests retain structured
+errors. This describes the rule, not the result of a project-specific scan.
