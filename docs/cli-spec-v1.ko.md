@@ -171,3 +171,7 @@ Import를 분석하고 경계 규칙 위반을 감지합니다.
 ## 4. 규칙 설명
 
 `boundra explain BR-001 [--format text|json]`은 워크스페이스를 로드하지 않고 기본 경계 규칙을 설명합니다. BR-001부터 BR-006까지 대소문자 구분 없이 지원합니다. 원인, 올바른 예시와 위반 예시, 해결 방법을 제공하며 JSON에는 `rule`, `title`, `description`, `reason`, `invalid_example`, `valid_example`, `suggestion`, `meta.command`가 포함됩니다. 알 수 없는 규칙이나 잘못된 옵션은 종료 코드 2와 구조화된 오류를 반환합니다.
+
+## 5. 감시 모드
+
+`boundra watch [--root <path>] [--format text|json] [--interval-ms <n>] [--min-domains <n>] [--once]`는 전체 검사를 즉시 실행한 후 기본 1,500ms(최소 250ms) 간격으로 반복하며 변경된 결과만 출력합니다. 캐시 없이 소스, 설정, 매니페스트 및 별칭 변경을 반영합니다. JSON은 줄마다 `event`, `exit_code`, `report`, `meta.command`를 제공하고, `--once`는 검사 종료 코드를 반환합니다. Ctrl+C로 종료합니다.
