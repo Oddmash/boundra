@@ -515,6 +515,7 @@ fn parse_graph_format(value: &str) -> Result<GraphFormat, String> {
         "mermaid" => Ok(GraphFormat::Mermaid),
         "dot" => Ok(GraphFormat::Dot),
         "json" => Ok(GraphFormat::Json),
+        "html" => Ok(GraphFormat::Html),
         _ => Err(format!("invalid --format value: {value}")),
     }
 }
