@@ -352,7 +352,7 @@ test("copy preserves complete code and displays Oddmash UI feedback", async ({ p
   });
   expect(alignment).toBeLessThanOrEqual(4);
   await page.getByRole("button",{name:"Dismiss notification"}).click();
-  await expect(page.locator(".om-toast-region")).toHaveAttribute("data-state",/closing|closed/);
+  await expect(page.locator(".om-toast-region")).toHaveCount(0);
 });
 
 test("copy failure gives honest localized feedback", async ({ page }) => {
