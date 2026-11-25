@@ -139,6 +139,15 @@
 
 JSON 包含 `domain`、`direct_dependents`、`transitive_dependents`（仅间接）、`meta.command` 和 `meta.affected_domain_count`。按名称排序，去除重复项和目标域本身。未知域或无效项目返回退出码 2 和结构化错误。没有依赖方时成功返回空结果。此命令不能替代运行时调用分析或边界检查。
 
+### 1.10 `doctor`
+
+检查工作区准备状态，不修改文件。省略 `--root` 时在当前目录或父目录中查找最近的 `boundra.config.json`；指定时仅检查该路径。
+
+- `--root <path>`（可选）
+- `--format text|json`（默认：`text`）
+
+退出码 0 表示已就绪，1 表示扫描范围为空，2 表示配置缺失或无效，3 表示扫描错误。JSON 包含 `status`、`root`、`domain_count`、`scanned_file_count`、`analyzed_domain_count` 和 `meta.command`。失败时返回结构化诊断。边界违规应另行运行 `check-boundaries` 检查。
+
 ## 2. CLI 用户体验原则
 
 - 边界诊断包含规则代码、文件、行号、import、消息及建议。
