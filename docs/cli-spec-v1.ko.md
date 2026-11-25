@@ -134,6 +134,15 @@ Import를 분석하고 경계 규칙 위반을 감지합니다.
 
 <a id="2-cli-ux-principles"></a>
 
+### 1.9 `impact <domain>`
+
+선언된 `dependsOn` 관계를 기반으로 도메인의 공개 API 변경 시 영향을 받는 직접 및 간접 소비자를 확인합니다. 소스 파일은 수정하거나 스캔하지 않습니다.
+
+- `--root <path>` (기본값: `.`)
+- `--format text|json` (기본값: `text`)
+
+JSON은 `domain`, `direct_dependents`, `transitive_dependents`(간접 소비자만), `meta.command`, `meta.affected_domain_count`를 제공합니다. 이름순으로 정렬하며 중복과 대상 도메인을 제외합니다. 존재하지 않는 도메인이나 잘못된 프로젝트는 종료 코드 2와 구조화된 오류를 반환합니다. 소비자가 없는 도메인은 정상적으로 빈 결과를 반환합니다. 런타임 호출 분석이나 경계 검사를 대체하지 않습니다.
+
 ## 2. CLI UX 원칙
 
 - 경계 진단에는 규칙 코드, 파일, 줄 번호, import, 메시지 및 제안이 포함됩니다.
