@@ -6,13 +6,26 @@ The format follows Keep a Changelog and versions follow Semantic Versioning.
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-25
+
 ### Added
 
 - optional `check-boundaries --min-domains <n>` coverage gate for CI with structured `COVERAGE-001` diagnostics
+- generate localized public reference guides and agent-readable documentation from the authoritative sources
 
 ### Changed
 
 - move canonical repository metadata, CLI release downloads, and documentation to Oddmash/boundra without renaming the npm package
+
+- index discovered domain roots for boundary analysis and coverage reporting instead of repeatedly scanning every root
+- sort source paths for deterministic diagnostic output
+- redesign the website's boundary inspection animation to show the source, rule and verdict using one synchronized flow
+
+### Fixed
+
+- normalize case-insensitive HTTP content-type overrides and avoid delaying bounded error diagnostics on pending stream cancellation
+- preserve Vite diagnostics for failed or malformed CLI checks
+- cover empty boundary and runtime diagnostic summaries with exact regression assertions
 
 ## [0.6.0] - 2026-09-14
 

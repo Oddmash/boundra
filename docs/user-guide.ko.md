@@ -4,7 +4,7 @@
 
 [English](user-guide.md) · [日本語](user-guide.ja.md) · [简体中文](user-guide.zh-cn.md)
 
-Boundra는 Rust 기반 소스 아키텍처 검사기와 프레임워크 중립적인 TypeScript 계약 런타임을 결합합니다. 이 가이드는 공개된 v0.6.0 동작을 기준으로 합니다. 새로운 프레임워크, 호스팅 서비스 또는 자동 API 서버를 전제로 하지 않습니다.
+Boundra는 Rust 기반 소스 아키텍처 검사기와 프레임워크 중립적인 TypeScript 계약 런타임을 결합합니다. 이 가이드는 공개된 v0.7.0 동작을 기준으로 합니다. 새로운 프레임워크, 호스팅 서비스 또는 자동 API 서버를 전제로 하지 않습니다.
 
 <a id="1-install-and-verify"></a>
 
@@ -148,6 +148,8 @@ node --input-type=module -e 'import fs from "node:fs"; const r = JSON.parse(fs.r
 시범 도입 영역에서 예상하는 도메인 수에 맞추어 조건을 조정합니다. 보고서에 내부 경로가 포함되어 있다면 버전 관리에서 제외하세요.
 
 <a id="8-troubleshooting"></a>
+
+현재 CLI에서는 `pnpm exec boundra check-boundaries --format json --min-domains 2`로 최소 두 개의 도메인이 분석되도록 직접 요구할 수 있습니다. 프로젝트에 맞게 임곗값을 설정하세요.
 
 ## 8. 문제 해결
 

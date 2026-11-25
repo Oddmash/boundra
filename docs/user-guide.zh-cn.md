@@ -4,7 +4,7 @@
 
 [English](user-guide.md) · [한국어](user-guide.ko.md) · [日本語](user-guide.ja.md)
 
-Boundra 将 Rust 源代码架构检查器与不依赖特定框架的 TypeScript 契约运行时结合起来。本指南基于公开版本 v0.6.0 的行为，不要求使用新的框架、托管服务或自动生成的 API 服务器。
+Boundra 将 Rust 源代码架构检查器与不依赖特定框架的 TypeScript 契约运行时结合起来。本指南基于公开版本 v0.7.0 的行为，不要求使用新的框架、托管服务或自动生成的 API 服务器。
 
 <a id="1-install-and-verify"></a>
 <a id="1-安装"></a>
@@ -153,6 +153,8 @@ node --input-type=module -e 'import fs from "node:fs"; const r = JSON.parse(fs.r
 根据试点范围调整预期领域数量。如果报告包含内部路径，请不要将其提交到版本控制。
 
 <a id="8-troubleshooting"></a>
+
+当前 CLI 可使用 `pnpm exec boundra check-boundaries --format json --min-domains 2` 直接要求至少分析两个领域。请根据项目调整阈值。
 
 ## 8. 故障排查
 
