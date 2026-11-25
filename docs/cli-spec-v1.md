@@ -7,6 +7,8 @@ Global information flags:
 - `--help`, `-h`
 - `--version`, `-V`
 
+Use `boundra <command> --help` (or `-h`) for command-specific usage.
+
 ### 1.0 `init`
 
 Initialize a Boundra workspace without overwriting application files.
@@ -73,6 +75,7 @@ Coverage reporting:
   `analyzed_domain_count` counts unique domains that contain at least one source
   file included by the configured scan, not merely loaded manifests.
 - Text output warns when no source files or no domains were analyzed.
+- Text output reports scanned file and analyzed domain counts for every completed scan.
 - If `--min-domains` is set and the scan has no violations but covers fewer than
   the requested number of domains, the command returns `COVERAGE-001` and exit
   code 2. JSON uses the existing structured error shape with actual and expected
