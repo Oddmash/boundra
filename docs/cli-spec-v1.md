@@ -85,8 +85,10 @@ Generate a domain dependency graph from domain manifests.
 
 Options:
 - `--root <path>` (default: `.`)
-- `--format mermaid|json|dot` (default: `mermaid`)
+- `--format mermaid|json|dot|html` (default: `mermaid`)
 - `--output <path>`
+
+Use `boundra graph-domains --format html --output graph.html` to create an offline, searchable dependency view. Open the file in a browser. It shows declared, not observed, dependencies and requires no network or server.
 
 ### 1.4 `generate route <domain>/<name>`
 ### 1.5 `generate query <domain>/<name>`
