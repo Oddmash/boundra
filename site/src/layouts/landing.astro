@@ -1,5 +1,6 @@
 ---
 import Layout from './site.astro';
+import '../landing-navigation.css';
 import { docsHome, docPath } from '../docs-nav';
 import { docCopy } from '../doc-ui-copy';
 import { landingCopy, htmlLanguage, guidePath, type LandingLocale } from '../landing-copy';
@@ -308,7 +309,7 @@ const scenes = [
     for (const wire of stage.querySelectorAll('.scan-wire,.decision-wire')) resize.observe(wire);
     window.addEventListener('pagehide', stop);
     window.addEventListener('pageshow', schedule);
-    elapsed = reduced.matches ? decisionEnd : 0;
+    elapsed = decisionEnd;
     measureRoutes();
     render();
     stage.dataset.ready = 'true';
@@ -337,10 +338,10 @@ const scenes = [
   .hero a:focus-visible, .stage-controls :global(button:focus-visible) { outline: 2px solid #ffbf91; outline-offset: 4px; }
   .boundary-stage { position:relative; min-width:0; background:radial-gradient(ellipse at 50% 33%,#29231e 0,#1a1917 45%,#141413 80%); border:1px solid #39342e; border-radius:22px; padding:clamp(15px,2.3vw,28px); box-shadow:0 25px 75px #0005; --input-offset:0; --check-progress:1; --decision-offset:0; }
   .hero-proof { color:#b4aea6; max-width:46ch; font-size:14px; line-height:1.6; margin:10px 0 0; }
-  .stage-top { display:flex; justify-content:space-between; gap:8px; align-items:center; color:#d5d0c8; font:12px/1.5 var(--mono); margin-bottom:20px; min-height:30px; }
+  .stage-top { display:flex; justify-content:space-between; gap:8px; align-items:center; color:#d5d0c8; font:12px/1.5 var(--mono); margin-bottom:20px; min-height:44px; }
   .stage-command { display:flex; align-items:baseline; gap:8px; min-width:0; overflow-wrap:anywhere; }
   .stage-command > span:first-child { color:#ffab7d; font-weight:700; }
-  .stage-controls { display:flex; gap:6px; flex:none; --om-semantic-color-surface:#211f1d; --om-semantic-color-bg:#332a24; --om-semantic-color-border:#80766a; --om-semantic-color-text:#e9e2d9; --om-semantic-color-focus:#ffbf91; }
+  .stage-controls { display:flex; gap:6px; flex:none; min-inline-size:44px; --om-semantic-color-surface:#211f1d; --om-semantic-color-bg:#332a24; --om-semantic-color-border:#80766a; --om-semantic-color-text:#e9e2d9; --om-semantic-color-focus:#ffbf91; }
   .stage-controls :global(.om-button) { inline-size:44px; min-block-size:44px; padding:0; }
   .stage-controls :global(button[hidden]) { display:none; }
   .scene-stack { display:grid; grid-template-columns:minmax(0,1fr); grid-template-rows:auto 34px auto 44px auto auto; }

@@ -262,11 +262,16 @@ test("the boundary scan routes the result in one synchronized sequence", async (
   await expect(page.getByRole("button", { name: "Pause animation" })).toHaveClass(/\bom-button\b/);
   const rule = page.locator("[data-active=true] .rule");
   await expect(rule).toHaveText("BR-001");
+  await expect(stage).toHaveAttribute("data-phase", "result");
+  await expect(page.locator('[data-active=true] [data-selected="true"]')).toHaveAttribute("data-outcome", "blocked");
+  await expect(page.locator("[data-active=true] [data-scene-title]")).toBeVisible();
   await expect(page.getByRole("button", { name: "Next example" })).toBeHidden();
   await assertSceneGeometry(page);
 
-  await expect(stage).toHaveAttribute("data-phase", "result", { timeout: 4000 });
-  const states = await page.evaluate(() => window.boundraTrace.filter(state => state.scene === "0"));
+  await expect(rule).toHaveText("PASS", { timeout: 5000 });
+  await expect(page.locator('[data-active=true] .syntax-string')).toHaveClass(/revised/);
+  await expect(stage).toHaveAttribute("data-phase", "result", { timeout: 3500 });
+  const states = await page.evaluate(() => window.boundraTrace.filter(state => state.scene === "1"));
   const checking = states.find(state => state.phase === "checking");
   const decision = states.find(state => state.phase === "decision");
   expect(checking).toBeDefined();
@@ -281,13 +286,7 @@ test("the boundary scan routes the result in one synchronized sequence", async (
   expect(decision.outputDash).not.toBe("none");
   expect(Math.abs(parseFloat(decision.outputDash) - decision.outputLength)).toBeLessThan(0.1);
   expect(Math.abs(decision.outputOffset - decision.outputLength * decision.output / 100)).toBeLessThan(0.1);
-  expect(states.at(-1)).toMatchObject({ phase: "result", scene: "0", input: 0, output: 0, check: 1, scanDash: "none", outputDash: "none", outputVisible: true, outputOffset: 0 });
-  await expect(page.locator('[data-active=true] [data-selected="true"]')).toHaveAttribute("data-outcome", "blocked");
-  await expect(page.locator("[data-active=true] [data-scene-title]")).toBeVisible();
-
-  await expect(rule).toHaveText("PASS", { timeout: 5000 });
-  await expect(page.locator('[data-active=true] .syntax-string')).toHaveClass(/revised/);
-  await expect(stage).toHaveAttribute("data-phase", "result", { timeout: 3500 });
+  expect(states.at(-1)).toMatchObject({ phase: "result", scene: "1", input: 0, output: 0, check: 1, scanDash: "none", outputDash: "none", outputVisible: true, outputOffset: 0 });
   await expect(page.locator('[data-active=true] [data-selected="true"]')).toHaveAttribute("data-outcome", "allowed");
   await assertSceneGeometry(page);
 
