@@ -23,6 +23,7 @@ pub(crate) enum Command {
     Generate(GenerateOptions),
     Init(InitOptions),
     Migrate(MigrateOptions),
+    Mcp(PathBuf),
     Completions(crate::commands::completions::Shell),
     Help,
     Version,
@@ -58,6 +59,10 @@ pub(crate) fn parse_command(args: &[String]) -> Result<Command, String> {
         "baseline" => Ok(Command::Baseline(parse_baseline_options(&args[1..])?)),
         "migrate" => Ok(Command::Migrate(parse_migrate_options(&args[1..])?)),
         "check-changed" => Ok(Command::Changed(parse_changed_options(&args[1..])?)),
+        "mcp" => match &args[1..] {
+            [flag, root] if flag == "--root" && !root.is_empty() => Ok(Command::Mcp(root.into())),
+            _ => Err("mcp requires --root <workspace-path>".into()),
+        },
         "completions" => match &args[1..] {
             [shell] => crate::commands::completions::Shell::parse(shell).map(Command::Completions),
             _ => Err("completions requires exactly one shell: bash, zsh or fish".into()),
