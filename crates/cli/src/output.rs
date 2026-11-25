@@ -105,6 +105,10 @@ pub(crate) fn print_error_json(command: &str, diagnostic: &CliDiagnostic) {
 }
 
 pub(crate) fn print_text(violations: &[Violation], coverage: BoundaryScanCoverage) {
+    println!(
+        "Scanned {} source file(s) across {} analyzed domain(s)",
+        coverage.scanned_file_count, coverage.analyzed_domain_count
+    );
     if coverage.scanned_file_count == 0 {
         println!("[WARNING] check-boundaries scanned no source files");
     }
