@@ -7,6 +7,8 @@
 - `--help`, `-h`
 - `--version`, `-V`
 
+使用 `boundra <command> --help` 或 `-h` 查看命令用法。
+
 ### 1.0 `init`
 
 初始化 Boundra 工作区，不覆盖应用文件。
