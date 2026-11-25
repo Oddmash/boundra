@@ -160,6 +160,10 @@
 }
 ```
 
+## 变更文件报告
+
+`boundra check-changed --base <ref> [--root <path>] [--format text|json]` 完整扫描工作区并区分 Git 变更文件和其他违规。包含已暂存、未暂存和未跟踪文件；删除、重命名或非源码变更时聚焦完整结果。未变更文件的违规也返回退出码 1。
+
 ## 只读迁移计划
 
 `boundra migrate [--root <path>] [--from <relative-path>] [--format text|json]` 从指定或唯一的常规源码目录中识别域候选、层、清单、源文件数、import 和警告。路径存在歧义时必须明确选择，不修改文件。
