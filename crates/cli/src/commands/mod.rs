@@ -4,6 +4,7 @@ pub mod add_dependency;
 pub mod check_boundaries;
 #[path = "create-domain.rs"]
 pub mod create_domain;
+pub mod doctor;
 pub mod generate;
 #[path = "graph-domains.rs"]
 pub mod graph_domains;
