@@ -1,0 +1,57 @@
+.site-header :is([data-language-picker], [data-language-fallback]) {
+  flex: 0 0 115px;
+  inline-size: 115px;
+  min-inline-size: 115px;
+  max-inline-size: 100%;
+  block-size: 38px;
+}
+.site-header [data-language-picker] .om-locale-picker,
+.site-header [data-language-picker] .om-select-dropdown {
+  inline-size: 100%;
+}
+.site-header [data-language-picker] .om-select-dropdown-trigger,
+.site-header [data-language-fallback].locale-menu > summary {
+  box-sizing: border-box;
+  inline-size: 100%;
+  block-size: 38px;
+  min-block-size: 38px;
+  min-height: 38px;
+  padding: 0 10px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.site-header [data-language-fallback].locale-menu > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  list-style: none;
+  color: inherit;
+}
+.site-header [data-language-fallback].locale-menu > summary::-webkit-details-marker {
+  display: none;
+}
+.site-header [data-language-fallback].locale-menu > summary::marker {
+  content: '';
+}
+.site-header [data-language-fallback].locale-menu > summary::after {
+  content: '';
+  flex: none;
+  inline-size: .4em;
+  block-size: .4em;
+  margin-inline: .2em;
+  border-inline-end: 1px solid currentColor;
+  border-block-end: 1px solid currentColor;
+  transform: rotate(45deg);
+}
+.site-header [data-language-fallback].locale-menu > .locale-options {
+  position: absolute;
+  inset-inline-end: 0;
+  inset-block-start: calc(100% + 7px);
+  margin-block-start: 0;
+  min-inline-size: 130px;
+}
+html.landing-document body {
+  background: #fff;
+}

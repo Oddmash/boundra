@@ -1,5 +1,6 @@
 ---
 import '../styles.css';
+import '../locale-navigation.css';
 import PlatformLinks from '../components/platform-links.astro';
 import { docsHome, docPath } from '../docs-nav';
 import { landingCopy, locales, htmlLanguage, landingPath, type LandingLocale } from '../landing-copy';
@@ -13,7 +14,7 @@ const docsUrl = docsHome(base, locale);
 const alternate = (item: LandingLocale) => landingLocale ? landingPath(base,item) : docPath(base,documentSlug,item) ?? docsHome(base,item);
 ---
 <!doctype html>
-<html lang={lang}>
+<html lang={lang} class:list={[{'landing-document': !!landingLocale}]} style={landingLocale ? 'background-color:#111110' : undefined}>
   <head>
     <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><meta name="description" content={description} />
     <title>{title}</title><link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} /><link rel="icon" href={`${base}boundra-mark.svg`} type="image/svg+xml" />
@@ -22,30 +23,54 @@ const alternate = (item: LandingLocale) => landingLocale ? landingPath(base,item
   </head>
   <body class:list={[{'landing-page': !!landingLocale}]}>
     <a class="skip" href="#main">{t.skip}</a>
-    <header class="site-header"><div class="shell nav"><a class="brand" href={home}><img src={base + 'boundra-mark.svg'} width="32" height="32" alt="" />Boundra</a><nav aria-label={t.nav}><a class="docs-header-link" href={docsUrl} aria-current={!landingLocale ? 'page' : undefined}>{t.navDocs}</a><PlatformLinks/><div class="language-select" data-language-picker data-om-theme={landingLocale ? 'dark' : 'light'} hidden></div><details class="locale-menu" data-language-fallback data-label={t.language} data-current={locale}><summary aria-label={t.language}>{t.languageName}</summary><div class="locale-options">{locales.map(item => <a href={alternate(item)} lang={htmlLanguage(item)} hreflang={htmlLanguage(item)} data-locale={item} aria-current={item === locale ? 'page' : undefined}>{landingCopy[item].languageName}</a>)}</div></details></nav></div></header>
+    <header class="site-header om-site-header om-scroll-header" data-header-theme={landingLocale ? 'dark' : 'light'} data-om-theme={landingLocale ? 'dark' : 'light'}><div class="shell nav om-site-header-inner"><a class="brand" href={home}><img src={base + 'boundra-mark.svg'} width="32" height="32" alt="" />Boundra</a><nav class="om-site-nav" aria-label={t.nav}><a class="docs-header-link" href={docsUrl} aria-current={!landingLocale ? 'page' : undefined}>{t.navDocs}</a><PlatformLinks/><div class="language-select" data-language-picker hidden></div><details class="locale-menu om-locale-fallback" data-language-fallback data-label={t.language} data-current={locale}><summary aria-label={t.language}>{t.languageName}</summary><ul class="locale-options om-locale-options" role="list">{locales.map(item => <li><a href={alternate(item)} lang={htmlLanguage(item)} hreflang={htmlLanguage(item)} data-locale={item} aria-current={item === locale ? 'page' : undefined}>{landingCopy[item].languageName}</a></li>)}</ul></details></nav></div></header>
     <main id="main"><slot /></main>
-    <footer class="site-footer"><div class="shell footer"><a class="brand" href={home}><img src={`${base}boundra-mark.svg`} alt="" width="26" height="26" />Boundra</a><span>{t.openSource}</span><nav aria-label={t.footerNav}><a href={docsUrl}>{t.docsTitle}</a><a href="https://www.npmjs.com/package/boundra">npm</a><a href="https://github.com/Oddmash/boundra">{t.source}</a></nav></div></footer>
+    <footer class="site-footer om-site-footer"><div class="shell footer om-site-footer-inner"><a class="brand" href={home}><img src={`${base}boundra-mark.svg`} alt="" width="26" height="26" />Boundra</a><span>{t.openSource}</span><nav class="om-site-nav" aria-label={t.footerNav}><a href={docsUrl}>{t.docsTitle}</a><a href="https://www.npmjs.com/package/boundra">npm</a><a href="https://github.com/Oddmash/boundra">{t.source}</a></nav></div></footer>
     <div id="copy-toast" data-om-theme={landingLocale ? 'dark' : 'light'}></div>
     <script>import '../site-ui'; import '../scroll-header';</script>
   </body>
 </html>
 <style>
   :global(html) { scroll-padding-top: calc(var(--site-header-height, 68px) + 12px); }
-  .site-header { position:sticky; top:0; z-index:30; background:white; transition:transform 220ms cubic-bezier(.22,.61,.36,1); }
-  .site-header[data-scroll-hidden="true"]:not(:focus-within) { transform:translateY(calc(-100% - 1px)); pointer-events:none; }
+  .site-header {
+    --header-surface:#fff;
+    --header-ink:var(--ink);
+    --header-line:var(--line);
+    --header-accent:var(--brand);
+    --header-focus:var(--brand);
+    --header-menu-surface:var(--surface);
+    --header-menu-line:var(--line);
+    --header-control-line:#858585;
+    --om-scroll-header-z-index:30;
+    color-scheme:light;
+    background:var(--header-surface);
+    color:var(--header-ink);
+    border-bottom-color:var(--header-line);
+    transition:transform 220ms cubic-bezier(.22,.61,.36,1),box-shadow 180ms ease;
+  }
+  .site-header[data-header-theme="dark"] {
+    --header-surface:#111110;
+    --header-ink:#f4f2ed;
+    --header-line:#33302d;
+    --header-accent:#ffb07d;
+    --header-focus:#ffbf91;
+    --header-menu-surface:#22201e;
+    --header-menu-line:#655d54;
+    --header-control-line:#666059;
+    color-scheme:dark;
+  }
+  .landing-page .site-header[data-header-theme="light"] { box-shadow:0 4px 16px rgb(23 23 23 / .06); }
+  .site-header[data-theme-switching="true"] :global(*) { transition:none !important; }
   @media(min-width:721px) { :global(html[data-header-visible="true"] .docs-sidebar), :global(html[data-header-visible="true"] .docs-toc) { top:calc(var(--site-header-height, 68px) + 16px); max-height:calc(100vh - var(--site-header-height, 68px) - 32px); } }
-  .landing-page .site-header { background:#111110; color:#f4f2ed; border-bottom:1px solid #33302d; }
-  .landing-page .site-header .brand,.landing-page .site-header nav a { color:#f4f2ed; }
-  .landing-page .site-header nav a:hover { color:#ffb07d; }
-  .landing-page .site-header :is(a,summary):focus-visible { outline:2px solid #ffbf91; outline-offset:3px; }
+  .site-header .brand,.site-header nav a { color:var(--header-ink); }
+  .site-header nav a:hover:not(.platform-link) { color:var(--header-accent); }
+  .site-header :is(a,summary):focus-visible { outline:2px solid var(--header-focus); outline-offset:3px; }
   .docs-header-link { position:relative; padding-inline:4px; border-bottom:2px solid transparent; transition:color 150ms ease,border-color 150ms ease; }
-  .docs-header-link:hover,.docs-header-link[aria-current="page"] { color:var(--brand); border-bottom-color:currentColor; }
-  .landing-page .docs-header-link:hover { color:#ffb07d; }
+  .site-header .docs-header-link:hover,.site-header .docs-header-link[aria-current="page"] { color:var(--header-accent); border-bottom-color:currentColor; }
   @media(prefers-reduced-motion:reduce) { .site-header,.docs-header-link { transition:none; } }
   .locale-menu { position:relative; color:inherit; font-size:14px; }
-  .locale-menu summary { cursor:pointer; border:1px solid #666059; border-radius:7px; padding:7px 10px; min-height:36px; white-space:nowrap; }
-  .locale-options { position:absolute; z-index:10; right:0; top:calc(100% + 7px); background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:5px; min-width:130px; }
-  .landing-page .locale-options { background:#22201e; border-color:#655d54; }
+  .locale-menu summary { cursor:pointer; border:1px solid var(--header-control-line); border-radius:7px; padding:7px 10px; min-height:36px; white-space:nowrap; }
+  .locale-options { position:absolute; z-index:10; right:0; top:calc(100% + 7px); background:var(--header-menu-surface); border:1px solid var(--header-menu-line); border-radius:8px; padding:5px; min-width:130px; }
   .locale-options a { display:flex !important; padding:5px 10px; white-space:nowrap; border-radius:4px; }
   .locale-options a[aria-current="page"] { background:color-mix(in srgb,currentColor 10%,transparent); }
   @media(max-width:720px) { .locale-options { position:static; margin-top:7px; } }
