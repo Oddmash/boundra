@@ -163,3 +163,7 @@ import を分析し、境界ルール違反を検出します。
 ## 4. ルールの説明
 
 `boundra explain BR-001 [--format text|json]` はワークスペースを読み込まず組み込みの境界ルールを説明します。BR-001 から BR-006 まで大文字小文字を区別しません。原因、正しい例と違反例、解決策を表示し、JSON は `rule`、`title`、`description`、`reason`、`invalid_example`、`valid_example`、`suggestion`、`meta.command` を含みます。不明なルールや無効なオプションは終了コード 2 と構造化エラーを返します。
+
+## 5. 監視モード
+
+`boundra watch [--root <path>] [--format text|json] [--interval-ms <n>] [--min-domains <n>] [--once]` は初回と既定 1,500ms（最小 250ms）ごとに完全検査を実行し、変更された結果のみを出力します。キャッシュなしでソース、設定、マニフェスト、エイリアスを検査します。JSON は行ごとに `event`、`exit_code`、`report`、`meta.command` を含みます。`--once` は検査の終了コードを返し、Ctrl+C で停止します。
