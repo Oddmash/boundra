@@ -363,3 +363,66 @@ test("copy failure gives honest localized feedback", async ({ page }) => {
   await page.getByRole("button",{name:"코드 복사"}).first().click();
   await expect(page.locator(".om-toast [role=alert]")).toContainText("코드를 복사하지 못했어요");
 });
+
+test("documentation cards sweep their background from left to right without shifting content", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.goto("ko/");
+  const card = page.locator(".doc-list > a").first();
+  const readStyle = () => card.evaluate((element) => {
+    const style = getComputedStyle(element);
+    const rect = element.getBoundingClientRect();
+    const heading = element.querySelector("h3").getBoundingClientRect();
+    return {
+      fill: style.backgroundSize,
+      image: style.backgroundImage,
+      position: style.backgroundPositionX,
+      repeat: style.backgroundRepeat,
+      transition: style.transitionProperty,
+      duration: style.transitionDuration,
+      left: rect.left,
+      width: rect.width,
+      height: rect.height,
+      titleLeft: heading.left,
+    };
+  });
+  const initial = await readStyle();
+  expect(initial).toMatchObject({ fill: "0% 100%", repeat: "no-repeat" });
+  expect(initial.position).toMatch(/^0(?:px|%)$/);
+  expect(initial.image).toContain("linear-gradient");
+  expect(initial.transition).toContain("background-size");
+  expect(initial.duration).not.toBe("0s");
+
+  await card.hover();
+  await expect.poll(async () => (await readStyle()).fill).toBe("100% 100%");
+  expect(await readStyle()).toMatchObject({
+    left: initial.left,
+    width: initial.width,
+    height: initial.height,
+    titleLeft: initial.titleLeft,
+  });
+  await page.locator(".doc-list").screenshot({ path: testInfo.outputPath("card-hover.png") });
+  await page.mouse.move(0, 0);
+  await expect.poll(async () => (await readStyle()).fill).toBe("0% 100%");
+
+  await page.keyboard.press("Tab");
+  await card.focus();
+  await expect(card).toBeFocused();
+  await expect.poll(() => card.evaluate(element => element.matches(":focus-visible"))).toBe(true);
+  await expect.poll(async () => (await readStyle()).fill).toBe("100% 100%");
+  expect(await card.evaluate(element => getComputedStyle(element).outlineStyle)).toBe("solid");
+  await page.locator(".doc-list").screenshot({ path: testInfo.outputPath("card-focus.png") });
+  await card.press("Enter");
+  await expect(page).toHaveURL(/\/docs\/user-guide\.ko\/$/);
+});
+
+test("documentation card fill respects the reduced motion setting", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("./");
+  const card = page.locator(".doc-list > a").first();
+  await card.hover();
+  expect(await card.evaluate(element => {
+    const style = getComputedStyle(element);
+    return { fill: style.backgroundSize, duration: style.transitionDuration };
+  })).toEqual({ fill: "100% 100%", duration: "0s" });
+});
