@@ -52,24 +52,71 @@ if (import.meta.hot) {
   };
 }
 
+type BoundaryDiagnostic = BoundraOverlayPayload["diagnostics"][number];
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isBoundaryDiagnostic(value: unknown): value is BoundaryDiagnostic {
+  return isRecord(value)
+    && typeof value.rule === "string"
+    && typeof value.file === "string"
+    && typeof value.line === "number"
+    && typeof value.import === "string"
+    && typeof value.message === "string"
+    && typeof value.suggestion === "string";
+}
+
+function toCliDiagnostic(value: unknown, root: string): BoundaryDiagnostic | undefined {
+  if (!isRecord(value)
+    || typeof value.code !== "string"
+    || typeof value.message !== "string"
+    || typeof value.suggestion !== "string") return undefined;
+
+  const context = isRecord(value.context) ? value.context : {};
+  const file = typeof context.file === "string" ? context.file
+    : typeof context.root === "string" ? context.root : root;
+  return {
+    rule: value.code,
+    file,
+    line: 0,
+    import: "",
+    message: value.message,
+    suggestion: value.suggestion,
+  };
+}
+
 export function runBoundaryCheck(root: string, cliPath = "boundra"): BoundraOverlayPayload {
   const result = spawnSync(cliPath, ["check-boundaries", "--root", root, "--format", "json"], {
     encoding: "utf8",
   });
+
   try {
-    const output = JSON.parse(result.stdout || "{}") as { violations?: BoundraOverlayPayload["diagnostics"] };
-    return { source: "boundary", diagnostics: output.violations ?? [] };
-  } catch {
-    return {
-      source: "boundary",
-      diagnostics: result.status === 0 ? [] : [{
-        rule: "PROJECT-002",
-        file: root,
-        line: 0,
-        import: "",
-        message: result.stderr?.trim() || "failed to run Boundra boundary check",
-        suggestion: "ensure the Boundra CLI is installed and the project config is valid",
-      }],
-    };
-  }
+    const output: unknown = JSON.parse(result.stdout);
+    if (isRecord(output) && output.status === "error" && Array.isArray(output.errors)) {
+      const diagnostics = output.errors.map((error) => toCliDiagnostic(error, root));
+      if (diagnostics.length > 0 && diagnostics.every((item): item is BoundaryDiagnostic => item !== undefined)) {
+        return { source: "boundary", diagnostics };
+      }
+    }
+    if (isRecord(output)
+      && Array.isArray(output.violations)
+      && output.violations.every(isBoundaryDiagnostic)
+      && (result.status === 0 || (result.status === 1 && output.violations.length > 0))) {
+      return { source: "boundary", diagnostics: output.violations };
+    }
+  } catch {}
+
+  return {
+    source: "boundary",
+    diagnostics: [{
+      rule: "PROJECT-002",
+      file: root,
+      line: 0,
+      import: "",
+      message: result.stderr?.trim() || result.error?.message || "invalid response from Boundra boundary check",
+      suggestion: "ensure the Boundra CLI is installed and the project config is valid",
+    }],
+  };
 }
