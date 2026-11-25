@@ -1,0 +1,3 @@
+</main><script>
+const search=document.getElementById('search');const cards=[...document.querySelectorAll('article[data-domain]')];const results=document.getElementById('results');function filter(){const query=search.value.toLowerCase().trim();let count=0;for(const card of cards){card.hidden=!card.dataset.domain.toLowerCase().includes(query);if(!card.hidden)count++;}results.textContent=`${count} of ${cards.length} domains`;}search.addEventListener('input',filter);document.addEventListener('click',event=>{const link=event.target.closest('a[href^="#domain-"]');if(link){search.value='';filter();}});filter();
+</script></body></html>

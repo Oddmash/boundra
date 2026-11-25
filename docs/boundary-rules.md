@@ -38,6 +38,10 @@ discovered domain manifest. It may be nested below `paths.domains`.
 - Allow: `dependsOn`에 선언된 도메인의 manifest public API
 - Reason: 실제 코드 의존성과 domain graph를 일치시켜 숨은 결합을 방지
 
+### BR-007: Declarative Domain Restrictions
+
+An import resolving to a target domain listed under its source domain in `checkBoundaries.denyDomainDependencies` is prohibited, even if its public API is declared. The default map is empty. Existing BR-001 through BR-006 still apply independently.
+
 ## 2. Allow List
 
 - `client -> shared`

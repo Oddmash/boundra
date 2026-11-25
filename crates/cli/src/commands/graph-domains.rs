@@ -20,6 +20,7 @@ pub(crate) enum GraphFormat {
     Mermaid,
     Dot,
     Json,
+    Html,
 }
 
 #[derive(Debug, Serialize)]
@@ -70,6 +71,7 @@ pub(crate) fn run(options: &GraphDomainsOptions) -> i32 {
         GraphFormat::Mermaid => render_mermaid_graph(&project.domains),
         GraphFormat::Dot => render_dot_graph(&project.domains),
         GraphFormat::Json => render_json_graph(&project.domains),
+        GraphFormat::Html => render_html_graph(&project.domains),
     };
 
     if let Some(path) = &options.output {
@@ -110,7 +112,7 @@ pub(crate) fn run(options: &GraphDomainsOptions) -> i32 {
 fn report_error(options: &GraphDomainsOptions, diagnostic: &CliDiagnostic) {
     match options.format {
         GraphFormat::Json => print_error_json("graph-domains", diagnostic),
-        GraphFormat::Mermaid | GraphFormat::Dot => print_error(diagnostic),
+        GraphFormat::Mermaid | GraphFormat::Dot | GraphFormat::Html => print_error(diagnostic),
     }
 }
 
@@ -178,5 +180,131 @@ pub(crate) fn graph_format_name(format: GraphFormat) -> &'static str {
         GraphFormat::Mermaid => "mermaid",
         GraphFormat::Dot => "dot",
         GraphFormat::Json => "json",
+        GraphFormat::Html => "html",
+    }
+}
+
+fn escape_html(value: &str) -> String {
+    value
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;")
+}
+
+fn render_html_graph(domains: &BTreeMap<String, DomainManifest>) -> String {
+    use std::fmt::Write;
+    let ids: BTreeMap<_, _> = domains
+        .keys()
+        .enumerate()
+        .map(|(index, name)| (name.as_str(), index))
+        .collect();
+    let mut reverse: BTreeMap<&str, Vec<&str>> = BTreeMap::new();
+    for (name, manifest) in domains {
+        for dependency in &manifest.depends_on {
+            reverse.entry(dependency).or_default().push(name);
+        }
+    }
+    let mut output = String::from(include_str!("graph-view-start.html"));
+    let _ = write!(
+        output,
+        "<p>{} domains</p><nav aria-label=\"Domain index\"><ul>",
+        domains.len()
+    );
+    for (name, index) in &ids {
+        let _ = write!(
+            output,
+            "<li><a href=\"#domain-{index}\">{}</a></li>",
+            escape_html(name)
+        );
+    }
+    output.push_str("</ul></nav><main id=\"domains\">");
+    for (name, manifest) in domains {
+        let index = ids[name.as_str()];
+        let _ = write!(
+            output,
+            "<article id=\"domain-{index}\" data-domain=\"{}\"><h2>{}</h2>",
+            escape_html(name),
+            escape_html(name)
+        );
+        for (label, neighbors) in [
+            (
+                "Depends on",
+                manifest
+                    .depends_on
+                    .iter()
+                    .map(String::as_str)
+                    .collect::<Vec<_>>(),
+            ),
+            (
+                "Used by",
+                reverse.get(name.as_str()).cloned().unwrap_or_default(),
+            ),
+        ] {
+            let _ = write!(output, "<section><h3>{label}</h3><ul>");
+            if neighbors.is_empty() {
+                output.push_str("<li>None</li>");
+            }
+            for neighbor in neighbors {
+                if let Some(id) = ids.get(neighbor) {
+                    let _ = write!(
+                        output,
+                        "<li><a href=\"#domain-{id}\">{}</a></li>",
+                        escape_html(neighbor)
+                    );
+                } else {
+                    let _ = write!(
+                        output,
+                        "<li>{} (not discovered)</li>",
+                        escape_html(neighbor)
+                    );
+                }
+            }
+            output.push_str("</ul></section>");
+        }
+        output.push_str("</article>");
+    }
+    output.push_str(include_str!("graph-view-end.html"));
+    output
+}
+
+#[cfg(test)]
+mod html_tests {
+    use super::*;
+    use boundra_core::PublicApi;
+
+    #[test]
+    fn renders_large_graph_deterministically_with_bidirectional_navigation() {
+        let domains = (0..500)
+            .map(|index| {
+                let name = format!("domain-{index:03}");
+                let depends_on = if index == 0 {
+                    vec!["<unknown>".to_string()]
+                } else {
+                    vec![format!("domain-{:03}", index - 1)]
+                };
+                (
+                    name.clone(),
+                    DomainManifest {
+                        name,
+                        depends_on,
+                        public_api: PublicApi {
+                            client: vec![],
+                            server: vec![],
+                            shared: vec![],
+                        },
+                    },
+                )
+            })
+            .collect();
+        let html = render_html_graph(&domains);
+        assert_eq!(html, render_html_graph(&domains));
+        assert_eq!(html.matches("<article id=").count(), 500);
+        assert!(html.contains("&lt;unknown&gt; (not discovered)"));
+        assert!(!html.contains("<unknown>"));
+        assert!(html.contains("href=\"#domain-499\""));
+        assert!(html.contains("Used by"));
+        assert!(html.contains("default-src 'none'"));
     }
 }

@@ -24,6 +24,8 @@ A client file should not import a server implementation. A billing domain should
 
 **[User guide](docs/user-guide.md)** · [Adoption and trade-offs](docs/product-positioning.md)
 
+**VS Code:** Install the [Boundra Marketplace pre-release](https://marketplace.visualstudio.com/items?itemName=oddmash.boundra-vscode) and run `Boundra: Check Workspace` for saved-file diagnostics in a trusted workspace with the local CLI installed. See [editor setup](editors/vscode/README.md).
+
 ## Quick start
 
 Use Node.js 20 or later in an existing TypeScript project. The first CLI invocation downloads and verifies the matching native binary. Supported targets: Linux x64, macOS Intel and Apple Silicon, Windows x64. See [installation and offline usage](docs/cli-install.md).

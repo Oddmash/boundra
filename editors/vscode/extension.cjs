@@ -1,8 +1,7 @@
-const vscode = require("vscode");
 const { dirname } = require("node:path");
 const { inside, findRoot, findLauncher, runCheck, createScheduler, publishDiagnostics } = require("./diagnostics.cjs");
 
-function activate(context) {
+function activate(context, vscode = require("vscode")) {
   if (!vscode.workspace.isTrusted) return;
   const output = vscode.window.createOutputChannel("Boundra");
   const roots = new Map();
