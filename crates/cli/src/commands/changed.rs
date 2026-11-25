@@ -63,10 +63,11 @@ fn inspect(options: &ChangedOptions) -> Result<(Value, i32), String> {
         ];
         args.extend(suffix);
         let tracked = paths(&git(options, &args)?)?;
-        if tracked.len() % 2 != 0 {
+        let (pairs, remainder) = tracked.as_chunks::<2>();
+        if !remainder.is_empty() {
             return Err("invalid Git name-status report".into());
         }
-        for item in tracked.chunks_exact(2) {
+        for item in pairs {
             if !matches!(item[0].as_str(), "A" | "M" | "D" | "T" | "U" | "X" | "B") {
                 return Err("unsupported Git changed-file status".into());
             }
