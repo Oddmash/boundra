@@ -167,3 +167,7 @@ Import를 분석하고 경계 규칙 위반을 감지합니다.
   }
 }
 ```
+
+## 4. 규칙 설명
+
+`boundra explain BR-001 [--format text|json]`은 워크스페이스를 로드하지 않고 기본 경계 규칙을 설명합니다. BR-001부터 BR-006까지 대소문자 구분 없이 지원합니다. 원인, 올바른 예시와 위반 예시, 해결 방법을 제공하며 JSON에는 `rule`, `title`, `description`, `reason`, `invalid_example`, `valid_example`, `suggestion`, `meta.command`가 포함됩니다. 알 수 없는 규칙이나 잘못된 옵션은 종료 코드 2와 구조화된 오류를 반환합니다.
