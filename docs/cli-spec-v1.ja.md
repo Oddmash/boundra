@@ -139,6 +139,15 @@ import を分析し、境界ルール違反を検出します。
 
 JSON は `domain`、`direct_dependents`、`transitive_dependents` (間接のみ)、`meta.command`、`meta.affected_domain_count` を返します。名前順に整列し、重複と対象自身を除きます。不明なドメインや無効なプロジェクトは終了コード 2 と構造化エラーを返します。利用者がいない場合は空の結果で成功します。実行時の呼び出し分析や境界チェックの代替ではありません。
 
+### 1.10 `doctor`
+
+ファイルを変更せずにワークスペースの準備状態を確認します。`--root` を省略すると現在または親ディレクトリの最も近い `boundra.config.json` を探します。指定時はそのパスのみ確認します。
+
+- `--root <path>` (任意)
+- `--format text|json` (既定値: `text`)
+
+終了コード 0 は準備完了、1 は空の検査範囲、2 は設定の欠落または不正、3 はスキャンエラー。JSON は `status`、`root`、`domain_count`、`scanned_file_count`、`analyzed_domain_count`、`meta.command` を含みます。失敗時は構造化された診断を返します。境界違反は `check-boundaries` で別途確認します。
+
 ## 2. CLI UX の原則
 
 - 境界診断にはルールコード、ファイル、行、import、メッセージ、提案を含めます。
