@@ -61,7 +61,7 @@
 
 选项：
 - `--root <path>`（默认：`.`）
-- `--format text|json`（默认：`text`）
+- `--format text|json|github|sarif`（默认：`text`）
 - `--min-domains <positive integer>`（可选，也接受 `--min-domains=<n>`）
 
 覆盖范围报告：
