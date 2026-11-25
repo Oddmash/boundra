@@ -58,7 +58,7 @@ const CopyAction = ({text}: {text: string}) => {
 
 const toastHost = document.querySelector<HTMLElement>('#copy-toast');
 if (toastHost) {
-  const actions = [];
+  const actions: ReturnType<typeof createPortal>[] = [];
   for (const pre of document.querySelectorAll<HTMLPreElement>('.doc-content pre, .code-panel pre, .file-tree pre')) {
     const code = pre.querySelector('code');
     if (!code || pre.parentElement?.classList.contains('copy-code-shell')) continue;
@@ -73,7 +73,7 @@ if (toastHost) {
     action.dataset.omTheme = pre.classList.contains('astro-code') ? 'dark' : 'light';
     pre.before(shell);
     shell.append(pre, action);
-    actions.push(createPortal(createElement(CopyAction, { text: code.textContent ?? '' }), action));
+    actions.push(createPortal(createElement(CopyAction, { text: code.textContent ?? '' }), action, String(actions.length)));
   }
   createRoot(toastHost).render(createElement(ToastProvider, { dismissLabel: copy.dismiss }, actions));
 }
