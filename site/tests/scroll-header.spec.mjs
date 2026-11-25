@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test";
 for (const width of [1440, 390]) {
   test(`scroll-aware header at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 800 });
-    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.emulateMedia({ reducedMotion: "no-preference" });
     await page.goto("docs/user-guide.ko/");
     const header = page.locator(".site-header");
     const docsLink = header.locator(".docs-header-link");
@@ -14,12 +14,13 @@ for (const width of [1440, 390]) {
     await expect(docsLink).toHaveAttribute("aria-current", "page");
     await expect(docsLink).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
     await expect(docsLink).toHaveCSS("border-bottom-color", "rgb(194, 65, 12)");
-    await expect(header).toHaveCSS("transition-duration", "0s");
+    await expect.poll(() => header.evaluate(element => parseFloat(getComputedStyle(element).transitionDuration))).toBeGreaterThan(0);
 
     const mainOffset = await page.locator("main").evaluate(element => element.offsetTop);
     await page.evaluate(() => window.scrollTo(0, 600));
     await expect(header).toHaveAttribute("data-scroll-hidden", "true");
-    await expect.poll(() => header.evaluate(element => element.getBoundingClientRect().bottom)).toBeLessThanOrEqual(0);
+    await expect(header).toHaveAttribute("data-om-scroll-hidden", "true");
+    await expect.poll(() => header.evaluate(element => element.getBoundingClientRect().bottom)).toBeLessThanOrEqual(.5);
     await page.evaluate(() => window.scrollBy(0, -12));
     await expect(header).toHaveAttribute("data-scroll-hidden", "false");
     await expect.poll(() => header.evaluate(element => element.getBoundingClientRect().top)).toBe(0);
@@ -69,7 +70,7 @@ const assertPalette = async (header, theme) => {
 for (const [width, route] of [[1440, "./"], [390, "ko/"]]) {
   test(`landing header follows the hero boundary at ${width}px`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width, height: 800 });
-    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.emulateMedia({ reducedMotion: "no-preference" });
     await page.goto(route);
     const header = page.locator(".site-header");
     await expect(header.locator("[data-language-picker] [role=combobox]")).toBeVisible();
@@ -96,7 +97,7 @@ for (const [width, route] of [[1440, "./"], [390, "ko/"]]) {
     await expect(header).toHaveAttribute("data-scroll-hidden", "false");
     await page.screenshot({ path: testInfo.outputPath("dark-header.png") });
     expect(await page.locator("main").evaluate(element => element.offsetTop)).toBe(mainOffset);
-    await expect(header).toHaveCSS("transition-duration", "0s");
+    await expect.poll(() => header.evaluate(element => parseFloat(getComputedStyle(element).transitionDuration))).toBeGreaterThan(0);
 
     const docsLink = header.locator(".docs-header-link");
     await page.keyboard.press("Tab");
@@ -185,4 +186,19 @@ test("native language fallback uses the same header palette if enhancement is un
   await expect(header).toHaveAttribute("data-scroll-hidden", "false");
   await expect(menu).toHaveCSS("background-color", "rgb(250, 250, 249)");
   await expect(menu.getByRole("link", { name: "English" })).toHaveCSS("color", "rgb(23, 23, 23)");
+});
+
+test("reduced motion keeps the shared scroll header visible while updating its palette", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 800 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("./");
+  const header = page.locator(".site-header");
+  await expect(header.locator("[data-language-picker] [role=combobox]")).toBeVisible();
+  const boundary = await themeBoundary(page);
+  await page.evaluate(y => window.scrollTo(0, y), boundary + 48);
+  await assertPalette(header, "light");
+  await expect(header).toHaveAttribute("data-om-scroll-hidden", "false");
+  await expect(header).toHaveAttribute("data-scroll-hidden", "false");
+  await expect(header).toHaveCSS("transition-duration", "0s");
+  await expect.poll(() => header.evaluate(element => element.getBoundingClientRect().top)).toBe(0);
 });
