@@ -26,16 +26,22 @@ const alternate = (item: LandingLocale) => landingLocale ? landingPath(base,item
     <main id="main"><slot /></main>
     <footer class="site-footer"><div class="shell footer"><a class="brand" href={home}><img src={`${base}boundra-mark.svg`} alt="" width="26" height="26" />Boundra</a><span>{t.openSource}</span><nav aria-label={t.footerNav}><a href={docsUrl}>{t.docsTitle}</a><a href="https://www.npmjs.com/package/boundra">npm</a><a href="https://github.com/Oddmash/boundra">{t.source}</a></nav></div></footer>
     <div id="copy-toast" data-om-theme={landingLocale ? 'dark' : 'light'}></div>
-    <script>import '../site-ui';</script>
+    <script>import '../site-ui'; import '../scroll-header';</script>
   </body>
 </html>
 <style>
+  :global(html) { scroll-padding-top: calc(var(--site-header-height, 68px) + 12px); }
+  .site-header { position:sticky; top:0; z-index:30; background:white; transition:transform 220ms cubic-bezier(.22,.61,.36,1); }
+  .site-header[data-scroll-hidden="true"]:not(:focus-within) { transform:translateY(calc(-100% - 1px)); pointer-events:none; }
+  @media(min-width:721px) { :global(html[data-header-visible="true"] .docs-sidebar), :global(html[data-header-visible="true"] .docs-toc) { top:calc(var(--site-header-height, 68px) + 16px); max-height:calc(100vh - var(--site-header-height, 68px) - 32px); } }
   .landing-page .site-header { background:#111110; color:#f4f2ed; border-bottom:1px solid #33302d; }
   .landing-page .site-header .brand,.landing-page .site-header nav a { color:#f4f2ed; }
   .landing-page .site-header nav a:hover { color:#ffb07d; }
   .landing-page .site-header :is(a,summary):focus-visible { outline:2px solid #ffbf91; outline-offset:3px; }
-  .docs-header-link { padding:8px 10px; border-radius:8px; transition:background-color 150ms ease,color 150ms ease; }
-  .docs-header-link:hover,.docs-header-link[aria-current="page"] { background:color-mix(in srgb,currentColor 8%,transparent); }
+  .docs-header-link { position:relative; padding-inline:4px; border-bottom:2px solid transparent; transition:color 150ms ease,border-color 150ms ease; }
+  .docs-header-link:hover,.docs-header-link[aria-current="page"] { color:var(--brand); border-bottom-color:currentColor; }
+  .landing-page .docs-header-link:hover { color:#ffb07d; }
+  @media(prefers-reduced-motion:reduce) { .site-header,.docs-header-link { transition:none; } }
   .locale-menu { position:relative; color:inherit; font-size:14px; }
   .locale-menu summary { cursor:pointer; border:1px solid #666059; border-radius:7px; padding:7px 10px; min-height:36px; white-space:nowrap; }
   .locale-options { position:absolute; z-index:10; right:0; top:calc(100% + 7px); background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:5px; min-width:130px; }

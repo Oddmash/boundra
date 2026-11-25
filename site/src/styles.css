@@ -276,17 +276,46 @@ button:focus-visible {
   column-gap: 48px;
 }
 .doc-list > a {
+  --om-link-card-fill: color-mix(in srgb, var(--accent) 8%, transparent);
   color: var(--ink);
   text-decoration: none;
   border-top: 1px solid var(--line);
-  padding: 18px 0;
+  padding: 18px 10px;
   display: flex;
   justify-content: space-between;
   gap: 16px;
+  background-image: linear-gradient(var(--om-link-card-fill), var(--om-link-card-fill));
+  background-position: left center;
+  background-repeat: no-repeat;
+  background-size: 0% 100%;
+  transition: background-size 200ms ease-out;
 }
-.doc-list > a:hover h3 {
+.doc-list > a:focus-visible {
+  background-size: 100% 100%;
+}
+.doc-list > a:focus-visible h3 {
   color: var(--brand);
-  text-decoration: underline;
+}
+@media (hover: hover) and (pointer: fine) {
+  .doc-list > a:hover {
+    background-size: 100% 100%;
+  }
+  .doc-list > a:hover h3 {
+    color: var(--brand);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .doc-list > a {
+    transition: none;
+  }
+}
+@media (forced-colors: active) {
+  .doc-list > a {
+    background-image: none;
+  }
+  .doc-list > a:focus-visible {
+    outline-color: Highlight;
+  }
 }
 .doc-list h3 {
   margin: 0;
