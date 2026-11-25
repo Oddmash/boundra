@@ -7,6 +7,7 @@ use crate::commands::explain::ExplainOptions;
 use crate::commands::generate::{GenerateKind, GenerateOptions};
 use crate::commands::graph_domains::{GraphDomainsOptions, GraphFormat};
 use crate::commands::init::InitOptions;
+use crate::commands::watch::WatchOptions;
 use crate::output::OutputFormat;
 use crate::util::is_kebab_case;
 
@@ -19,6 +20,7 @@ pub(crate) enum Command {
     GraphDomains(GraphDomainsOptions),
     Generate(GenerateOptions),
     Init(InitOptions),
+    Watch(WatchOptions),
     Help,
     Version,
 }
@@ -51,10 +53,65 @@ pub(crate) fn parse_command(args: &[String]) -> Result<Command, String> {
         }
         "init" => Ok(Command::Init(parse_init_options(&args[1..])?)),
         "explain" => Ok(Command::Explain(parse_explain_options(&args[1..])?)),
+        "watch" => Ok(Command::Watch(parse_watch_options(&args[1..])?)),
         "help" | "--help" | "-h" => Ok(Command::Help),
         "--version" | "-V" => Ok(Command::Version),
         _ => Err(format!("unknown command: {command}")),
     }
+}
+
+fn parse_watch_options(args: &[String]) -> Result<WatchOptions, String> {
+    let mut options = WatchOptions {
+        root: PathBuf::from("."),
+        format: OutputFormat::Text,
+        interval_ms: 1500,
+        once: false,
+        min_domains: None,
+    };
+    let mut index = 0;
+    while index < args.len() {
+        let argument = &args[index];
+        if argument == "--once" {
+            options.once = true;
+            index += 1;
+            continue;
+        }
+        let (key, value) = if let Some(pair) = argument.split_once('=') {
+            pair
+        } else {
+            if !matches!(
+                argument.as_str(),
+                "--root" | "--format" | "--interval-ms" | "--min-domains"
+            ) {
+                return Err(format!("unknown option: {argument}"));
+            }
+            index += 1;
+            (
+                argument.as_str(),
+                args.get(index)
+                    .map(String::as_str)
+                    .ok_or_else(|| format!("missing value for {argument}"))?,
+            )
+        };
+        if value.is_empty() || value.starts_with("--") {
+            return Err(format!("missing value for {key}"));
+        }
+        match key {
+            "--root" => options.root = PathBuf::from(value),
+            "--format" => options.format = parse_output_format(value)?,
+            "--interval-ms" => {
+                options.interval_ms = value
+                    .parse::<u64>()
+                    .ok()
+                    .filter(|interval| *interval >= 250)
+                    .ok_or("--interval-ms must be an integer of at least 250")?
+            }
+            "--min-domains" => options.min_domains = Some(parse_min_domains(value)?),
+            _ => return Err(format!("unknown option: {key}")),
+        }
+        index += 1;
+    }
+    Ok(options)
 }
 
 fn parse_explain_options(args: &[String]) -> Result<ExplainOptions, String> {
