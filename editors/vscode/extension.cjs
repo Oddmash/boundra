@@ -42,6 +42,10 @@ function activate(context) {
   const relevant = uri => !/[\\/](?:node_modules|\.git|\.next|\.turbo|dist|build|target|coverage)[\\/]/.test(uri.fsPath) && schedule(uri);
   const watcher = vscode.workspace.createFileSystemWatcher("**/*.{ts,tsx,js,jsx,mts,cts,mjs,cjs,svelte,json,jsonc}");
   context.subscriptions.push(output, watcher, watcher.onDidChange(relevant), watcher.onDidCreate(relevant), watcher.onDidDelete(relevant),
+    vscode.workspace.onDidSaveTextDocument(document => relevant(document.uri)),
+    vscode.workspace.onDidCreateFiles(event => event.files.forEach(relevant)),
+    vscode.workspace.onDidDeleteFiles(event => event.files.forEach(relevant)),
+    vscode.workspace.onDidRenameFiles(event => event.files.forEach(file => { relevant(file.oldUri); relevant(file.newUri); })),
     vscode.window.onDidChangeActiveTextEditor(editor => schedule(editor?.document.uri)),
     vscode.workspace.onDidChangeWorkspaceFolders(event => {
       for (const folder of event.removed) for (const [root, state] of roots) if (inside(folder.uri.fsPath, root)) {
