@@ -83,7 +83,7 @@ const scenes = [
       <p class="version">{t.eyebrow}</p>
       <h1>{t.headline} <span>{t.accent}</span></h1>
       <p class="lead">{t.lead}</p><p class="hero-proof">{story.story}</p>
-      <div class="actions"><a class="button primary" href={guide}>{t.start} <span aria-hidden="true">→</span></a><a class="button secondary" href={docs}>{t.docs}</a></div>
+      <div class="actions"><a class="button primary om-button om-button--link om-button--primary om-button--md" href={guide}>{t.start} <span aria-hidden="true">→</span></a><a class="button secondary om-button om-button--link om-button--secondary om-button--md" href={docs}>{t.docs}</a></div>
       <p class="requirements">{t.requirements}</p>
     </div>
     <div class="boundary-stage" data-boundary-stage data-pause={t.pause} data-resume={t.resume} data-phase="result" data-phase-copy={JSON.stringify({ scan: flow.scan, checking: flow.check, decision: flow.decision, result: flow.complete })}>
@@ -147,21 +147,21 @@ const scenes = [
   <section class="shell content-section" id="quickstart">
     <div class="section-heading"><h2>{t.quickTitle}</h2><p>{t.quickDesc}</p></div>
     <div class="walkthrough">
-      <div><h3>{t.install}</h3><p>{t.installDesc}</p><div class="code-panel"><div class="code-caption">{t.terminal}</div><pre><code>{commands}</code></pre></div><a class="text-link" href={reference("cli-install")}>{t.installLink} <span aria-hidden="true">→</span></a></div>
-      <div><h3>{t.structure}</h3><p>{t.structureDesc}</p><div class="file-tree"><pre><code>{tree}</code></pre></div><a class="text-link" href={reference("domain-manifest-spec")}>{t.manifest} <span aria-hidden="true">→</span></a></div>
+      <div><h3>{t.install}</h3><p>{t.installDesc}</p><div class="code-panel om-code-block"><div class="code-caption om-code-block-header"><span class="om-code-block-caption">{t.terminal}</span></div><pre class="om-code-block-content" tabindex="0"><code>{commands}</code></pre></div><a class="text-link" href={reference("cli-install")}>{t.installLink} <span aria-hidden="true">→</span></a></div>
+      <div><h3>{t.structure}</h3><p>{t.structureDesc}</p><div class="file-tree om-code-block"><pre class="om-code-block-content" tabindex="0"><code>{tree}</code></pre></div><a class="text-link" href={reference("domain-manifest-spec")}>{t.manifest} <span aria-hidden="true">→</span></a></div>
     </div>
   </section>
   <section class="shell content-section split-section">
     <div><h2>{t.contractTitle}</h2><p>{t.contractDesc}</p><p>{t.contractDesc2}</p><a class="text-link" href={locale === "en" ? guide + "#4-implement-a-real-contract" : guide}>{t.contractLink} <span aria-hidden="true">→</span></a></div>
-    <div class="code-panel"><div class="code-caption">domains/order/shared/contracts/get-order.ts</div><pre><code>{contract}</code></pre></div>
+    <div class="code-panel om-code-block"><div class="code-caption om-code-block-header"><span class="om-code-block-caption">domains/order/shared/contracts/get-order.ts</span></div><pre class="om-code-block-content" tabindex="0"><code>{contract}</code></pre></div>
   </section>
   <section class="shell content-section split-section" id="ci">
     <div><h2>{t.ciTitle}</h2><p>{t.ciDesc}</p><a class="text-link" href={reference("ci-integration")}>{t.ciLink} <span aria-hidden="true">→</span></a></div>
-    <div class="code-panel"><div class="code-caption">{t.terminal}</div><pre><code>pnpm exec boundra check-boundaries --format json</code></pre></div>
+    <div class="code-panel om-code-block"><div class="code-caption om-code-block-header"><span class="om-code-block-caption">{t.terminal}</span></div><pre class="om-code-block-content" tabindex="0"><code>pnpm exec boundra check-boundaries --format json</code></pre></div>
   </section>
   <section class="shell content-section" id="documentation">
     <div class="section-heading"><h2>{t.docsTitle}</h2><p>{t.docsDesc}</p></div>
-    <div class="doc-list">{sections.map(([title, description, href]) => <a class="om-link-card" href={href}><div><h3>{title}</h3><p>{description}</p></div><span aria-hidden="true">→</span></a>)}</div>
+    <div class="doc-list">{sections.map(([title, description, href]) => <a class="om-link-card" href={href}><div><h3>{title}</h3><p>{description}</p></div><span class="om-link-card-arrow" aria-hidden="true">→</span></a>)}</div>
     <a class="text-link" href={docs}>{t.docsAll} <span aria-hidden="true">→</span></a>
   </section>
   <section class="shell content-section fit-section"><h2>{t.fitTitle}</h2><p>{t.fitDesc}</p><a class="text-link" href={reference("product-positioning")}>{t.fitLink} <span aria-hidden="true">→</span></a></section>
@@ -331,11 +331,9 @@ const scenes = [
   .landing .lead { color: #d2cec8; font-size: clamp(17px,1.55vw,20px); }
   .landing .requirements { color: #b6b1aa; }
   .landing .actions { margin-block: 30px 16px; }
-  .hero .primary { background: #f4f2ed; color: #171716; border-color: #f4f2ed; }
-  .hero .primary:hover { background: #ddd8d0; }
-  .hero .secondary { color: #f4f2ed; border-color: #6d6860; }
-  .hero .secondary:hover { background: #292724; }
-  .hero a:focus-visible, .stage-controls :global(button:focus-visible) { outline: 2px solid #ffbf91; outline-offset: 4px; }
+  .hero .primary { --om-semantic-color-action:#f4f2ed; --om-semantic-color-on-action:#171716; --om-semantic-color-action-hover:#ddd8d0; --om-semantic-color-border:#f4f2ed; }
+  .hero .secondary { --om-semantic-color-text:#f4f2ed; --om-semantic-color-border:#6d6860; --om-semantic-color-surface:transparent; --om-semantic-color-bg:#292724; }
+  .hero a:focus-visible, .stage-controls button:focus-visible { outline: 2px solid #ffbf91; outline-offset: 4px; }
   .boundary-stage { position:relative; min-width:0; background:radial-gradient(ellipse at 50% 33%,#29231e 0,#1a1917 45%,#141413 80%); border:1px solid #39342e; border-radius:22px; padding:clamp(15px,2.3vw,28px); box-shadow:0 25px 75px #0005; --input-offset:0; --check-progress:1; --decision-offset:0; }
   .hero-proof { color:#b4aea6; max-width:46ch; font-size:14px; line-height:1.6; margin:10px 0 0; }
   .stage-top { display:flex; justify-content:space-between; gap:8px; align-items:center; color:#d5d0c8; font:12px/1.5 var(--mono); margin-bottom:20px; min-height:44px; }

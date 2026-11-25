@@ -5,6 +5,7 @@
   max-inline-size: 100%;
   block-size: 38px;
 }
+.site-header [data-language-picker] .om-locale-picker,
 .site-header [data-language-picker] .om-select-dropdown {
   inline-size: 100%;
 }

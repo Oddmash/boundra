@@ -1,61 +1,64 @@
+import { observeScrollHeader } from '@oddmash/ui/scroll-header';
+
 const header = document.querySelector<HTMLElement>('.site-header');
 if (header) {
   const root = document.documentElement;
-  const position = () => Math.max(0, window.scrollY);
-  const updateHeight = () => root.style.setProperty('--site-header-height', `${header.getBoundingClientRect().height}px`);
-  const show = (visible: boolean) => {
-    header.dataset.scrollHidden = String(!visible);
-    root.dataset.headerVisible = String(visible);
+  const hero = document.querySelector<HTMLElement>('.landing-page .hero-band');
+  let themeRevision = 0;
+  const updateTheme = () => {
+    const midpoint = Math.min(header.offsetHeight, window.innerHeight) / 2;
+    const theme = hero && hero.getBoundingClientRect().bottom > midpoint ? 'dark' : 'light';
+    if (header.dataset.headerTheme === theme) return;
+    const revision = ++themeRevision;
+    header.dataset.themeSwitching = 'true';
+    header.dataset.headerTheme = theme;
+    header.dataset.omTheme = theme;
+    window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
+      if (revision === themeRevision) delete header.dataset.themeSwitching;
+    }));
   };
-
-  let previous = position();
-  let distance = 0;
-  let direction = 0;
+  let stopScroll: (() => void) | undefined;
+  let observedHeight = -1;
   let queued = false;
-  const hasActiveMenu = () => header.contains(document.activeElement) ||
-    header.querySelector('details[open], [aria-expanded="true"]') !== null;
 
-  const update = () => {
-    queued = false;
-    const current = position();
-    const delta = current - previous;
-    previous = current;
-    if (current <= header.offsetHeight || hasActiveMenu()) {
-      show(true);
-      direction = 0;
-      distance = 0;
-      return;
+  const syncVisible = () => {
+    const hidden = header.dataset.omScrollHidden === 'true';
+    header.dataset.scrollHidden = String(hidden);
+    root.dataset.headerVisible = String(!hidden);
+  };
+  const state = new MutationObserver(syncVisible);
+  state.observe(header, { attributes: true, attributeFilter: ['data-om-scroll-hidden'] });
+  const updateLayout = () => {
+    const height = header.offsetHeight;
+    root.style.setProperty('--site-header-height', `${header.getBoundingClientRect().height}px`);
+    if (height !== observedHeight) {
+      stopScroll?.();
+      observedHeight = height;
+      stopScroll = observeScrollHeader(header, { hideThreshold: 16, revealThreshold: 8, topOffset: height });
+      syncVisible();
     }
-    if (!delta) return;
-    const nextDirection = Math.sign(delta);
-    if (nextDirection !== direction) {
-      direction = nextDirection;
-      distance = 0;
-    }
-    distance += Math.abs(delta);
-    if (direction < 0 && distance >= 8) show(true);
-    if (direction > 0 && distance >= 16) show(false);
+    updateTheme();
   };
 
-  updateHeight();
-  show(true);
-  if ('ResizeObserver' in window) new ResizeObserver(updateHeight).observe(header);
-  else window.addEventListener('resize', updateHeight, { passive: true });
+  updateLayout();
+  const resize = 'ResizeObserver' in window ? new ResizeObserver(updateLayout) : undefined;
+  resize?.observe(header);
+  if (hero) resize?.observe(hero);
+  window.addEventListener('resize', updateLayout, { passive: true });
   window.addEventListener('scroll', () => {
     if (!queued) {
       queued = true;
-      window.requestAnimationFrame(update);
+      window.requestAnimationFrame(() => {
+        queued = false;
+        updateTheme();
+      });
     }
   }, { passive: true });
-  header.addEventListener('focusin', () => {
-    show(true);
-    distance = 0;
-    direction = 0;
-  });
-  window.addEventListener('pageshow', () => {
-    previous = position();
-    direction = 0;
-    distance = 0;
-    show(true);
+  window.addEventListener('pageshow', updateLayout);
+  window.addEventListener('pagehide', event => {
+    if (event.persisted) return;
+    stopScroll?.();
+    resize?.disconnect();
+    state.disconnect();
   });
 }
