@@ -68,6 +68,44 @@ fn help_lists_the_complete_v1_command_surface() {
 }
 
 #[test]
+fn doctor_reports_workspace_readiness_and_discovers_ancestors() {
+    let root = create_temp_dir("doctor");
+    let missing = run_boundra(&root, &["doctor", "--root", ".", "--format=json"]);
+    assert_eq!(missing.status.code(), Some(2));
+    assert_eq!(
+        parse_json_stdout(&missing)["errors"][0]["code"],
+        "DOCTOR-001"
+    );
+    assert!(run_boundra(&root, &["init"]).status.success());
+    let empty = run_boundra(&root, &["doctor", "--format", "json"]);
+    assert_eq!(empty.status.code(), Some(1));
+    assert_eq!(parse_json_stdout(&empty)["status"], "empty");
+    assert!(run_boundra(&root, &["create-domain", "order"])
+        .status
+        .success());
+    let nested = root.join("domains/order");
+    let ready = run_boundra(&nested, &["doctor", "--format=json"]);
+    assert_eq!(ready.status.code(), Some(0));
+    let report = parse_json_stdout(&ready);
+    assert_eq!(report["status"], "ready");
+    assert_eq!(report["domain_count"], 1);
+    assert_eq!(report["analyzed_domain_count"], 1);
+    assert_eq!(
+        run_boundra(&nested, &["doctor", "--root", "."])
+            .status
+            .code(),
+        Some(2)
+    );
+    fs::write(root.join("boundra.config.json"), "{ invalid").unwrap();
+    let invalid = run_boundra(&nested, &["doctor", "--format=json"]);
+    assert_eq!(invalid.status.code(), Some(2));
+    assert_eq!(
+        parse_json_stdout(&invalid)["errors"][0]["code"],
+        "PROJECT-001"
+    );
+}
+
+#[test]
 fn command_help_and_init_default_are_usable() {
     let root = create_temp_dir("command-help");
     for command in [
