@@ -1,5 +1,6 @@
 ---
 import '../styles.css';
+import '../locale-navigation.css';
 import PlatformLinks from '../components/platform-links.astro';
 import { docsHome, docPath } from '../docs-nav';
 import { landingCopy, locales, htmlLanguage, landingPath, type LandingLocale } from '../landing-copy';
@@ -13,7 +14,7 @@ const docsUrl = docsHome(base, locale);
 const alternate = (item: LandingLocale) => landingLocale ? landingPath(base,item) : docPath(base,documentSlug,item) ?? docsHome(base,item);
 ---
 <!doctype html>
-<html lang={lang}>
+<html lang={lang} class:list={[{'landing-document': !!landingLocale}]} style={landingLocale ? 'background-color:#111110' : undefined}>
   <head>
     <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><meta name="description" content={description} />
     <title>{title}</title><link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} /><link rel="icon" href={`${base}boundra-mark.svg`} type="image/svg+xml" />
