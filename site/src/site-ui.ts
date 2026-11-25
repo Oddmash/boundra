@@ -63,7 +63,12 @@ for (const pre of document.querySelectorAll<HTMLPreElement>('.doc-content pre, .
   const code = pre.querySelector('code');
   if (!code || pre.parentElement?.classList.contains('copy-code-shell')) continue;
   const shell = document.createElement('div');
-  shell.className = 'copy-code-shell';
+  const panel = pre.closest<HTMLElement>('.code-panel, .file-tree');
+  shell.className = panel ? 'copy-code-shell' : 'copy-code-shell om-code-block';
+  panel?.classList.add('om-code-block');
+  const caption = panel?.querySelector('.code-caption');
+  if (caption) caption.classList.add('om-code-block-header', 'om-code-block-caption');
+  pre.classList.add('om-code-block-content');
   const action = document.createElement('div');
   action.className = 'copy-code-action';
   action.dataset.omTheme = pre.classList.contains('astro-code') ? 'dark' : 'light';
@@ -71,6 +76,7 @@ for (const pre of document.querySelectorAll<HTMLPreElement>('.doc-content pre, .
   shell.append(pre, action);
   const root = createRoot(action);
   root.render(createElement(Button, {
+    className: 'om-code-block-copy',
     variant: 'ghost',
     size: 'sm',
     'aria-label': copy.copy,
