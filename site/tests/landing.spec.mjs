@@ -161,8 +161,8 @@ for (const width of [1440, 768, 390, 320]) {
     expect(target.width).toBeGreaterThanOrEqual(44);
     expect(target.height).toBeGreaterThanOrEqual(44);
     await expect(page.getByRole("button", { name: "Pause animation" })).toBeHidden();
-    await next.press("Tab");
-    await next.press("Shift+Tab");
+    await page.getByRole("link", { name: "Read documentation", exact: true }).focus();
+    await page.keyboard.press("Tab");
     await expect(next).toBeFocused();
     await expect(next).toHaveCSS("outline-color", "rgb(255, 191, 145)");
     await expect(next).toHaveCSS("outline-width", "2px");
