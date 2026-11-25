@@ -15,7 +15,8 @@ During development the plugin:
 - renders unhandled `BoundraRuntimeError` details in a browser overlay
 - shows all normalized validation issues with contract, phase, code, and field
   paths
-- runs boundary checks at startup and after source updates
+- runs asynchronous boundary checks at startup and after source or JSON/JSONC
+  metadata updates, coalescing rapid saves and discarding superseded results
 - shows all boundary violations with file/line locations and imports
 - copies a safe text summary for issue reports without including input, result,
   or cause values
