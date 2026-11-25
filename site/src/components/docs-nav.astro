@@ -7,4 +7,4 @@ const t = docCopy[locale];
 const base = import.meta.env.BASE_URL.replace(/\/$/, '') + '/';
 const groups = localGroups(base,locale);
 ---
-<nav aria-label={t.title}><a class="docs-home" href={docsHome(base,locale)} aria-current={!slug ? 'page' : undefined}>{t.title}</a>{groups.map(group => <div class="nav-group"><h2>{group.label}</h2>{group.items.map(({slug: path,label,href}) => <a href={href} aria-current={slug.replace(/\.(?:ko|ja|zh-cn)$/,'') === path ? 'page' : undefined}>{label}</a>)}</div>)}</nav>
+<nav class="om-docs-navigation" aria-label={t.title}><a class="docs-home" href={docsHome(base,locale)} aria-current={!slug ? 'page' : undefined}>{t.title}</a>{groups.map(group => <div class="nav-group om-docs-group"><h2 class="om-docs-group-label">{group.label}</h2><ul class="om-docs-links" role="list">{group.items.map(({slug: path,label,href}) => <li><a href={href} aria-current={slug.replace(/\.(?:ko|ja|zh-cn)$/,'') === path ? 'page' : undefined}>{label}</a></li>)}</ul></div>)}</nav>
