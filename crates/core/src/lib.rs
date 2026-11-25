@@ -25,6 +25,7 @@ pub enum RuleCode {
     Br004,
     Br005,
     Br006,
+    Br007,
 }
 
 impl RuleCode {
@@ -36,6 +37,7 @@ impl RuleCode {
             Self::Br004 => "BR-004",
             Self::Br005 => "BR-005",
             Self::Br006 => "BR-006",
+            Self::Br007 => "BR-007",
         }
     }
 }
@@ -176,6 +178,7 @@ pub struct CheckBoundariesConfig {
     pub ignore: Vec<String>,
     pub capabilities: CapabilityConfig,
     pub policy: BoundaryPolicyConfig,
+    pub deny_domain_dependencies: BTreeMap<String, Vec<String>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -252,6 +255,7 @@ impl Default for CheckBoundariesConfig {
                 .collect(),
             capabilities: CapabilityConfig::default(),
             policy: BoundaryPolicyConfig::default(),
+            deny_domain_dependencies: BTreeMap::new(),
         }
     }
 }
@@ -314,6 +318,21 @@ pub fn load_project_model(root: &Path) -> io::Result<ProjectModel> {
     let config = load_config(root)?;
     validate_config(root, &config)?;
     let (domains, domain_roots) = load_domain_manifests(root, &config)?;
+    for (source, targets) in &config.check_boundaries.deny_domain_dependencies {
+        if !domains.contains_key(source) {
+            return invalid_data(format!(
+                "denyDomainDependencies: unknown source domain '{source}'"
+            ));
+        }
+        let mut seen = std::collections::BTreeSet::new();
+        for target in targets {
+            if source == target || !domains.contains_key(target) || !seen.insert(target) {
+                return invalid_data(format!(
+                    "denyDomainDependencies: invalid or duplicate target '{target}' for '{source}'"
+                ));
+            }
+        }
+    }
     let path_aliases = load_path_aliases(root)?;
 
     Ok(ProjectModel {
@@ -965,6 +984,9 @@ impl RawBoundraConfig {
         }
 
         if let Some(check_boundaries) = self.check_boundaries {
+            if let Some(deny_domain_dependencies) = check_boundaries.deny_domain_dependencies {
+                config.check_boundaries.deny_domain_dependencies = deny_domain_dependencies;
+            }
             if let Some(include_extensions) = check_boundaries.include_extensions {
                 config.check_boundaries.include_extensions = include_extensions;
             }
@@ -1031,6 +1053,7 @@ struct RawCheckBoundariesConfig {
     ignore: Option<Vec<String>>,
     capabilities: Option<RawCapabilityConfig>,
     policy: Option<RawBoundaryPolicyConfig>,
+    deny_domain_dependencies: Option<BTreeMap<String, Vec<String>>>,
 }
 
 #[derive(Debug, Default, Deserialize)]
