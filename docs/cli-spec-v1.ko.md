@@ -145,6 +145,15 @@ Import를 분석하고 경계 규칙 위반을 감지합니다.
 
 JSON은 `domain`, `direct_dependents`, `transitive_dependents`(간접 소비자만), `meta.command`, `meta.affected_domain_count`를 제공합니다. 이름순으로 정렬하며 중복과 대상 도메인을 제외합니다. 존재하지 않는 도메인이나 잘못된 프로젝트는 종료 코드 2와 구조화된 오류를 반환합니다. 소비자가 없는 도메인은 정상적으로 빈 결과를 반환합니다. 런타임 호출 분석이나 경계 검사를 대체하지 않습니다.
 
+### 1.10 `doctor`
+
+파일을 수정하지 않고 워크스페이스 준비 상태를 확인합니다. `--root`를 생략하면 현재 디렉터리 또는 상위 디렉터리에서 가장 가까운 `boundra.config.json`을 찾습니다. 명시하면 해당 경로만 검사합니다.
+
+- `--root <path>` (선택)
+- `--format text|json` (기본값: `text`)
+
+종료 코드 0은 준비 완료, 1은 빈 검사 범위, 2는 설정 누락 또는 오류, 3은 스캔 오류를 뜻합니다. JSON에는 `status`, `root`, `domain_count`, `scanned_file_count`, `analyzed_domain_count`, `meta.command`가 포함됩니다. 실패 시 구조화된 진단을 반환합니다. 경계 위반은 `check-boundaries`로 별도 검사합니다.
+
 ## 2. CLI UX 원칙
 
 - 경계 진단에는 규칙 코드, 파일, 줄 번호, import, 메시지 및 제안이 포함됩니다.
