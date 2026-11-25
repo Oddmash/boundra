@@ -83,6 +83,19 @@ for (const width of [1440, 768, 390, 320]) {
       fullPage: true,
     });
     await assertReflow(page);
+    const blocked = page.getByRole("radio", { name: "Internal import" });
+    const allowed = page.getByRole("radio", { name: "Public API" });
+    await expect(blocked).toBeChecked();
+    await blocked.focus();
+    await blocked.press("ArrowRight");
+    await expect(allowed).toBeChecked();
+    await expect(page.getByText("Allowed by boundary rules", { exact: true })).toBeVisible();
+    await expect(page.getByText("BR-004", { exact: true })).toBeHidden();
+    await assertReflow(page);
+    await page.screenshot({ path: testInfo.outputPath("allowed-import.png"), fullPage: true });
+    await allowed.press("ArrowLeft");
+    await expect(blocked).toBeChecked();
+    await expect(page.getByText("BR-004", { exact: true })).toBeVisible();
     expect(
       await page.evaluate(() =>
         [...document.images].every(
