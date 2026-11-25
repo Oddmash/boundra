@@ -30,6 +30,7 @@ pub fn run(args: &[String]) -> i32 {
         Command::GraphDomains(options) => commands::graph_domains::run(&options),
         Command::Generate(options) => commands::generate::run(&options),
         Command::Init(options) => commands::init::run(&options),
+        Command::Migrate(options) => commands::migrate::run(&options),
         Command::Help => {
             print_help();
             0
@@ -58,6 +59,7 @@ fn print_help() {
     println!("  boundra check-boundaries [--root <path>] [--format text|json] [--min-domains <n>]");
     println!("  boundra create-domain <name> [--path <parent-path>] [--root <path>]");
     println!("  boundra init [--root <path>] [--name <kebab-case>]");
+    println!("  boundra migrate [--root <path>] [--from <relative-path>] [--format text|json]");
     println!(
         "  boundra graph-domains [--root <path>] [--format mermaid|dot|json] [--output <path>]"
     );
