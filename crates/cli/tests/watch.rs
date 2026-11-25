@@ -2,17 +2,21 @@ use std::fs;
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::mpsc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use serde_json::Value;
 
+static NEXT_ID: AtomicUsize = AtomicUsize::new(0);
+
 struct Fixture(PathBuf);
 impl Fixture {
     fn new() -> Self {
         let root = std::env::temp_dir().join(format!(
-            "boundra-watch-{}-{}",
+            "boundra-watch-{}-{}-{}",
             std::process::id(),
+            NEXT_ID.fetch_add(1, Ordering::Relaxed),
             SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .unwrap()
