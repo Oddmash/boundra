@@ -84,6 +84,10 @@ Import를 분석하고 경계 규칙 위반을 감지합니다.
 
 `boundra graph-domains --format html --output graph.html`로 검색 가능한 오프라인 의존성 뷰를 생성합니다. 브라우저로 파일을 열면 선언된 의존성을 탐색할 수 있으며 네트워크나 서버가 필요하지 않습니다.
 
+### `completions <bash|zsh|fish>`
+
+CLI 도움말을 기반으로 자동 완성 스크립트를 출력합니다. 사용하는 셸의 일반적인 완성 설정으로 불러올 수 있으며 시작 파일을 자동 수정하지 않습니다.
+
 ### 1.4 `generate route <domain>/<name>`
 ### 1.5 `generate query <domain>/<name>`
 ### 1.6 `generate mutation <domain>/<name>`
