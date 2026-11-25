@@ -68,7 +68,7 @@ const alternate = (item: LandingLocale) => landingLocale ? landingPath(base,item
   .site-header nav a:hover:not(.platform-link) { color:var(--header-accent); }
   .site-header :is(a,summary):focus-visible { outline:2px solid var(--header-focus); outline-offset:3px; }
   .docs-header-link { position:relative; padding-inline:4px; border-bottom:2px solid transparent; transition:color 150ms ease,border-color 150ms ease; }
-  .docs-header-link:hover,.docs-header-link[aria-current="page"] { color:var(--header-accent); border-bottom-color:currentColor; }
+  .site-header .docs-header-link:hover,.site-header .docs-header-link[aria-current="page"] { color:var(--header-accent); border-bottom-color:currentColor; }
   @media(prefers-reduced-motion:reduce) { .site-header,.docs-header-link { transition:none; } }
   .locale-menu { position:relative; color:inherit; font-size:14px; }
   .locale-menu summary { cursor:pointer; border:1px solid var(--header-control-line); border-radius:7px; padding:7px 10px; min-height:36px; white-space:nowrap; }
