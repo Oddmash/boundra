@@ -33,7 +33,7 @@ const alternate = (item: LandingLocale) => landingLocale ? landingPath(base,item
   :global(html) { scroll-padding-top: calc(var(--site-header-height, 68px) + 12px); }
   .site-header { position:sticky; top:0; z-index:30; background:white; transition:transform 220ms cubic-bezier(.22,.61,.36,1); }
   .site-header[data-scroll-hidden="true"]:not(:focus-within) { transform:translateY(calc(-100% - 1px)); pointer-events:none; }
-  :global(html[data-header-visible="true"] .docs-sidebar), :global(html[data-header-visible="true"] .docs-toc) { top:calc(var(--site-header-height, 68px) + 16px); max-height:calc(100vh - var(--site-header-height, 68px) - 32px); }
+  @media(min-width:721px) { :global(html[data-header-visible="true"] .docs-sidebar), :global(html[data-header-visible="true"] .docs-toc) { top:calc(var(--site-header-height, 68px) + 16px); max-height:calc(100vh - var(--site-header-height, 68px) - 32px); } }
   .landing-page .site-header { background:#111110; color:#f4f2ed; border-bottom:1px solid #33302d; }
   .landing-page .site-header .brand,.landing-page .site-header nav a { color:#f4f2ed; }
   .landing-page .site-header nav a:hover { color:#ffb07d; }
