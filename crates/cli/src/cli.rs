@@ -26,6 +26,7 @@ pub fn run(args: &[String]) -> i32 {
         Command::AddDependency(options) => commands::add_dependency::run(&options),
         Command::Baseline(options) => commands::baseline::run(&options),
         Command::Changed(options) => commands::changed::run(&options),
+        Command::Completions(shell) => commands::completions::run(shell),
         Command::CheckBoundaries(options) => commands::check_boundaries::run(&options),
         Command::CreateDomain(options) => commands::create_domain::run(&options),
         Command::GraphDomains(options) => commands::graph_domains::run(&options),
@@ -49,21 +50,25 @@ fn requests_json(args: &[String]) -> bool {
         || args.iter().any(|arg| arg == "--format=json")
 }
 
+pub(crate) const HELP_COMMANDS: &[&str] = &[
+    "add-dependency <domain>/<dependency> [--root <path>]",
+    "check-changed --base <ref> [--root <path>] [--format text|json]",
+    "baseline create|check [--root <path>] [--baseline <path>] [--format text|json]",
+    "check-boundaries [--root <path>] [--format text|json] [--min-domains <n>]",
+    "create-domain <name> [--path <parent-path>] [--root <path>]",
+    "init [--root <path>] [--name <kebab-case>]",
+    "migrate [--root <path>] [--from <relative-path>] [--format text|json]",
+    "graph-domains [--root <path>] [--format mermaid|dot|json|html] [--output <path>]",
+    "generate route|query|mutation|resource <domain>/<name> [--root <path>]",
+    "completions bash|zsh|fish",
+    "help",
+    "--help",
+    "--version",
+];
+
 fn print_help() {
-    println!("Boundra CLI");
-    println!();
-    println!("Usage:");
-    println!("  boundra add-dependency <domain>/<dependency> [--root <path>]");
-    println!("  boundra check-changed --base <ref> [--root <path>] [--format text|json]");
-    println!(
-        "  boundra baseline create|check [--root <path>] [--baseline <path>] [--format text|json]"
-    );
-    println!("  boundra check-boundaries [--root <path>] [--format text|json] [--min-domains <n>]");
-    println!("  boundra create-domain <name> [--path <parent-path>] [--root <path>]");
-    println!("  boundra init [--root <path>] [--name <kebab-case>]");
-    println!("  boundra migrate [--root <path>] [--from <relative-path>] [--format text|json]");
-    println!(
-        "  boundra graph-domains [--root <path>] [--format mermaid|dot|json|html] [--output <path>]"
-    );
-    println!("  boundra generate route|query|mutation|resource <domain>/<name> [--root <path>]");
+    println!("Boundra CLI\n\nUsage:");
+    for command in HELP_COMMANDS {
+        println!("  boundra {command}");
+    }
 }
