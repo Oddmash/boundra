@@ -6,6 +6,10 @@ The format follows Keep a Changelog and versions follow Semantic Versioning.
 
 ## [Unreleased]
 
+### Added
+
+- inspect direct and indirect domain consumers with `impact <domain>` in text or JSON
+
 ## [0.7.0] - 2026-11-25
 
 ### Added
