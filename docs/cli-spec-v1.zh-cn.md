@@ -75,8 +75,10 @@
 
 选项：
 - `--root <path>`（默认：`.`）
-- `--format mermaid|json|dot`（默认：`mermaid`）
+- `--format mermaid|json|dot|html`（默认：`mermaid`）
 - `--output <path>`
+
+使用 `boundra graph-domains --format html --output graph.html` 生成可搜索的离线依赖视图。在浏览器中打开文件即可查看声明的依赖关系，无需网络或服务器。
 
 ### 1.4 `generate route <domain>/<name>`
 ### 1.5 `generate query <domain>/<name>`
