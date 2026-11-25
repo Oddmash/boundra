@@ -24,6 +24,8 @@ Boundra 将 Rust 编写的静态分析 CLI 与基于模式的 TypeScript 契约�
 
 **[详细使用指南](docs/user-guide.zh-cn.md)** · [采用建议及取舍](docs/product-positioning.zh-cn.md)
 
+**VS Code：** 安装 [Boundra Marketplace 预发行版](https://marketplace.visualstudio.com/items?itemName=oddmash.boundra-vscode)，在安装了本地 CLI 的受信任工作区运行 `Boundra: Check Workspace`，查看已保存文件的边界诊断。参阅[编辑器设置](editors/vscode/README.md)。
+
 ## 快速开始
 
 在现有 TypeScript 项目中使用 Node.js 20 或更高版本。CLI 首次运行时下载并验证对应的原生二进制文件。支持 Linux x64、macOS Intel 和 Apple Silicon、Windows x64。详情请参阅 [安装和离线使用](docs/cli-install.zh-cn.md)。
