@@ -53,4 +53,6 @@ test("the shared heading observer marks the visible documentation section", asyn
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
   await expect(last).toHaveAttribute("aria-current", "location");
   await expect(page.locator(".docs-toc [aria-current='location']")).toHaveCount(1);
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect(last).not.toHaveAttribute("aria-current", "location");
 });
