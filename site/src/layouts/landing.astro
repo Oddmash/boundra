@@ -1,0 +1,243 @@
+---
+import Layout from './site.astro';
+import { landingCopy, htmlLanguage, guidePath, type LandingLocale } from '../landing-copy';
+const { locale = 'en' } = Astro.props as { locale?: LandingLocale };
+const t = landingCopy[locale];
+const guide = guidePath(import.meta.env.BASE_URL.replace(/\/$/, '') + '/', locale);
+const englishDocs = locale === 'en' ? '' : ` (${t.englishDocs})`;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '') + '/';
+const docs = `${base}docs/`;
+const commands = `pnpm add boundra zod
+pnpm exec boundra init --name my-app
+pnpm exec boundra create-domain order
+pnpm exec boundra create-domain billing
+pnpm exec boundra add-dependency billing/order
+pnpm exec boundra check-boundaries`;
+const tree = `domains/
+  order/
+    client/
+    server/
+    shared/
+      public.ts
+  billing/
+    client/
+    server/
+    shared/`;
+const contract = `import { defineQuery } from "boundra";
+import { z } from "zod";
+
+export const getOrderQuery = defineQuery({
+  name: "get-order",
+  input: z.object({ orderId: z.string().min(1) }),
+  result: z.object({ orderId: z.string(), status: z.string() }),
+});`;
+const sections = [
+  [t.docStart, t.docStartDesc, guide],
+  [t.docRules, t.docRulesDesc, docs + 'boundary-rules/'],
+  [t.docContracts, t.docContractsDesc, docs + 'contract-schema-spec/'],
+  [t.docFramework, t.docFrameworkDesc, docs + 'frameworks/'],
+  [t.docConfig, t.docConfigDesc, docs + 'config-spec/'],
+  [t.docCI, t.docCIDesc, docs + 'ci-integration/'],
+];
+const scenes = [
+  { rule: 'BR-001', title: t.rule1Title, description: t.rule1Desc, source: 'order', sourceLayer: 'client', target: 'order', targetLayer: 'server/internal', path: 'domains/order/client/use-order.ts', symbol: 'orderService', imported: '@domains/order/server/internal', allowed: false },
+  { rule: 'BR-004', title: t.rule4Title, description: t.rule4Desc, source: 'billing', sourceLayer: 'server', target: 'order', targetLayer: 'server/internal', path: 'domains/billing/server/invoice.ts', symbol: 'orderService', imported: '@domains/order/server/internal', allowed: false },
+  { rule: 'BR-006', title: t.rule6Title, description: t.rule6Desc, source: 'billing', sourceLayer: 'server', target: 'order', targetLayer: 'shared/public', path: 'domains/billing/server/invoice.ts', symbol: 'getOrderQuery', imported: '@domains/order/shared/public', allowed: false },
+  { rule: 'PASS', title: t.passTitle, description: t.passDesc, source: 'billing', sourceLayer: 'server', target: 'order', targetLayer: 'shared/public', path: 'domains/billing/server/invoice.ts', symbol: 'getOrderQuery', imported: '@domains/order/shared/public', allowed: true },
+];
+---
+<Layout title={`Boundra | ${t.eyebrow}`} description={t.meta} lang={htmlLanguage(locale)} landingLocale={locale}>
+  <div class="landing">
+  <div class="hero-band"><section class="hero shell">
+    <div class="hero-copy">
+      <p class="version">{t.eyebrow}</p>
+      <h1>{t.headline} <span>{t.accent}</span></h1>
+      <p class="lead">{t.lead}</p>
+      <div class="actions"><a class="button primary" href={guide}>{t.start} <span aria-hidden="true">→</span></a><a class="button secondary" href={docs}>{t.docs}{englishDocs}</a></div>
+      <p class="requirements">{t.requirements}</p>
+    </div>
+    <div class="boundary-stage" data-boundary-stage data-pause={t.pause} data-resume={t.resume}>
+      <div class="stage-top"><span>{t.check}</span><div class="stage-controls"><button type="button" data-play hidden aria-label={t.pause} title={t.pause}><span aria-hidden="true">Ⅱ</span></button><button type="button" data-next hidden aria-label={t.next} title={t.next}><span aria-hidden="true">→</span></button></div></div>
+      <div class="scene-stack">
+        {scenes.map((scene, index) => (
+          <div class:list={['scene', { accepted: scene.allowed }]} data-scene={index} data-active={index === 0 ? 'true' : 'false'}>
+            <div class="scene-map" aria-hidden="true">
+              <div class="domain"><span class="domain-name">{scene.source}</span><span class="layer">{scene.sourceLayer === 'client' ? 'shared' : 'client'}</span><strong class="layer selected">{scene.sourceLayer}</strong><span class="layer">{scene.sourceLayer === 'client' ? 'server' : 'shared'}</span></div>
+              <div class="route">
+                <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                  <path class="route-track" d="M0 50 H100" />
+                  <path class="route-signal" d={scene.allowed ? 'M0 50 H100' : 'M0 50 H50'} pathLength="100" />
+                </svg>
+                <div class="gate"><img src={base + 'boundra-mark.svg'} width="30" height="30" alt="" /><span>{scene.allowed ? 'OK' : scene.rule}</span></div>
+              </div>
+              <div class="domain target"><span class="domain-name">{scene.target}</span><span class="layer">{scene.targetLayer === 'shared/public' ? 'client' : 'shared/public'}</span><strong class="layer selected">{scene.targetLayer}</strong><span class="layer">{scene.targetLayer === 'shared/public' ? 'server/internal' : 'client'}</span></div>
+            </div>
+            <div class="scene-code"><span class="preview-path">{scene.path}</span><pre><code><span class="syntax-keyword">import</span> {'{ ' + scene.symbol + ' }'} <span class="syntax-keyword">from</span>{'\n'}  <span class="syntax-string">{'"' + scene.imported + '"'}</span>;</code></pre></div>
+            <div class="scene-result"><span class="rule">{scene.rule}</span><div><strong data-scene-title>{scene.title}</strong><p>{scene.description}</p></div></div>
+          </div>
+        ))}
+      </div>
+      <p class="preview-note">{t.note}</p>
+      <p class="sr-only" data-status role="status"></p>
+    </div>
+  </section></div>
+  <section class="shell content-section" id="quickstart">
+    <div class="section-heading"><h2>{t.quickTitle}</h2><p>{t.quickDesc}</p></div>
+    <div class="walkthrough">
+      <div><h3>{t.install}</h3><p>{t.installDesc}</p><div class="code-panel"><div class="code-caption">{t.terminal}</div><pre><code>{commands}</code></pre></div><a class="text-link" href={`${docs}cli-install/`}>{t.installLink}{englishDocs} <span aria-hidden="true">→</span></a></div>
+      <div><h3>{t.structure}</h3><p>{t.structureDesc}</p><div class="file-tree"><pre><code>{tree}</code></pre></div><a class="text-link" href={`${docs}domain-manifest-spec/`}>{t.manifest}{englishDocs} <span aria-hidden="true">→</span></a></div>
+    </div>
+  </section>
+  <section class="shell content-section split-section">
+    <div><h2>{t.contractTitle}</h2><p>{t.contractDesc}</p><p>{t.contractDesc2}</p><a class="text-link" href={`${docs}user-guide/#4-implement-a-real-contract`}>{t.contractLink}{englishDocs} <span aria-hidden="true">→</span></a></div>
+    <div class="code-panel"><div class="code-caption">domains/order/shared/contracts/get-order.ts</div><pre><code>{contract}</code></pre></div>
+  </section>
+  <section class="shell content-section split-section" id="ci">
+    <div><h2>{t.ciTitle}</h2><p>{t.ciDesc}</p><a class="text-link" href={`${docs}ci-integration/`}>{t.ciLink}{englishDocs} <span aria-hidden="true">→</span></a></div>
+    <div class="code-panel"><div class="code-caption">{t.terminal}</div><pre><code>pnpm exec boundra check-boundaries --format json</code></pre></div>
+  </section>
+  <section class="shell content-section" id="documentation">
+    <div class="section-heading"><h2>{t.docsTitle}</h2><p>{t.docsDesc}{englishDocs}</p></div>
+    <div class="doc-list">{sections.map(([title, description, href]) => <a href={href}><div><h3>{title}</h3><p>{description}{href !== guide && englishDocs}</p></div><span aria-hidden="true">→</span></a>)}</div>
+    <a class="text-link" href={docs}>{t.docsAll}{englishDocs} <span aria-hidden="true">→</span></a>
+  </section>
+  <section class="shell content-section fit-section"><h2>{t.fitTitle}</h2><p>{t.fitDesc}</p><a class="text-link" href={`${docs}product-positioning/`}>{t.fitLink}{englishDocs} <span aria-hidden="true">→</span></a></section>
+  </div>
+</Layout>
+
+<script>
+  for (const stage of document.querySelectorAll<HTMLElement>('[data-boundary-stage]')) {
+    const scenes = Array.from(stage.querySelectorAll<HTMLElement>('[data-scene]'));
+    const play = stage.querySelector<HTMLButtonElement>('[data-play]')!;
+    const next = stage.querySelector<HTMLButtonElement>('[data-next]')!;
+    const status = stage.querySelector<HTMLElement>('[data-status]')!;
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+    let current = 0;
+    let paused = false;
+    let visible = false;
+    let hovered = false;
+    let focused = false;
+    let timer: number | undefined;
+    const clear = () => { if (timer !== undefined) window.clearTimeout(timer); timer = undefined; };
+    const renderControls = () => {
+      play.hidden = reduced.matches;
+      next.hidden = false;
+      const name = paused ? stage.dataset.resume! : stage.dataset.pause!;
+      play.setAttribute('aria-label', name);
+      play.title = name;
+      play.querySelector('span')!.textContent = paused ? '▶' : 'Ⅱ';
+    };
+    const select = (index: number, manual = false) => {
+      current = index % scenes.length;
+      for (const [i, scene] of scenes.entries()) scene.dataset.active = String(i === current);
+      if (manual) status.textContent = scenes[current].querySelector('[data-scene-title]')!.textContent;
+    };
+    const schedule = () => {
+      clear();
+      if (!reduced.matches && !paused && visible && !hovered && !focused && !document.hidden) {
+        timer = window.setTimeout(() => { select(current + 1); schedule(); }, 5200);
+      }
+    };
+    play.addEventListener('click', () => { paused = !paused; renderControls(); schedule(); });
+    next.addEventListener('click', () => { paused = true; select(current + 1, true); renderControls(); schedule(); });
+    stage.addEventListener('mouseenter', () => { hovered = true; schedule(); });
+    stage.addEventListener('mouseleave', () => { hovered = false; schedule(); });
+    stage.addEventListener('focusin', () => { focused = true; schedule(); });
+    stage.addEventListener('focusout', (event) => {
+      focused = event.relatedTarget instanceof Node && stage.contains(event.relatedTarget);
+      schedule();
+    });
+    document.addEventListener('visibilitychange', schedule);
+    reduced.addEventListener('change', () => { renderControls(); schedule(); });
+    const observer = new IntersectionObserver(([entry]) => { visible = entry.isIntersecting && entry.intersectionRatio >= 0.35; schedule(); }, { threshold: [0, 0.35] });
+    observer.observe(stage);
+    window.addEventListener('pagehide', clear);
+    window.addEventListener('pageshow', schedule);
+    stage.dataset.ready = 'true';
+    renderControls();
+  }
+</script>
+<style>
+  .landing { --landing-surface: #f8f7f5; --landing-border: #e3e0dc; }
+  .hero-band { color: #f4f2ed; background: #111110; }
+  .landing .hero {
+    grid-template-columns: minmax(0, .9fr) minmax(0, 1.14fr);
+    gap: clamp(36px, 5vw, 82px);
+    min-height: min(730px, 79svh);
+    padding-block: clamp(56px, 8vw, 106px);
+  }
+  .landing .hero h1 { font-size: clamp(44px, 5.7vw, 83px); font-weight: 750; letter-spacing: -.062em; line-height: 1.07; text-wrap: balance; margin-block: 16px 24px; }
+  .hero h1 span { color: #ff9c61; }
+  .landing .version { color: #b9b6af; font-weight: 600; margin-top: 0; }
+  .landing .lead { color: #d2cec8; font-size: clamp(17px,1.55vw,20px); }
+  .landing .requirements { color: #b6b1aa; }
+  .landing .actions { margin-block: 30px 16px; }
+  .hero .primary { background: #f4f2ed; color: #171716; border-color: #f4f2ed; }
+  .hero .primary:hover { background: #ddd8d0; }
+  .hero .secondary { color: #f4f2ed; border-color: #6d6860; }
+  .hero .secondary:hover { background: #292724; }
+  .hero a:focus-visible, .stage-controls button:focus-visible { outline: 2px solid #ffbf91; outline-offset: 4px; }
+  .boundary-stage { position: relative; min-width: 0; background: radial-gradient(ellipse at 50% 35%, #29221d 0, #1a1917 40%, #141413 75%); border: 1px solid #38332e; border-radius: 22px; padding: clamp(15px, 2.3vw, 28px); box-shadow: 0 25px 75px #0005; }
+  .stage-top { display:flex; justify-content:space-between; gap:8px; align-items:center; color:#d5d0c8; font: 13px/1.5 var(--mono); margin-bottom:30px; min-height:36px; }
+  .stage-controls { display:flex; gap:8px; flex-wrap:wrap; }
+  .stage-controls button { width:36px; height:36px; border-radius:50%; background:#24221f; border:1px solid #615b53; color:#f4f2ed; font-size:16px; cursor:pointer; }
+  .stage-controls button:hover { border-color:#ff9c61; background:#332a24; }
+  .stage-controls button[hidden] { display:none; }
+  .scene-stack { display:grid; grid-template-columns:minmax(0,1fr); }
+  .scene { grid-area:1/1; visibility:hidden; min-width:0; display:grid; grid-template-rows: auto auto 1fr; gap:22px; --signal:#ffad87; --result:#f4c1ad; }
+  .scene[data-active="true"] { visibility:visible; }
+  .scene.accepted { --signal:#a2d9b2; --result:#c2e7cb; }
+  .scene-map { display:grid; grid-template-columns:minmax(0,1fr) minmax(76px,.45fr) minmax(0,1fr); align-items:center; min-width:0; }
+  .domain { position:relative; z-index:1; display:grid; gap:8px; min-width:0; padding:14px; background:#22201e; border:1px solid #504a43; border-radius:12px; overflow-wrap:anywhere; font:12px/1.4 var(--mono); }
+  .domain-name { color:#eee7de; font-size:15px; font-weight:700; margin-bottom:4px; }
+  .layer { color:#b4aea6; border:1px solid #3c3935; border-radius:5px; padding:8px 6px; }
+  .layer.selected { background:#372b25; border-color:#e28c5d; color:#ffdcbd; font-weight:650; }
+  .target .layer.selected { border-color:var(--signal); color:var(--result); background:#292624; }
+  .route { display:grid; place-items:center; height:100%; min-height:76px; position:relative; }
+  .route svg { position:absolute; width:100%; height:100%; inset:0; overflow:visible; }
+  .route-track,.route-signal { fill:none; stroke-width:2; vector-effect:non-scaling-stroke; }
+  .route-track { stroke:#66564b; stroke-dasharray:3 5; }
+  .route-signal { stroke:var(--signal); stroke-linecap:round; }
+  .gate { z-index:1; display:grid; justify-items:center; gap:4px; padding:7px 5px; min-width:58px; border:1px solid var(--signal); background:#1c1917; border-radius:10px; color:var(--result); font:10px var(--mono); }
+  .gate img { border-radius:4px; }
+  .scene-code { background:#171614; border:1px solid #39342f; border-radius:10px; padding:12px; min-width:0; }
+  .preview-path { display:block; color:#bdb7ae; font:11px/1.5 var(--mono); overflow-wrap:anywhere; border-bottom:1px solid #3b3630; padding-bottom:9px; }
+  .scene pre { margin: 10px 0 0; font:clamp(11px,1.1vw,13px)/1.7 var(--mono); white-space:pre-wrap; overflow-wrap:anywhere; }
+  .syntax-keyword { color:#d5b7ff; }
+  .syntax-string { color:#ffd09e; }
+  .scene-result { border-top:1px solid #4b4038; padding-top:14px; display:flex; gap:12px; align-items:flex-start; color:var(--result); font-size:14px; line-height:1.5; min-width:0; }
+  .scene-result .rule { padding:5px 7px; border:1px solid var(--signal); border-radius:5px; font:12px var(--mono); flex:none; }
+  .scene-result strong { font-weight:700; }
+  .scene-result p { color:#d2ccc3; margin:3px 0 0; }
+  .preview-note { margin:22px 0 0; font-size:12px; line-height:1.55; color:#bcb6ad; }
+  .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+  @media (prefers-reduced-motion: no-preference) {
+    .boundary-stage[data-ready] .scene[data-active="true"] .route-signal { animation: trace 950ms cubic-bezier(.2,.7,.3,1) both; }
+    .boundary-stage[data-ready] .scene[data-active="true"] .gate { animation: gate-glow 750ms 500ms both; }
+    .boundary-stage[data-ready] .scene[data-active="true"] .scene-result { animation: focus-result 450ms 550ms both; }
+    @keyframes trace { from { stroke-dasharray:100; stroke-dashoffset:100; } to { stroke-dasharray:100; stroke-dashoffset:0; } }
+    @keyframes gate-glow { from { box-shadow:0 0 0 0 #ffad8733; } 50% { box-shadow:0 0 18px 3px #ffad8733; } to { box-shadow:0 0 0 0 transparent; } }
+    @keyframes focus-result { from { opacity:.66; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+  }
+  .landing .content-section { border-top:1px solid var(--landing-border); padding-block:clamp(44px,6vw,78px); }
+  .landing .content-section h2 { font-size:clamp(30px,3.8vw,46px); letter-spacing:-.045em; }
+  .landing .section-heading { margin-bottom:32px; }
+  .landing .code-panel,.landing .file-tree { background:var(--landing-surface); border-color:var(--landing-border); border-radius:12px; }
+  .landing .split-section { align-items:center; }
+  .landing .doc-list a { min-height:84px; }
+  .landing .fit-section { padding-bottom:80px; }
+  :global(html[lang="ko"]) .landing :is(h1,h2,h3,p) { word-break:keep-all; overflow-wrap:anywhere; }
+  @media(max-width:920px) {
+    .landing .hero { grid-template-columns:minmax(0,1fr); min-height:auto; }
+    .landing .hero h1 { max-width:720px; }
+  }
+  @media(max-width:430px) {
+    .scene-map { grid-template-columns:minmax(0,1fr) minmax(56px,.35fr) minmax(0,1fr); }
+    .domain { padding:7px; gap:5px; font-size:10px; }
+    .domain-name { font-size:13px; }
+    .layer { padding:6px 3px; }
+    .gate { min-width:48px; padding:5px 2px; font-size:9px; }
+    .scene-result { gap:8px; font-size:13px; }
+    .scene { gap:16px; }
+  }
+</style>
