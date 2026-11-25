@@ -1,12 +1,15 @@
 ---
 import Layout from './site.astro';
+import { docsHome, docPath } from '../docs-nav';
+import { docCopy } from '../doc-ui-copy';
 import { landingCopy, htmlLanguage, guidePath, type LandingLocale } from '../landing-copy';
 const { locale = 'en' } = Astro.props as { locale?: LandingLocale };
 const t = landingCopy[locale];
 const guide = guidePath(import.meta.env.BASE_URL.replace(/\/$/, '') + '/', locale);
-const englishDocs = locale === 'en' ? '' : ` (${t.englishDocs})`;
+
 const base = import.meta.env.BASE_URL.replace(/\/$/, '') + '/';
-const docs = `${base}docs/`;
+const docs = docsHome(base,locale);
+const reference = (slug: string) => docPath(base,slug,locale) ?? guide;
 const commands = `pnpm add boundra zod
 pnpm exec boundra init --name my-app
 pnpm exec boundra create-domain order
@@ -32,13 +35,17 @@ export const getOrderQuery = defineQuery({
   result: z.object({ orderId: z.string(), status: z.string() }),
 });`;
 const sections = [
-  [t.docStart, t.docStartDesc, guide],
-  [t.docRules, t.docRulesDesc, docs + 'boundary-rules/'],
-  [t.docContracts, t.docContractsDesc, docs + 'contract-schema-spec/'],
-  [t.docFramework, t.docFrameworkDesc, docs + 'frameworks/'],
-  [t.docConfig, t.docConfigDesc, docs + 'config-spec/'],
-  [t.docCI, t.docCIDesc, docs + 'ci-integration/'],
-];
+  [t.docStart, t.docStartDesc, 'user-guide'],
+  [docCopy[locale].example, docCopy[locale].exampleIntro, 'example'],
+  [t.docRules, t.docRulesDesc, 'boundary-rules'],
+  [t.docContracts, t.docContractsDesc, 'contract-schema-spec'],
+  [t.docFramework, t.docFrameworkDesc, 'frameworks'],
+  [t.docConfig, t.docConfigDesc, 'config-spec'],
+  [t.docCI, t.docCIDesc, 'ci-integration'],
+].flatMap(([title, description, slug]) => {
+  const href = docPath(base,slug,locale);
+  return href ? [[title, description, href]] : [];
+});
 const scenes = [
   { rule: 'BR-001', title: t.rule1Title, description: t.rule1Desc, source: 'order', sourceLayer: 'client', target: 'order', targetLayer: 'server/internal', path: 'domains/order/client/use-order.ts', symbol: 'orderService', imported: '@domains/order/server/internal', dependency: '[]', allowed: false },
   { rule: 'BR-004', title: t.rule4Title, description: t.rule4Desc, source: 'billing', sourceLayer: 'server', target: 'order', targetLayer: 'server/internal', path: 'domains/billing/server/invoice.ts', symbol: 'orderService', imported: '@domains/order/server/internal', dependency: '["order"]', allowed: false },
@@ -53,7 +60,7 @@ const scenes = [
       <p class="version">{t.eyebrow}</p>
       <h1>{t.headline} <span>{t.accent}</span></h1>
       <p class="lead">{t.lead}</p>
-      <div class="actions"><a class="button primary" href={guide}>{t.start} <span aria-hidden="true">→</span></a><a class="button secondary" href={docs}>{t.docs}{englishDocs}</a></div>
+      <div class="actions"><a class="button primary" href={guide}>{t.start} <span aria-hidden="true">→</span></a><a class="button secondary" href={docs}>{t.docs}</a></div>
       <p class="requirements">{t.requirements}</p>
     </div>
     <div class="boundary-stage" data-boundary-stage data-pause={t.pause} data-resume={t.resume}>
@@ -84,24 +91,24 @@ const scenes = [
   <section class="shell content-section" id="quickstart">
     <div class="section-heading"><h2>{t.quickTitle}</h2><p>{t.quickDesc}</p></div>
     <div class="walkthrough">
-      <div><h3>{t.install}</h3><p>{t.installDesc}</p><div class="code-panel"><div class="code-caption">{t.terminal}</div><pre><code>{commands}</code></pre></div><a class="text-link" href={`${docs}cli-install/`}>{t.installLink}{englishDocs} <span aria-hidden="true">→</span></a></div>
-      <div><h3>{t.structure}</h3><p>{t.structureDesc}</p><div class="file-tree"><pre><code>{tree}</code></pre></div><a class="text-link" href={`${docs}domain-manifest-spec/`}>{t.manifest}{englishDocs} <span aria-hidden="true">→</span></a></div>
+      <div><h3>{t.install}</h3><p>{t.installDesc}</p><div class="code-panel"><div class="code-caption">{t.terminal}</div><pre><code>{commands}</code></pre></div><a class="text-link" href={reference("cli-install")}>{t.installLink} <span aria-hidden="true">→</span></a></div>
+      <div><h3>{t.structure}</h3><p>{t.structureDesc}</p><div class="file-tree"><pre><code>{tree}</code></pre></div><a class="text-link" href={reference("domain-manifest-spec")}>{t.manifest} <span aria-hidden="true">→</span></a></div>
     </div>
   </section>
   <section class="shell content-section split-section">
-    <div><h2>{t.contractTitle}</h2><p>{t.contractDesc}</p><p>{t.contractDesc2}</p><a class="text-link" href={`${docs}user-guide/#4-implement-a-real-contract`}>{t.contractLink}{englishDocs} <span aria-hidden="true">→</span></a></div>
+    <div><h2>{t.contractTitle}</h2><p>{t.contractDesc}</p><p>{t.contractDesc2}</p><a class="text-link" href={locale === "en" ? guide + "#4-implement-a-real-contract" : guide}>{t.contractLink} <span aria-hidden="true">→</span></a></div>
     <div class="code-panel"><div class="code-caption">domains/order/shared/contracts/get-order.ts</div><pre><code>{contract}</code></pre></div>
   </section>
   <section class="shell content-section split-section" id="ci">
-    <div><h2>{t.ciTitle}</h2><p>{t.ciDesc}</p><a class="text-link" href={`${docs}ci-integration/`}>{t.ciLink}{englishDocs} <span aria-hidden="true">→</span></a></div>
+    <div><h2>{t.ciTitle}</h2><p>{t.ciDesc}</p><a class="text-link" href={reference("ci-integration")}>{t.ciLink} <span aria-hidden="true">→</span></a></div>
     <div class="code-panel"><div class="code-caption">{t.terminal}</div><pre><code>pnpm exec boundra check-boundaries --format json</code></pre></div>
   </section>
   <section class="shell content-section" id="documentation">
-    <div class="section-heading"><h2>{t.docsTitle}</h2><p>{t.docsDesc}{englishDocs}</p></div>
-    <div class="doc-list">{sections.map(([title, description, href]) => <a href={href}><div><h3>{title}</h3><p>{description}{href !== guide && englishDocs}</p></div><span aria-hidden="true">→</span></a>)}</div>
-    <a class="text-link" href={docs}>{t.docsAll}{englishDocs} <span aria-hidden="true">→</span></a>
+    <div class="section-heading"><h2>{t.docsTitle}</h2><p>{t.docsDesc}</p></div>
+    <div class="doc-list">{sections.map(([title, description, href]) => <a href={href}><div><h3>{title}</h3><p>{description}</p></div><span aria-hidden="true">→</span></a>)}</div>
+    <a class="text-link" href={docs}>{t.docsAll} <span aria-hidden="true">→</span></a>
   </section>
-  <section class="shell content-section fit-section"><h2>{t.fitTitle}</h2><p>{t.fitDesc}</p><a class="text-link" href={`${docs}product-positioning/`}>{t.fitLink}{englishDocs} <span aria-hidden="true">→</span></a></section>
+  <section class="shell content-section fit-section"><h2>{t.fitTitle}</h2><p>{t.fitDesc}</p><a class="text-link" href={reference("product-positioning")}>{t.fitLink} <span aria-hidden="true">→</span></a></section>
   </div>
 </Layout>
 
