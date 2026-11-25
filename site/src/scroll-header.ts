@@ -1,3 +1,5 @@
+import { observeScrollHeader } from '@oddmash/ui/scroll-header';
+
 const header = document.querySelector<HTMLElement>('.site-header');
 if (header) {
   const root = document.documentElement;
@@ -15,71 +17,48 @@ if (header) {
       if (revision === themeRevision) delete header.dataset.themeSwitching;
     }));
   };
-  const position = () => Math.max(0, window.scrollY);
-  const updateLayout = () => {
-    root.style.setProperty('--site-header-height', `${header.getBoundingClientRect().height}px`);
-    updateTheme();
-  };
-  const show = (visible: boolean) => {
-    header.dataset.scrollHidden = String(!visible);
-    root.dataset.headerVisible = String(visible);
-  };
-
-  let previous = position();
-  let distance = 0;
-  let direction = 0;
+  let stopScroll: (() => void) | undefined;
+  let observedHeight = -1;
   let queued = false;
-  const hasActiveMenu = () => header.contains(document.activeElement) ||
-    header.querySelector('details[open], [aria-expanded="true"]') !== null;
 
-  const update = () => {
-    queued = false;
-    const current = position();
-    const delta = current - previous;
-    previous = current;
+  const syncVisible = () => {
+    const hidden = header.dataset.omScrollHidden === 'true';
+    header.dataset.scrollHidden = String(hidden);
+    root.dataset.headerVisible = String(!hidden);
+  };
+  const state = new MutationObserver(syncVisible);
+  state.observe(header, { attributes: true, attributeFilter: ['data-om-scroll-hidden'] });
+  const updateLayout = () => {
+    const height = header.offsetHeight;
+    root.style.setProperty('--site-header-height', `${header.getBoundingClientRect().height}px`);
+    if (height !== observedHeight) {
+      stopScroll?.();
+      observedHeight = height;
+      stopScroll = observeScrollHeader(header, { hideThreshold: 16, revealThreshold: 8, topOffset: height });
+      syncVisible();
+    }
     updateTheme();
-    if (current <= header.offsetHeight || hasActiveMenu()) {
-      show(true);
-      direction = 0;
-      distance = 0;
-      return;
-    }
-    if (!delta) return;
-    const nextDirection = Math.sign(delta);
-    if (nextDirection !== direction) {
-      direction = nextDirection;
-      distance = 0;
-    }
-    distance += Math.abs(delta);
-    if (direction < 0 && distance >= 8) show(true);
-    if (direction > 0 && distance >= 16) show(false);
   };
 
   updateLayout();
-  show(true);
-  if ('ResizeObserver' in window) {
-    const resize = new ResizeObserver(updateLayout);
-    resize.observe(header);
-    if (hero) resize.observe(hero);
-  }
+  const resize = 'ResizeObserver' in window ? new ResizeObserver(updateLayout) : undefined;
+  resize?.observe(header);
+  if (hero) resize?.observe(hero);
   window.addEventListener('resize', updateLayout, { passive: true });
   window.addEventListener('scroll', () => {
     if (!queued) {
       queued = true;
-      window.requestAnimationFrame(update);
+      window.requestAnimationFrame(() => {
+        queued = false;
+        updateTheme();
+      });
     }
   }, { passive: true });
-  header.addEventListener('focusin', () => {
-    updateTheme();
-    show(true);
-    distance = 0;
-    direction = 0;
-  });
-  window.addEventListener('pageshow', () => {
-    updateLayout();
-    previous = position();
-    direction = 0;
-    distance = 0;
-    show(true);
+  window.addEventListener('pageshow', updateLayout);
+  window.addEventListener('pagehide', event => {
+    if (event.persisted) return;
+    stopScroll?.();
+    resize?.disconnect();
+    state.disconnect();
   });
 }
