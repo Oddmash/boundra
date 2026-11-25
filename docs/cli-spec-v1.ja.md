@@ -80,6 +80,10 @@ import を分析し、境界ルール違反を検出します。
 
 `boundra graph-domains --format html --output graph.html` で検索可能なオフライン依存関係ビューを生成します。ブラウザーで開くと宣言された依存関係を確認でき、ネットワークやサーバーは不要です。
 
+### `completions <bash|zsh|fish>`
+
+CLI ヘルプから生成した補完スクリプトを出力します。通常の補完設定で読み込めます。起動ファイルは自動変更しません。
+
 ### 1.4 `generate route <domain>/<name>`
 ### 1.5 `generate query <domain>/<name>`
 ### 1.6 `generate mutation <domain>/<name>`
