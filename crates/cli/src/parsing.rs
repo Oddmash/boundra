@@ -2,6 +2,7 @@ use std::path::PathBuf;
 
 use crate::commands::add_dependency::AddDependencyOptions;
 use crate::commands::baseline::{BaselineAction, BaselineOptions};
+use crate::commands::changed::ChangedOptions;
 use crate::commands::check_boundaries::CheckBoundariesOptions;
 use crate::commands::create_domain::CreateDomainOptions;
 use crate::commands::generate::{GenerateKind, GenerateOptions};
@@ -15,6 +16,7 @@ use crate::util::is_kebab_case;
 pub(crate) enum Command {
     AddDependency(AddDependencyOptions),
     Baseline(BaselineOptions),
+    Changed(ChangedOptions),
     CheckBoundaries(CheckBoundariesOptions),
     CreateDomain(CreateDomainOptions),
     GraphDomains(GraphDomainsOptions),
@@ -54,10 +56,51 @@ pub(crate) fn parse_command(args: &[String]) -> Result<Command, String> {
         "init" => Ok(Command::Init(parse_init_options(&args[1..])?)),
         "baseline" => Ok(Command::Baseline(parse_baseline_options(&args[1..])?)),
         "migrate" => Ok(Command::Migrate(parse_migrate_options(&args[1..])?)),
+        "check-changed" => Ok(Command::Changed(parse_changed_options(&args[1..])?)),
         "help" | "--help" | "-h" => Ok(Command::Help),
         "--version" | "-V" => Ok(Command::Version),
         _ => Err(format!("unknown command: {command}")),
     }
+}
+
+fn parse_changed_options(args: &[String]) -> Result<ChangedOptions, String> {
+    let mut root = PathBuf::from(".");
+    let mut base = None;
+    let mut format = OutputFormat::Text;
+    let mut index = 0;
+    while index < args.len() {
+        let argument = &args[index];
+        let (key, value) = match argument.split_once('=') {
+            Some(pair) => pair,
+            None => {
+                if !matches!(argument.as_str(), "--root" | "--base" | "--format") {
+                    return Err(format!("unknown option: {argument}"));
+                }
+                index += 1;
+                (
+                    argument.as_str(),
+                    args.get(index)
+                        .map(String::as_str)
+                        .ok_or_else(|| format!("missing value for {argument}"))?,
+                )
+            }
+        };
+        if value.is_empty() || value.starts_with('-') {
+            return Err(format!("invalid value for {key}"));
+        }
+        match key {
+            "--root" => root = PathBuf::from(value),
+            "--base" => base = Some(value.to_string()),
+            "--format" => format = parse_output_format(value)?,
+            _ => return Err(format!("unknown option: {key}")),
+        }
+        index += 1;
+    }
+    Ok(ChangedOptions {
+        root,
+        base: base.ok_or("check-changed requires --base <ref>")?,
+        format,
+    })
 }
 
 fn parse_migrate_options(args: &[String]) -> Result<MigrateOptions, String> {
