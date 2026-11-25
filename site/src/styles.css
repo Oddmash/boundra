@@ -26,6 +26,12 @@ body {
   margin: 0;
   line-height: 1.65;
 }
+body.landing-page {
+  background: #111110;
+}
+.landing-page main {
+  background: #fff;
+}
 a {
   color: var(--brand);
   text-underline-offset: 4px;
@@ -83,26 +89,26 @@ button:focus-visible {
 }
 .platform-links {
   --om-platform-link-size: 42px;
-  --om-platform-link-muted: var(--header-ink, var(--ink));
-  --om-platform-link-color: var(--header-ink, var(--ink));
-  --om-semantic-color-bg: var(--header-menu-surface, var(--surface));
-  --om-semantic-color-border-subtle: var(--header-menu-line, var(--line));
+  --om-platform-link-muted: var(--ink);
+  --om-platform-link-color: var(--ink);
+  --om-semantic-color-bg: #fff;
+  --om-semantic-color-border-subtle: var(--line);
   gap: 3px;
 }
 .platform-link[data-platform='github'] svg {
   inline-size: 22px;
   block-size: 22px;
 }
-.nav nav a.om-platform-link {
+.footer nav a.om-platform-link {
   display: inline-grid;
   min-height: var(--om-platform-link-size);
   color: var(--om-platform-link-muted);
 }
-.nav nav a.om-platform-link:focus-visible {
-  outline-color: var(--header-focus, var(--brand));
+.footer nav a.om-platform-link:focus-visible {
+  outline-color: var(--brand);
   outline-offset: 3px;
 }
-.nav nav a.om-platform-link:hover {
+.footer nav a.om-platform-link:hover {
   color: var(--om-platform-link-color, var(--om-semantic-color-text));
 }
 .nav nav a,
@@ -325,8 +331,8 @@ button:focus-visible {
 }
 .docs-sidebar {
   position: sticky;
-  top: 24px;
-  max-height: calc(100vh - 48px);
+  top: calc(var(--site-header-height, 69px) + 40px);
+  max-height: calc(100vh - var(--site-header-height, 69px) - 64px);
   overflow: auto;
   padding-right: 14px;
   border-right: 1px solid var(--line);
@@ -438,10 +444,10 @@ html[lang="ko"] .doc-content [data-juliya="applied"] {
 }
 .docs-toc {
   position: sticky;
-  top: 24px;
+  top: calc(var(--site-header-height, 69px) + 40px);
   padding-left: 14px;
   border-left: 1px solid var(--line);
-  max-height: calc(100vh - 48px);
+  max-height: calc(100vh - var(--site-header-height, 69px) - 64px);
   overflow: auto;
 }
 .reference-list {

@@ -38,9 +38,8 @@ for (const width of [1440, 390]) {
 }
 
 const themeBoundary = page => page.evaluate(() => {
-  const header = document.querySelector(".site-header");
   const hero = document.querySelector(".hero-band");
-  return hero.getBoundingClientRect().bottom + scrollY - Math.min(header.offsetHeight, innerHeight) / 2;
+  return hero.getBoundingClientRect().bottom + scrollY;
 });
 
 const assertPalette = async (header, theme) => {
@@ -51,20 +50,7 @@ const assertPalette = async (header, theme) => {
   await expect(header.locator(".brand")).toHaveCSS("color", dark ? "rgb(244, 242, 237)" : "rgb(23, 23, 23)");
   await expect(header.locator(".docs-header-link")).toHaveCSS("color", dark ? "rgb(244, 242, 237)" : "rgb(23, 23, 23)");
   await expect(header.locator("[data-language-picker] [role=combobox]")).toHaveCSS("color", dark ? "rgb(245, 245, 245)" : "rgb(23, 23, 23)");
-  const iconContrast = await header.evaluate(element => {
-    const rgb = color => color.match(/[0-9.]+/g).slice(0, 3).map(Number);
-    const luminance = color => rgb(color).map(value => {
-      const channel = value / 255;
-      return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
-    }).reduce((total, channel, index) => total + channel * [0.2126, 0.7152, 0.0722][index], 0);
-    const background = luminance(getComputedStyle(element).backgroundColor);
-    return [...element.querySelectorAll("a[data-platform]")].map(link => {
-      const foreground = luminance(getComputedStyle(link).color);
-      return (Math.max(background, foreground) + 0.05) / (Math.min(background, foreground) + 0.05);
-    });
-  });
-  expect(iconContrast).toHaveLength(2);
-  expect(iconContrast.every(value => value >= 3)).toBe(true);
+  await expect(header.locator("a[data-platform]")).toHaveCount(0);
 };
 
 for (const [width, route] of [[1440, "./"], [390, "ko/"]]) {
@@ -201,4 +187,57 @@ test("reduced motion keeps the shared scroll header visible while updating its p
   await expect(header).toHaveAttribute("data-scroll-hidden", "false");
   await expect(header).toHaveCSS("transition-duration", "0s");
   await expect.poll(() => header.evaluate(element => element.getBoundingClientRect().top)).toBe(0);
+});
+
+test("landing retains a dark backing while the header returns to the hero", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 800 });
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.goto("./");
+  const header = page.locator(".site-header");
+  await expect(page.locator("body")).toHaveCSS("background-color", "rgb(17, 17, 16)");
+  await expect(page.locator("main")).toHaveCSS("background-color", "rgb(255, 255, 255)");
+  const boundary = await themeBoundary(page);
+  await page.evaluate(y => window.scrollTo(0, y + 30), boundary);
+  await expect(header).toHaveAttribute("data-scroll-hidden", "true");
+  await assertPalette(header, "light");
+  await page.evaluate(y => window.scrollTo(0, y - 10), boundary);
+  await expect(header).toHaveAttribute("data-scroll-hidden", "false");
+  await assertPalette(header, "dark");
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect(header).toHaveAttribute("data-scroll-hidden", "false");
+  await expect.poll(() => header.evaluate(element => element.getBoundingClientRect().top)).toBe(0);
+  await assertPalette(header, "dark");
+});
+
+test("desktop documentation sidebars stay stable during heading navigation and header reveal", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.goto("docs/user-guide/");
+  const header = page.locator(".site-header");
+  const sidebar = page.locator(".docs-sidebar");
+  const toc = page.locator(".docs-toc");
+  const top = await sidebar.evaluate(element => element.getBoundingClientRect().top);
+  const tocTop = await toc.evaluate(element => element.getBoundingClientRect().top);
+  await toc.getByRole("link", { name: "7. CI and review" }).click();
+  await expect(page).toHaveURL(/#7-ci-and-review$/);
+  await expect(header).toHaveAttribute("data-scroll-hidden", "true");
+  await expect.poll(() => sidebar.evaluate(element => element.getBoundingClientRect().top)).toBeCloseTo(top, 0);
+  await expect.poll(() => toc.evaluate(element => element.getBoundingClientRect().top)).toBeCloseTo(tocTop, 0);
+  await page.evaluate(() => window.scrollBy(0, -20));
+  await expect(header).toHaveAttribute("data-scroll-hidden", "false");
+  await expect.poll(() => sidebar.evaluate(element => element.getBoundingClientRect().top)).toBeCloseTo(top, 0);
+  await expect.poll(() => toc.evaluate(element => element.getBoundingClientRect().top)).toBeCloseTo(tocTop, 0);
+});
+
+test("desktop documentation navigation retains the sidebar list position", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 540 });
+  await page.goto("docs/user-guide/");
+  const sidebar = page.locator(".docs-sidebar");
+  const destination = sidebar.getByRole("link", { name: "Framework compatibility" }).first();
+  await destination.scrollIntoViewIfNeeded();
+  const before = await sidebar.evaluate(element => element.scrollTop);
+  expect(before).toBeGreaterThan(0);
+  await destination.click();
+  await expect(page).toHaveURL(/\/docs\/framework-conformance\/$/);
+  await expect.poll(() => sidebar.evaluate(element => element.scrollTop)).toBeCloseTo(before, 0);
 });

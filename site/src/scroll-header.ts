@@ -6,8 +6,7 @@ if (header) {
   const hero = document.querySelector<HTMLElement>('.landing-page .hero-band');
   let themeRevision = 0;
   const updateTheme = () => {
-    const midpoint = Math.min(header.offsetHeight, window.innerHeight) / 2;
-    const theme = hero && hero.getBoundingClientRect().bottom > midpoint ? 'dark' : 'light';
+    const theme = hero && hero.getBoundingClientRect().bottom > 0 ? 'dark' : 'light';
     if (header.dataset.headerTheme === theme) return;
     const revision = ++themeRevision;
     header.dataset.themeSwitching = 'true';

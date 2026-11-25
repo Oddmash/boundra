@@ -52,7 +52,9 @@ for (const width of [320, 1440]) {
         await expect(page.locator(".boundary-stage")).toHaveAttribute("data-phase", "result");
         await expect(page.locator("html")).toHaveAttribute("lang", lang);
         await expect(page.locator("html")).toHaveCSS("background-color", "rgb(17, 17, 16)");
-        await expect(page.locator("body")).toHaveCSS("background-color", "rgb(255, 255, 255)");
+        await expect(page.locator("body")).toHaveCSS("background-color", "rgb(17, 17, 16)");
+        await expect(page.locator("main")).toHaveCSS("background-color", "rgb(255, 255, 255)");
+        await expect(page.locator(".hero-band")).toHaveCSS("background-color", "rgb(17, 17, 16)");
         await page.evaluate(() => document.fonts.ready);
         before = await geometry(page, "[data-language-fallback]");
       } finally {
