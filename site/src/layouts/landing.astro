@@ -149,7 +149,7 @@ const scenes = [
   </section>
   <section class="shell content-section" id="documentation">
     <div class="section-heading"><h2>{t.docsTitle}</h2><p>{t.docsDesc}</p></div>
-    <div class="doc-list">{sections.map(([title, description, href]) => <a href={href}><div><h3>{title}</h3><p>{description}</p></div><span aria-hidden="true">→</span></a>)}</div>
+    <div class="doc-list">{sections.map(([title, description, href]) => <a class="om-link-card" href={href}><div><h3>{title}</h3><p>{description}</p></div><span aria-hidden="true">→</span></a>)}</div>
     <a class="text-link" href={docs}>{t.docsAll} <span aria-hidden="true">→</span></a>
   </section>
   <section class="shell content-section fit-section"><h2>{t.fitTitle}</h2><p>{t.fitDesc}</p><a class="text-link" href={reference("product-positioning")}>{t.fitLink} <span aria-hidden="true">→</span></a></section>
