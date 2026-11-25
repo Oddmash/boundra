@@ -29,7 +29,7 @@ export const groups = [
     items: [
       ["contract-schema-spec", "Contracts"],
       ["http-transport", "HTTP transport"],
-      ["frameworks", "Next.js and Vite"],
+      ["framework-surface", "Framework surface"],
       ["vite-integration", "Vite integration"],
       ["error-view", "Development error view"],
     ],
