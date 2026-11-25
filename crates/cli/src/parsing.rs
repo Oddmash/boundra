@@ -23,6 +23,7 @@ pub(crate) enum Command {
     Generate(GenerateOptions),
     Init(InitOptions),
     Migrate(MigrateOptions),
+    Completions(crate::commands::completions::Shell),
     Help,
     Version,
 }
@@ -57,6 +58,10 @@ pub(crate) fn parse_command(args: &[String]) -> Result<Command, String> {
         "baseline" => Ok(Command::Baseline(parse_baseline_options(&args[1..])?)),
         "migrate" => Ok(Command::Migrate(parse_migrate_options(&args[1..])?)),
         "check-changed" => Ok(Command::Changed(parse_changed_options(&args[1..])?)),
+        "completions" => match &args[1..] {
+            [shell] => crate::commands::completions::Shell::parse(shell).map(Command::Completions),
+            _ => Err("completions requires exactly one shell: bash, zsh or fish".into()),
+        },
         "help" | "--help" | "-h" => Ok(Command::Help),
         "--version" | "-V" => Ok(Command::Version),
         _ => Err(format!("unknown command: {command}")),
