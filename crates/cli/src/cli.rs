@@ -3,6 +3,11 @@ use crate::output::{print_error, print_error_json, CliDiagnostic};
 use crate::parsing::{parse_command, Command};
 
 pub fn run(args: &[String]) -> i32 {
+    if matches!(args, [command, flag] if command == "explain" && matches!(flag.as_str(), "--help" | "-h"))
+    {
+        println!("Usage: boundra explain <rule> [--format text|json]");
+        return 0;
+    }
     let command = match parse_command(args) {
         Ok(command) => command,
         Err(err) => {
@@ -26,6 +31,7 @@ pub fn run(args: &[String]) -> i32 {
         Command::AddDependency(options) => commands::add_dependency::run(&options),
         Command::CheckBoundaries(options) => commands::check_boundaries::run(&options),
         Command::CreateDomain(options) => commands::create_domain::run(&options),
+        Command::Explain(options) => commands::explain::run(&options),
         Command::GraphDomains(options) => commands::graph_domains::run(&options),
         Command::Generate(options) => commands::generate::run(&options),
         Command::Init(options) => commands::init::run(&options),
@@ -54,6 +60,7 @@ fn print_help() {
     println!("  boundra check-boundaries [--root <path>] [--format text|json] [--min-domains <n>]");
     println!("  boundra create-domain <name> [--path <parent-path>] [--root <path>]");
     println!("  boundra init [--root <path>] [--name <kebab-case>]");
+    println!("  boundra explain <rule> [--format text|json]");
     println!(
         "  boundra graph-domains [--root <path>] [--format mermaid|dot|json] [--output <path>]"
     );
