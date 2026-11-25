@@ -96,6 +96,11 @@ button:focus-visible {
 .nav nav a.om-platform-link {
   display: inline-grid;
   min-height: var(--om-platform-link-size);
+  color: var(--om-platform-link-muted);
+}
+.nav nav a.om-platform-link:focus-visible {
+  outline-color: var(--header-focus, var(--brand));
+  outline-offset: 3px;
 }
 .nav nav a.om-platform-link:hover {
   color: var(--om-platform-link-color, var(--om-semantic-color-text));
