@@ -4,6 +4,7 @@ pub mod baseline;
 pub mod changed;
 #[path = "check-boundaries.rs"]
 pub mod check_boundaries;
+pub mod completions;
 #[path = "create-domain.rs"]
 pub mod create_domain;
 pub mod generate;
