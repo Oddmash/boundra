@@ -51,8 +51,18 @@ test("the shared heading observer marks the visible documentation section", asyn
   const last = links.last();
   await expect(last).toHaveAttribute("href", /^#/);
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-  await expect(last).toHaveAttribute("aria-current", "location");
-  await expect(page.locator(".docs-toc [aria-current='location']")).toHaveCount(1);
+  const active = page.locator(".docs-toc [aria-current='location']");
+  await expect(active).toHaveCount(1);
+  const expected = await links.evaluateAll(items => items.map(link => {
+    const heading = document.getElementById(link.dataset.headingId);
+    return {
+      id: link.dataset.headingId,
+      top: heading.getBoundingClientRect().top,
+      readingLine: Math.max(96, Number.parseFloat(getComputedStyle(heading).scrollMarginTop) || 0) + 24,
+    };
+  }).filter(heading => heading.top <= heading.readingLine).at(-1)?.id);
+  expect(expected).toBeTruthy();
+  await expect(active).toHaveAttribute("data-heading-id", expected);
   await page.evaluate(() => window.scrollTo(0, 0));
   await expect(last).not.toHaveAttribute("aria-current", "location");
 });
