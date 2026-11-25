@@ -15,7 +15,7 @@ const snapshot = (page) =>
     ids: [...element.querySelectorAll("[id]")].map((node) => node.id),
   }));
 
-test("Kowrap enhances Korean prose without rewriting documentation", async ({
+test("Juliya enhances Korean prose without rewriting documentation", async ({
   browser,
   page,
 }, testInfo) => {
@@ -29,17 +29,17 @@ test("Kowrap enhances Korean prose without rewriting documentation", async ({
   await page.setViewportSize({ width: 320, height: 900 });
   await page.goto("./docs/user-guide.ko/");
   await expect(page.locator(".doc-content h1")).toHaveAttribute(
-    "data-kowrap",
+    "data-juliya",
     "applied",
   );
   await expect(
-    page.locator('.doc-content [data-kowrap="fallback"]'),
+    page.locator('.doc-content [data-juliya="fallback"]'),
   ).toHaveCount(0);
   await expect
-    .poll(() => page.locator('.doc-content [data-kowrap="applied"] br').count())
+    .poll(() => page.locator('.doc-content [data-juliya="applied"] br').count())
     .toBeGreaterThan(0);
   const countingHeading = page.locator('[id="2-도메인-두-개로-시작하기"]');
-  await expect(countingHeading).toHaveAttribute("data-kowrap", "applied");
+  await expect(countingHeading).toHaveAttribute("data-juliya", "applied");
   await expect.poll(() => countingHeading.innerText()).toContain("두 개로");
   expect(await snapshot(page)).toEqual(original);
   expect(
@@ -67,6 +67,6 @@ test("Kowrap enhances Korean prose without rewriting documentation", async ({
 test("other languages retain native wrapping", async ({ page }) => {
   for (const path of ["", ".ja", ".zh-cn"]) {
     await page.goto(`./docs/user-guide${path}/`);
-    await expect(page.locator("[data-kowrap]")).toHaveCount(0);
+    await expect(page.locator("[data-juliya]")).toHaveCount(0);
   }
 });
