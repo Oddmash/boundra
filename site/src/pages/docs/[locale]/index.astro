@@ -1,0 +1,9 @@
+---
+import Index from '../../../layouts/docs-index.astro';
+import { locales } from '../../../landing-copy';
+export function getStaticPaths() {
+  return locales.filter(locale => locale !== 'en').map(locale => ({params:{locale},props:{locale}}));
+}
+const { locale } = Astro.props;
+---
+<Index locale={locale} />
