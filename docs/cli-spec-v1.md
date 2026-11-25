@@ -165,6 +165,22 @@ invalid project returns exit code 2 and a structured error for JSON requests.
 An isolated domain returns a successful empty report. This is a potential
 change-impact report, not proof of runtime usage or a replacement for checks.
 
+### 1.10 `doctor`
+
+Check workspace readiness without modifying files. Without `--root`, discover
+the nearest `boundra.config.json` in the current directory or its ancestors.
+An explicit `--root` is checked exactly.
+
+- `--root <path>` (optional)
+- `--format text|json` (default: `text`)
+
+Exit 0 indicates a valid project with analyzed domain sources, exit 1 indicates
+empty scan coverage, exit 2 indicates missing or invalid configuration, and
+exit 3 indicates scan errors. Successful and empty JSON reports contain
+`status`, `root`, `domain_count`, `scanned_file_count`, `analyzed_domain_count`
+and `meta.command`. Failures use structured CLI diagnostics. Doctor does not
+evaluate boundary violations; run `check-boundaries` separately.
+
 ## 2. CLI UX Principles
 
 - Boundary diagnostics include rule code, file, line, import, message, and suggestion.
