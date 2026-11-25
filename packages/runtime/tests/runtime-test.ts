@@ -42,11 +42,13 @@ assert(response.id === "item-001", "client should return a parsed result");
 
 let receivedHttpBody = "";
 let receivedHttpSignal: AbortSignal | null | undefined;
+let receivedHttpHeaders = new Headers();
 const httpClient = createBoundraClient(createHttpTransport({
   baseUrl: "https://example.test/api/boundra/",
   fetch: async (_url, init) => {
     receivedHttpBody = String(init?.body);
     receivedHttpSignal = init?.signal;
+    receivedHttpHeaders = new Headers(init?.headers);
     const request = JSON.parse(receivedHttpBody) as { input: unknown };
     return new Response(JSON.stringify({ result: request.input }), {
       status: 200,
@@ -63,6 +65,28 @@ const httpResponse = await httpClient.query(
 assert(httpResponse.id === "item-http", "HTTP transport should unwrap result");
 assert(receivedHttpBody.includes('"kind":"query"'), "HTTP transport should send contract kind");
 assert(receivedHttpSignal === httpController.signal, "HTTP transport should receive the call signal");
+assert(
+  receivedHttpHeaders.get("content-type") === "application/json",
+  "HTTP transport should send JSON content type by default",
+);
+
+const customHeadersClient = createBoundraClient(createHttpTransport({
+  baseUrl: "https://example.test",
+  headers: {
+    "Content-Type": "application/vnd.boundra+json",
+    "X-Request-ID": "request-001",
+  },
+  fetch: async (_url, init) => {
+    const headers = new Headers(init?.headers);
+    assert(
+      headers.get("content-type") === "application/vnd.boundra+json",
+      "HTTP transport should override content type case-insensitively without duplicating it",
+    );
+    assert(headers.get("x-request-id") === "request-001", "custom HTTP headers should be preserved");
+    return new Response(JSON.stringify({ result: { id: "item-http" } }));
+  },
+}));
+await customHeadersClient.query(query, { id: "item-http" });
 
 const abortController = new AbortController();
 abortController.abort();
@@ -133,6 +157,44 @@ const truncatedHttpError = await expectRuntimeError("RUNTIME-003", () =>
 assert(truncatedHttpError.cause instanceof BoundraHttpError, "expected bounded HTTP error");
 assert(truncatedHttpError.cause.body === "fail", "text error body should respect byte limit");
 assert(truncatedHttpError.cause.bodyTruncated, "oversized error body should report truncation");
+
+let finishCancellation: (() => void) | undefined;
+let cancellationRequested = false;
+const cancellation = new Promise<void>((resolve) => {
+  finishCancellation = resolve;
+});
+const errorStream = new ReadableStream<Uint8Array>({
+  start(controller) {
+    controller.enqueue(new TextEncoder().encode("failure"));
+  },
+  cancel() {
+    cancellationRequested = true;
+    return cancellation;
+  },
+});
+let timeout: ReturnType<typeof setTimeout> | undefined;
+try {
+  const streamedError = await Promise.race([
+    expectRuntimeError("RUNTIME-003", () =>
+      createBoundraClient(createHttpTransport({
+        baseUrl: "https://example.test",
+        maxErrorBodyBytes: 4,
+        fetch: async () => new Response(errorStream, { status: 409 }),
+      })).query(query, { id: "item-http" }),
+    ),
+    new Promise<never>((_resolve, reject) => {
+      timeout = setTimeout(() => reject(new Error("bounded error body cancellation blocked the diagnostic")), 1000);
+    }),
+  ]);
+  assert(streamedError.cause instanceof BoundraHttpError, "expected bounded streamed HTTP error");
+  assert(streamedError.cause.body === "fail", "streamed error should expose the captured text");
+  assert(streamedError.cause.bodyTruncated, "streamed error should report truncation");
+  assert(cancellationRequested, "truncated stream should be cancelled");
+  assert(!errorStream.locked, "error body reader should release its lock");
+} finally {
+  clearTimeout(timeout);
+  finishCancellation?.();
+}
 
 const inputError = await expectRuntimeError("RUNTIME-001", () =>
   client.query(query, { id: "" }),
