@@ -91,6 +91,26 @@ try {
   await delay(100);
   assert(Number(publishCount) === 4, "disposing should prevent pending scans from publishing");
 
+  await writeFile(join(root, "boundra.config.json"), JSON.stringify({ paths: { apps: "apps", domains: "domains" } }));
+  const reopenedWatcher: { listener?: (event: string, file: string) => void } = {};
+  let reopenedCount = 0;
+  plugin.configureServer({
+    ws: { send() { reopenedCount += 1; } },
+    watcher: {
+      on(_event, callback) { reopenedWatcher.listener = callback; },
+      off(_event, callback) { if (reopenedWatcher.listener === callback) delete reopenedWatcher.listener; },
+    },
+  });
+  await waitFor(() => reopenedCount === 1);
+  for (const event of ["add", "change", "unlink"]) {
+    const before = reopenedCount;
+    reopenedWatcher.listener?.(event, join(root, "tsconfig.jsonc"));
+    await waitFor(() => reopenedCount === before + 1);
+  }
+  assert(Number(publishCount) === 4, "reconfigured scans must not publish to the prior server");
+  plugin.closeBundle();
+  assert(reopenedWatcher.listener === undefined, "reconfigured watcher must be removed on close");
+
   const missingCli = runBoundaryCheck(root, join(root, "missing-boundra"));
   assert(missingCli.diagnostics[0]?.rule === "PROJECT-002",
     "a missing CLI must report a diagnostic instead of clearing the overlay");
