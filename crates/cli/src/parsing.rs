@@ -8,7 +8,7 @@ use crate::commands::generate::{GenerateKind, GenerateOptions};
 use crate::commands::graph_domains::{GraphDomainsOptions, GraphFormat};
 use crate::commands::impact::ImpactOptions;
 use crate::commands::init::InitOptions;
-use crate::output::OutputFormat;
+use crate::output::{BoundaryFormat, OutputFormat};
 use crate::util::is_kebab_case;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -209,7 +209,7 @@ fn parse_add_dependency_options(args: &[String]) -> Result<AddDependencyOptions,
 
 fn parse_check_boundaries_options(args: &[String]) -> Result<CheckBoundariesOptions, String> {
     let mut options = CheckBoundariesOptions {
-        format: OutputFormat::Text,
+        format: BoundaryFormat::Text,
         root: PathBuf::from("."),
         min_domains: None,
     };
@@ -237,13 +237,13 @@ fn parse_check_boundaries_options(args: &[String]) -> Result<CheckBoundariesOpti
             let Some(value) = args.get(index + 1) else {
                 return Err("missing value for --format".to_string());
             };
-            options.format = parse_output_format(value)?;
+            options.format = parse_boundary_format(value)?;
             index += 2;
             continue;
         }
 
         if let Some(value) = arg.strip_prefix("--format=") {
-            options.format = parse_output_format(value)?;
+            options.format = parse_boundary_format(value)?;
             index += 1;
             continue;
         }
@@ -441,6 +441,16 @@ fn parse_output_format(value: &str) -> Result<OutputFormat, String> {
     match value {
         "text" => Ok(OutputFormat::Text),
         "json" => Ok(OutputFormat::Json),
+        _ => Err(format!("invalid --format value: {value}")),
+    }
+}
+
+fn parse_boundary_format(value: &str) -> Result<BoundaryFormat, String> {
+    match value {
+        "text" => Ok(BoundaryFormat::Text),
+        "json" => Ok(BoundaryFormat::Json),
+        "github" => Ok(BoundaryFormat::Github),
+        "sarif" => Ok(BoundaryFormat::Sarif),
         _ => Err(format!("invalid --format value: {value}")),
     }
 }
