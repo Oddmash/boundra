@@ -63,6 +63,38 @@ assert(
   "boundary view should include later violations",
 );
 
+const emptyBoundarySummary = formatBoundraBoundarySummary({
+  source: "boundary",
+  diagnostics: [],
+});
+assert(
+  emptyBoundarySummary === "Boundra boundary diagnostics (0)",
+  "empty boundary summaries should contain only the zero-count heading",
+);
+
+const emptyRuntimeSummary = formatBoundraRuntimeSummary({
+  name: "BoundraRuntimeError",
+  code: "RUNTIME-003",
+  contract: "submit-order",
+  phase: "handler",
+  message: "order handler failed",
+  suggestion: "inspect the handler result",
+  issues: [],
+});
+assert(
+  emptyRuntimeSummary === [
+    "Boundra runtime diagnostics (1)",
+    "",
+    "1. [RUNTIME-003] Contract 'submit-order' rejected handler",
+    "contract: submit-order",
+    "phase: handler",
+    "path: value",
+    "message: order handler failed",
+    "suggestion: inspect the handler result",
+  ].join("\n"),
+  "runtime errors without issues should preserve the complete fallback diagnostic",
+);
+
 let serverError: unknown;
 try {
   createBoundraErrorView();
