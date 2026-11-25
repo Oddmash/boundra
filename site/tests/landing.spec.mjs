@@ -156,6 +156,10 @@ for (const width of [1440, 768, 390, 320]) {
     });
     await assertReflow(page);
     const next = page.getByRole("button", { name: "Next example" });
+    await expect(next).toHaveClass(/\bom-button\b/);
+    const target = await next.boundingBox();
+    expect(target.width).toBeGreaterThanOrEqual(44);
+    expect(target.height).toBeGreaterThanOrEqual(44);
     await expect(page.getByRole("button", { name: "Pause animation" })).toBeHidden();
     for (const rule of ["PASS", "BR-004", "PASS", "BR-006", "PASS"]) {
       await next.press("Enter");
@@ -192,6 +196,36 @@ for (const width of [1440, 768, 390, 320]) {
   });
 }
 
+test("shared stage controls preserve localized labels and static fallback", async ({ page, browser }) => {
+  const staticContext = await browser.newContext({ javaScriptEnabled: false });
+  try {
+    const staticPage = await staticContext.newPage();
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    for (const [path, pause, next] of [
+      ["./", "Pause animation", "Next example"],
+      ["ko/", "애니메이션 일시정지", "다음 예제"],
+      ["ja/", "アニメーションを一時停止", "次の例"],
+      ["zh-cn/", "暂停动画", "下一个示例"],
+    ]) {
+      await page.goto(path);
+      await expect(page.locator("[data-play]")).toHaveAttribute("aria-label", pause);
+      const advance = page.getByRole("button", { name: next });
+      await expect(advance).toHaveClass(/\bom-button\b/);
+      await advance.press("Enter");
+      await expect(page.locator("[data-active=true] .rule")).toHaveText("PASS");
+
+      await staticPage.goto(page.url());
+      await expect(staticPage.locator("[data-play]")).toHaveClass(/\bom-button\b/);
+      await expect(staticPage.locator("[data-next]")).toHaveClass(/\bom-button\b/);
+      await expect(staticPage.locator("[data-play]")).toBeHidden();
+      await expect(staticPage.locator("[data-next]")).toBeHidden();
+      await expect(staticPage.locator("[data-active=true] .rule")).toHaveText("BR-001");
+    }
+  } finally {
+    await staticContext.close();
+  }
+});
+
 test("the boundary scan routes the result in one synchronized sequence", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.emulateMedia({ reducedMotion: "no-preference" });
@@ -225,6 +259,7 @@ test("the boundary scan routes the result in one synchronized sequence", async (
   await page.goto("./");
   const stage = page.locator(".boundary-stage");
   await expect(stage).toHaveAttribute("data-running", "true");
+  await expect(page.getByRole("button", { name: "Pause animation" })).toHaveClass(/\bom-button\b/);
   const rule = page.locator("[data-active=true] .rule");
   await expect(rule).toHaveText("BR-001");
   await expect(page.getByRole("button", { name: "Next example" })).toBeHidden();
