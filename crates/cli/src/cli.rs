@@ -38,6 +38,7 @@ pub fn run(args: &[String]) -> i32 {
         Command::Generate(options) => commands::generate::run(&options),
         Command::Init(options) => commands::init::run(&options),
         Command::Impact(options) => commands::impact::run(&options),
+        Command::Doctor(options) => commands::doctor::run(&options),
         Command::Help => {
             print_help();
             0
@@ -67,6 +68,7 @@ fn print_help() {
         "impact",
         "graph-domains",
         "generate",
+        "doctor",
     ] {
         println!(
             "  boundra {}",
@@ -84,6 +86,7 @@ fn command_usage(command: &str) -> Option<&'static str> {
         "create-domain" => Some("create-domain <name> [--path <parent-path>] [--root <path>]"),
         "init" => Some("init [--root <path>] [--name <kebab-case>]"),
         "impact" => Some("impact <domain> [--root <path>] [--format text|json]"),
+        "doctor" => Some("doctor [--root <path>] [--format text|json]"),
         "graph-domains" => {
             Some("graph-domains [--root <path>] [--format mermaid|dot|json] [--output <path>]")
         }
