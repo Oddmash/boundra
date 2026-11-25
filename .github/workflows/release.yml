@@ -18,20 +18,27 @@ permissions:
   contents: read
 
 jobs:
+  verify-full:
+    uses: ./.github/workflows/boundra.yml
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+    with:
+      full_verify: true
+
   validate:
+    needs: verify-full
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@stable
       - uses: actions/setup-node@v6
         with:
           node-version: 24
-      - run: corepack enable
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa
       - run: pnpm install --frozen-lockfile
       - run: pnpm check-release-notes "${RELEASE_VERSION}"
       - run: pnpm check-release-version "${RELEASE_VERSION}"
-      - run: pnpm verify-example
-      - run: pnpm verify-clean-room
 
   build-cli:
     needs: validate
@@ -92,7 +99,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 24
-      - run: corepack enable
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa
       - run: pnpm install --frozen-lockfile
       - run: mkdir -p dist
       - run: pnpm --filter boundra pack --pack-destination "$GITHUB_WORKSPACE/dist"
@@ -115,7 +122,7 @@ jobs:
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
-      - run: corepack enable
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa
       - run: npm install --global npm@latest
       - run: pnpm install --frozen-lockfile
       - run: npm publish --access public
