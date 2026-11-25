@@ -70,3 +70,28 @@ test("other languages retain native wrapping", async ({ page }) => {
     await expect(page.locator("[data-juliya]")).toHaveCount(0);
   }
 });
+
+test("Korean documentation remains readable when the Juliya module is unavailable", async ({ browser, page }) => {
+  const plain = await browser.newPage({
+    javaScriptEnabled: false,
+    viewport: { width: 320, height: 900 },
+  });
+  await plain.goto("http://127.0.0.1:4173/boundra/docs/user-guide.ko/");
+  const original = await snapshot(plain);
+  await plain.close();
+  await page.setViewportSize({ width: 320, height: 900 });
+  const errors = [];
+  page.on("pageerror", error => errors.push(error.message));
+  const moduleFailed = page.waitForEvent("requestfailed", request =>
+    /\/_astro\/dom\.[^/]+\.js$/.test(new URL(request.url()).pathname),
+  );
+  await page.route("**/_astro/dom.*.js", route => route.abort());
+  await page.goto("./docs/user-guide.ko/");
+  await moduleFailed;
+  await expect(page.locator("html")).toHaveAttribute("data-juliya", "fallback");
+  await expect(page.locator(".doc-content h1")).toBeVisible();
+  await expect(page.locator(".doc-content [data-juliya]")).toHaveCount(0);
+  expect(await snapshot(page)).toEqual(original);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect(errors).toEqual([]);
+});
