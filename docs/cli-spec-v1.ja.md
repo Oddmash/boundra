@@ -61,7 +61,7 @@ import を分析し、境界ルール違反を検出します。
 
 オプション：
 - `--root <path>`（デフォルト：`.`）
-- `--format text|json`（デフォルト：`text`）
+- `--format text|json|github|sarif`（デフォルト：`text`）
 - `--min-domains <positive integer>`（任意、`--min-domains=<n>` も受け入れる）
 
 カバレッジの報告：
