@@ -41,6 +41,30 @@ fn definitions() -> Vec<(&'static str, Vec<&'static str>)> {
         .collect()
 }
 
+fn option_value(usage: &str, flag: &str) -> Option<String> {
+    let mut words = usage.split_whitespace();
+    while let Some(word) = words.next() {
+        if word.trim_matches(['[', ']']) == flag {
+            if word.ends_with(']') {
+                return None;
+            }
+            return words
+                .next()
+                .filter(|value| !value.starts_with("[--") && !value.starts_with("--"))
+                .map(|value| value.trim_matches(['[', ']']).to_string());
+        }
+    }
+    None
+}
+
+fn usage_for(name: &str) -> &str {
+    HELP_COMMANDS
+        .iter()
+        .find(|usage| usage.split_whitespace().next() == Some(name))
+        .copied()
+        .expect("known help entry")
+}
+
 fn render(shell: Shell) -> String {
     let definitions = definitions();
     let names = definitions
@@ -51,20 +75,51 @@ fn render(shell: Shell) -> String {
     let mut output = String::new();
     match shell {
         Shell::Bash => {
-            output.push_str(
-                "_boundra_complete() {\n  local cur choices\n  cur=\"${COMP_WORDS[COMP_CWORD]}\"\n",
-            );
+            output.push_str("_boundra_complete() {\n  local cur choices prev\n  cur=\"${COMP_WORDS[COMP_CWORD]}\"\n  prev=\"${COMP_WORDS[COMP_CWORD-1]}\"\n");
             let _ = writeln!(output, "  if (( COMP_CWORD == 1 )); then choices='{names}'; else\n    case \"${{COMP_WORDS[1]}}\" in");
             for (name, options) in &definitions {
-                let _ = writeln!(output, "      {name}) choices='{}' ;;", options.join(" "));
+                let _ = writeln!(
+                    output,
+                    "      {name}) choices='{}'; case \"$prev\" in",
+                    options.join(" ")
+                );
+                for option in options.iter().filter(|value| value.starts_with("--")) {
+                    if let Some(value) = option_value(usage_for(name), option) {
+                        let choices = if value.contains('|') {
+                            value.replace('|', " ")
+                        } else {
+                            String::new()
+                        };
+                        let _ = writeln!(output, "        {option}) choices='{choices}' ;;");
+                    }
+                }
+                output.push_str("      esac ;;\n");
             }
             output.push_str("    esac\n  fi\n  COMPREPLY=( $(compgen -W \"$choices\" -- \"$cur\") )\n}\ncomplete -o default -F _boundra_complete boundra\n");
         }
         Shell::Zsh => {
-            output.push_str("#compdef boundra\n_boundra() {\n  local -a choices\n");
+            output.push_str("#compdef boundra\n_boundra() {\n  local -a choices\n  local prev=\"${words[CURRENT-1]}\"\n");
             let _ = writeln!(output, "  if (( CURRENT == 2 )); then choices=({names}); else\n    case \"${{words[2]}}\" in");
             for (name, options) in &definitions {
-                let _ = writeln!(output, "      {name}) choices=({}) ;;", options.join(" "));
+                let _ = writeln!(
+                    output,
+                    "      {name}) choices=({}); case \"$prev\" in",
+                    options.join(" ")
+                );
+                for option in options.iter().filter(|value| value.starts_with("--")) {
+                    if let Some(value) = option_value(usage_for(name), option) {
+                        if value.contains('|') {
+                            let _ = writeln!(
+                                output,
+                                "        {option}) choices=({}) ;;",
+                                value.replace('|', " ")
+                            );
+                        } else {
+                            let _ = writeln!(output, "        {option}) _files; return ;;");
+                        }
+                    }
+                }
+                output.push_str("      esac ;;\n");
             }
             output.push_str("    esac\n  fi\n  compadd -- \"${choices[@]}\"\n}\n_boundra\n");
         }
@@ -76,7 +131,16 @@ fn render(shell: Shell) -> String {
             for (name, options) in &definitions {
                 for option in options {
                     if let Some(flag) = option.strip_prefix("--") {
-                        let _ = writeln!(output, "complete -c boundra -n '__fish_seen_subcommand_from {name}' -l {flag} -r");
+                        let mut spec = format!(
+                            "complete -c boundra -n '__fish_seen_subcommand_from {name}' -l {flag}"
+                        );
+                        if let Some(value) = option_value(usage_for(name), option) {
+                            spec.push_str(" -r");
+                            if value.contains('|') {
+                                let _ = write!(spec, " -f -a '{}'", value.replace('|', " "));
+                            }
+                        }
+                        let _ = writeln!(output, "{spec}");
                     } else {
                         let _ = writeln!(output, "complete -c boundra -n '__fish_seen_subcommand_from {name}' -a '{option}'");
                     }
@@ -107,5 +171,13 @@ mod tests {
             }
         }
         assert!(Shell::parse("unknown").is_err());
+        assert_eq!(
+            option_value("watch [--format text|json] [--once]", "--once"),
+            None
+        );
+        assert_eq!(
+            option_value("watch [--format text|json] [--once]", "--format").as_deref(),
+            Some("text|json")
+        );
     }
 }
