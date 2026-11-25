@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use crate::commands::add_dependency::AddDependencyOptions;
 use crate::commands::check_boundaries::CheckBoundariesOptions;
 use crate::commands::create_domain::CreateDomainOptions;
+use crate::commands::explain::ExplainOptions;
 use crate::commands::generate::{GenerateKind, GenerateOptions};
 use crate::commands::graph_domains::{GraphDomainsOptions, GraphFormat};
 use crate::commands::init::InitOptions;
@@ -14,6 +15,7 @@ pub(crate) enum Command {
     AddDependency(AddDependencyOptions),
     CheckBoundaries(CheckBoundariesOptions),
     CreateDomain(CreateDomainOptions),
+    Explain(ExplainOptions),
     GraphDomains(GraphDomainsOptions),
     Generate(GenerateOptions),
     Init(InitOptions),
@@ -48,10 +50,26 @@ pub(crate) fn parse_command(args: &[String]) -> Result<Command, String> {
             Ok(Command::Generate(options))
         }
         "init" => Ok(Command::Init(parse_init_options(&args[1..])?)),
+        "explain" => Ok(Command::Explain(parse_explain_options(&args[1..])?)),
         "help" | "--help" | "-h" => Ok(Command::Help),
         "--version" | "-V" => Ok(Command::Version),
         _ => Err(format!("unknown command: {command}")),
     }
+}
+
+fn parse_explain_options(args: &[String]) -> Result<ExplainOptions, String> {
+    let rule = args
+        .first()
+        .filter(|value| !value.starts_with('-') && !value.is_empty())
+        .ok_or("expected a boundary rule code")?
+        .clone();
+    let format = match &args[1..] {
+        [] => OutputFormat::Text,
+        [option, value] if option == "--format" => parse_output_format(value)?,
+        [option] if option.starts_with("--format=") => parse_output_format(&option[9..])?,
+        _ => return Err("expected --format text|json after the rule code".to_string()),
+    };
+    Ok(ExplainOptions { rule, format })
 }
 
 fn parse_init_options(args: &[String]) -> Result<InitOptions, String> {
@@ -189,7 +207,9 @@ fn parse_check_boundaries_options(args: &[String]) -> Result<CheckBoundariesOpti
 fn parse_min_domains(value: &str) -> Result<usize, String> {
     match value.parse::<usize>() {
         Ok(count) if count > 0 => Ok(count),
-        _ => Err(format!("invalid --min-domains value: {value}; expected a positive integer")),
+        _ => Err(format!(
+            "invalid --min-domains value: {value}; expected a positive integer"
+        )),
     }
 }
 
