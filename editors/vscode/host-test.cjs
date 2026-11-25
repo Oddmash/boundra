@@ -1,6 +1,6 @@
 const assert = require("node:assert/strict");
 const { execFileSync } = require("node:child_process");
-const { mkdir, symlink, writeFile, unlink } = require("node:fs/promises");
+const { mkdir, symlink, writeFile } = require("node:fs/promises");
 const { dirname, join } = require("node:path");
 const { setTimeout: delay } = require("node:timers/promises");
 const vscode = require("vscode");
@@ -30,15 +30,24 @@ exports.run = async () => {
   const extension = vscode.extensions.getExtension("oddmash.boundra-vscode");
   assert.ok(extension, "development extension was not loaded");
   await extension.activate();
-  await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(uri));
+  const document = await vscode.workspace.openTextDocument(uri);
+  await vscode.window.showTextDocument(document);
+  const save = async (text) => {
+    const edit = new vscode.WorkspaceEdit();
+    edit.replace(uri, new vscode.Range(document.positionAt(0), document.positionAt(document.getText().length)), text);
+    assert.ok(await vscode.workspace.applyEdit(edit));
+    assert.ok(await document.save());
+  };
   await vscode.commands.executeCommand("boundra.checkWorkspace");
   const diagnostics = () => vscode.languages.getDiagnostics(uri).filter(item => item.source === "Boundra");
   await waitFor(() => diagnostics().some(item => item.code === "BR-001" && item.range.start.line === 0));
-  await writeFile(file, "export {};\n");
+  await save("export {};\n");
   await waitFor(() => diagnostics().length === 0);
-  await writeFile(file, "import '../server/public';\n");
+  await save("import '../server/public';\n");
   await waitFor(() => diagnostics().some(item => item.code === "BR-001"));
-  await unlink(file);
+  const deletion = new vscode.WorkspaceEdit();
+  deletion.deleteFile(uri);
+  assert.ok(await vscode.workspace.applyEdit(deletion));
   await waitFor(() => diagnostics().length === 0);
   console.log("Boundra VS Code host test: OK");
 };
