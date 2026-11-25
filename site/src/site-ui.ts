@@ -8,8 +8,8 @@ import { docCopy, localeFromLang } from './doc-ui-copy';
 
 const copy = docCopy[localeFromLang(document.documentElement.lang)];
 const picker = document.querySelector<HTMLElement>('[data-language-picker]');
-const fallback = document.querySelector<HTMLElement>('[data-language-fallback]');
-if (picker && fallback) {
+const fallback = document.querySelector<HTMLDetailsElement>('[data-language-fallback]');
+if (picker && fallback && !fallback.open && !fallback.contains(document.activeElement)) {
   const links = [...fallback.querySelectorAll<HTMLAnchorElement>('a[data-locale]')];
   const options = links.map(link => ({ value: link.dataset.locale!, label: link.textContent!.trim(), lang: link.lang }));
   try {
