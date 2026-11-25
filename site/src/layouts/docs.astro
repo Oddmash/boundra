@@ -8,12 +8,14 @@ const t = docCopy[localeFromLang(lang)];
 <Layout title={`${title} | Boundra`} lang={lang} documentSlug={slug}>
   <div class="shell docs-layout">
     <aside class="docs-sidebar"><div class="desktop-docs-nav"><DocsNav slug={slug} lang={lang}/></div><details class="mobile-docs-nav"><summary>{t.browse}</summary><DocsNav slug={slug} lang={lang}/></details></aside>
-    <article class="doc-content"><slot /></article>
+    <article class="doc-content om-prose"><slot /></article>
     {headings.length > 0 && <aside class="docs-toc"><nav aria-label={t.onPage}><h2>{t.onPage}</h2>{headings.filter((h: {depth: number}) => h.depth === 2).map((heading: {slug: string, text: string}) => <a href={`#${heading.slug}`}>{heading.text}</a>)}</nav></aside>}
   </div>
 </Layout>
 <script>
-  if (document.documentElement.lang === 'ko') {
+  const lang = document.documentElement.lang.toLowerCase().split('-')[0];
+  const locale = lang === 'ko' || lang === 'en' || lang === 'ja' || lang === 'zh' ? lang : null;
+  if (locale) {
     const juliya = await import('@oddmash/juliya/dom').catch(() => null);
     if (juliya) {
       const { mountKowrap } = juliya;
@@ -21,10 +23,13 @@ const t = docCopy[localeFromLang(lang)];
       const candidates = document.querySelectorAll<HTMLElement>('.doc-content h1, .doc-content h2, .doc-content h3, .doc-content p');
       for (const element of candidates) {
         const text = element.textContent ?? '';
-        if (!/[가-힣]/.test(text) || text.length > 160 || element.querySelector('code, pre, img, br, button, input')) continue;
+        if (!text.trim() || /[\r\n\t]| {2,}/.test(text) || element.querySelector('code, pre, img, br, button, input, select, textarea, svg')) continue;
+        const strategy = element.matches('h1, h2, h3') || locale === 'ja' || locale === 'zh' ? 'balanced' : 'greedy';
         try {
-          controllers.push(mountKowrap(element, { inline: true, strategy: 'balanced', locale: 'ko' }));
+          controllers.push(mountKowrap(element, { inline: true, strategy, locale }));
           element.dataset.juliya = 'applied';
+          element.dataset.juliyaLocale = locale;
+          element.dataset.juliyaStrategy = strategy;
         } catch {
           element.dataset.juliya = 'fallback';
         }
@@ -40,4 +45,8 @@ const t = docCopy[localeFromLang(lang)];
 <style>
   .mobile-docs-nav{display:none}
   @media(max-width:720px){.desktop-docs-nav{display:none}.mobile-docs-nav{display:block}.mobile-docs-nav summary{cursor:pointer;font-weight:650;padding:8px 0}.mobile-docs-nav summary:focus-visible{outline:2px solid var(--brand);outline-offset:3px}.mobile-docs-nav[open] summary{margin-bottom:12px}}
+</style>
+<style is:global>
+  .doc-content [data-juliya="applied"] { text-wrap: wrap; }
+  .doc-content code:not(pre code) { word-break: normal; overflow-wrap: anywhere; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
 </style>
