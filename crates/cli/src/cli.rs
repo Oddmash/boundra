@@ -3,6 +3,14 @@ use crate::output::{print_error, print_error_json, CliDiagnostic};
 use crate::parsing::{parse_command, Command};
 
 pub fn run(args: &[String]) -> i32 {
+    if let [command, flag] = args {
+        if matches!(flag.as_str(), "--help" | "-h") {
+            if let Some(usage) = command_usage(command) {
+                println!("Usage: boundra {usage}");
+                return 0;
+            }
+        }
+    }
     let command = match parse_command(args) {
         Ok(command) => command,
         Err(err) => {
@@ -51,13 +59,37 @@ fn print_help() {
     println!("Boundra CLI");
     println!();
     println!("Usage:");
-    println!("  boundra add-dependency <domain>/<dependency> [--root <path>]");
-    println!("  boundra check-boundaries [--root <path>] [--format text|json] [--min-domains <n>]");
-    println!("  boundra create-domain <name> [--path <parent-path>] [--root <path>]");
-    println!("  boundra init [--root <path>] [--name <kebab-case>]");
-    println!("  boundra impact <domain> [--root <path>] [--format text|json]");
-    println!(
-        "  boundra graph-domains [--root <path>] [--format mermaid|dot|json] [--output <path>]"
-    );
-    println!("  boundra generate route|query|mutation|resource <domain>/<name> [--root <path>]");
+    for command in [
+        "add-dependency",
+        "check-boundaries",
+        "create-domain",
+        "init",
+        "impact",
+        "graph-domains",
+        "generate",
+    ] {
+        println!(
+            "  boundra {}",
+            command_usage(command).expect("known command")
+        );
+    }
+}
+
+fn command_usage(command: &str) -> Option<&'static str> {
+    match command {
+        "add-dependency" => Some("add-dependency <domain>/<dependency> [--root <path>]"),
+        "check-boundaries" => {
+            Some("check-boundaries [--root <path>] [--format text|json] [--min-domains <n>]")
+        }
+        "create-domain" => Some("create-domain <name> [--path <parent-path>] [--root <path>]"),
+        "init" => Some("init [--root <path>] [--name <kebab-case>]"),
+        "impact" => Some("impact <domain> [--root <path>] [--format text|json]"),
+        "graph-domains" => {
+            Some("graph-domains [--root <path>] [--format mermaid|dot|json] [--output <path>]")
+        }
+        "generate" => {
+            Some("generate route|query|mutation|resource <domain>/<name> [--root <path>]")
+        }
+        _ => None,
+    }
 }
