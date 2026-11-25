@@ -1,0 +1,17 @@
+---
+import Docs from './docs.astro';
+import { docCopy } from '../doc-ui-copy';
+import { htmlLanguage, guidePath, type LandingLocale } from '../landing-copy';
+import example from '../../../examples/order-billing/src/index.ts?raw';
+const { locale = 'en' } = Astro.props as {locale?: LandingLocale};
+const t = docCopy[locale];
+const base = import.meta.env.BASE_URL.replace(/\/$/, '') + '/';
+---
+<Docs title={t.example} slug="example" lang={htmlLanguage(locale)}>
+  <h1>{t.example}</h1><p>{t.exampleIntro}</p>
+  <h2>{t.run}</h2><p>{t.exampleRun}</p><pre><code>{`pnpm example:order-billing
+cargo run -p boundra-cli -- check-boundaries --root examples/order-billing
+cargo run -p boundra-cli -- graph-domains --root examples/order-billing --format mermaid`}</code></pre>
+  <h2>{t.entry}</h2><p>{t.exampleSource}</p><pre><code>{example}</code></pre>
+  <p><a href={guidePath(base,locale)}>{t.exampleGuide}</a> · <a href="https://github.com/Oddmash/boundra/tree/main/examples/order-billing">GitHub</a></p>
+</Docs>

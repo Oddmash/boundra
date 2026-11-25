@@ -114,7 +114,7 @@ for (const width of [1440, 768, 390, 320]) {
     await assertReflow(page);
     const next = page.getByRole("button", { name: "Next example" });
     await expect(page.getByRole("button", { name: "Pause animation" })).toBeHidden();
-    for (const rule of ["BR-004", "BR-006", "PASS"]) {
+    for (const rule of ["PASS", "BR-004", "PASS", "BR-006", "PASS"]) {
       await next.press("Enter");
       await expect(page.locator("[data-active=true] .rule")).toHaveText(rule);
       await assertSceneGeometry(page);
@@ -140,13 +140,8 @@ for (const width of [1440, 768, 390, 320]) {
       path: testInfo.outputPath("documentation.png"),
       fullPage: true,
     });
-    if (width <= 720) {
-      await page.locator(".mobile-docs-nav summary").click();
-    }
-    await page
-      .getByRole("link", { name: "한국어", exact: true })
-      .first()
-      .click();
+    await page.getByRole("combobox", { name: "Language" }).click();
+    await page.getByRole("option", { name: "한국어", exact: true }).click();
     await expect(page).toHaveURL(/\/docs\/user-guide\.ko\/$/);
     await expect(page.locator("html")).toHaveAttribute("lang", "ko");
     await assertReflow(page);
@@ -160,21 +155,22 @@ test("automatic boundary sequence pauses and supports explicit inspection", asyn
   await page.goto("./");
   const rule = page.locator("[data-active=true] .rule");
   await expect(rule).toHaveText("BR-001");
-  await expect(rule).toHaveText("BR-004", { timeout: 8000 });
+  await expect(page.getByRole("button", { name: "Next example" })).toBeHidden();
+  await expect(rule).toHaveText("PASS", { timeout: 9000 });
   await page.getByRole("button", { name: "Pause animation" }).click();
   await expect(page.getByRole("button", { name: "Resume animation" })).toBeVisible();
   await page.mouse.move(0, 0);
   await page.locator("h1").click();
   await page.waitForTimeout(5500);
-  await expect(rule).toHaveText("BR-004");
+  await expect(rule).toHaveText("PASS");
   await page.getByRole("button", { name: "Next example" }).click();
-  await expect(rule).toHaveText("BR-006");
+  await expect(rule).toHaveText("BR-004");
   await page.getByRole("button", { name: "Resume animation" }).click();
   await page.locator("#quickstart").scrollIntoViewIfNeeded();
   await page.locator("#quickstart h2").click();
   await page.mouse.move(0,0);
   await page.waitForTimeout(5500);
-  await expect(rule).toHaveText("BR-006");
+  await expect(rule).toHaveText("BR-004");
 });
 
 for (const [route, lang, name, start, suffix] of [
@@ -192,13 +188,56 @@ for (const [route, lang, name, start, suffix] of [
       await expect(page.locator('link[rel=alternate][hreflang="en"]')).toHaveCount(1);
       await assertReflow(page);
       await page.screenshot({ path: testInfo.outputPath("localized-landing.png"), fullPage: true });
-      await page.locator(".locale-menu summary").click();
-      await expect(page.getByRole("link", { name, exact: true })).toHaveAttribute("aria-current", "page");
-      await expect(page.getByRole("link", { name: "English", exact: true })).toBeVisible();
-      await page.locator(".locale-menu summary").click();
+      const picker = page.locator(".language-select [role=combobox]");
+      await picker.click();
+      await expect(page.getByRole("option", { name, exact: true })).toHaveAttribute("aria-selected", "true");
+      await expect(page.getByRole("option", { name: "English", exact: true })).toBeVisible();
+      await picker.press("Escape");
       await page.getByRole("link", { name: start, exact: true }).click();
       await expect(page).toHaveURL(new RegExp("user-guide\\." + suffix + "/$"));
       await assertReflow(page);
     });
   }
 }
+
+test("localized documentation keeps the locale and examples in the docs index", async ({ page }) => {
+  await page.goto("ko/");
+  await page.getByRole("link", {name:"문서",exact:true}).first().click();
+  await expect(page).toHaveURL(/\/docs\/ko\/$/);
+  await expect(page.locator("html")).toHaveAttribute("lang","ko");
+  await expect(page.locator(".docs-sidebar a[href='/boundra/docs/boundary-rules/']")).toHaveCount(0);
+  await page.locator(".doc-content").getByRole("link",{name:"주문과 청구 예제"}).click();
+  await expect(page).toHaveURL(/\/docs\/ko\/example\/$/);
+  const picker = page.locator(".language-select [role=combobox]");
+  await picker.click();
+  await page.getByRole("option",{name:"日本語",exact:true}).click();
+  await expect(page).toHaveURL(/\/docs\/ja\/example\/$/);
+  await expect(page.locator("html")).toHaveAttribute("lang","ja");
+});
+
+test("copy preserves complete code and displays Oddmash UI feedback", async ({ page, context }) => {
+  await context.grantPermissions(["clipboard-read","clipboard-write"]);
+  await page.goto("docs/user-guide/");
+  const pre = page.locator(".doc-content pre").first();
+  const expected = await pre.locator("code").textContent();
+  await page.getByRole("button",{name:"Copy code"}).first().click();
+  await expect(page.locator(".om-toast [role=status]")).toHaveText("Code copied");
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(expected);
+  const alignment = await page.locator(".om-toast").evaluate(toast => {
+    const icon = toast.querySelector(".om-toast-icon").getBoundingClientRect();
+    const title = toast.querySelector("strong").getBoundingClientRect();
+    return Math.abs(icon.top + icon.height/2 - title.top - title.height/2);
+  });
+  expect(alignment).toBeLessThanOrEqual(4);
+  await page.getByRole("button",{name:"Dismiss notification"}).click();
+  await expect(page.locator(".om-toast-region")).toHaveAttribute("data-state",/closing|closed/);
+});
+
+test("copy failure gives honest localized feedback", async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "clipboard", {value:{writeText: () => Promise.reject(new Error("denied"))},configurable:true});
+  });
+  await page.goto("docs/user-guide.ko/");
+  await page.getByRole("button",{name:"코드 복사"}).first().click();
+  await expect(page.locator(".om-toast [role=alert]")).toContainText("코드를 복사하지 못했어요");
+});

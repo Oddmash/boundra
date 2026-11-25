@@ -1,10 +1,4 @@
 ---
-import Docs from '../../layouts/docs.astro';
-import { groups } from '../../docs-nav';
-const base = import.meta.env.BASE_URL.replace(/\/$/, '') + '/docs/';
+import Index from '../../layouts/docs-index.astro';
 ---
-<Docs title="Documentation">
-  <h1>Documentation</h1><p class="doc-intro">Learn to install Boundra, introduce domain boundaries in an existing project, and use its schema-backed runtime.</p>
-  {groups.map(group => <section><h2>{group.label}</h2><ul class="reference-list">{group.items.map(([path, label]) => <li><a href={`${base}${path}/`}>{label}</a></li>)}</ul></section>)}
-  <h2>Additional reference</h2><p><a href={`${base}readme/`}>Full documentation index</a></p>
-</Docs>
+<Index locale="en" />

@@ -1,13 +1,15 @@
 ---
 import Layout from './site.astro';
 import DocsNav from '../components/docs-nav.astro';
+import { docCopy, localeFromLang } from '../doc-ui-copy';
 const { title, slug = '', headings = [], lang = 'en' } = Astro.props;
+const t = docCopy[localeFromLang(lang)];
 ---
-<Layout title={`${title} | Boundra docs`} lang={lang}>
+<Layout title={`${title} | Boundra`} lang={lang} documentSlug={slug}>
   <div class="shell docs-layout">
-    <aside class="docs-sidebar"><div class="desktop-docs-nav"><DocsNav slug={slug}/></div><details class="mobile-docs-nav"><summary>Browse documentation</summary><DocsNav slug={slug}/></details></aside>
+    <aside class="docs-sidebar"><div class="desktop-docs-nav"><DocsNav slug={slug} lang={lang}/></div><details class="mobile-docs-nav"><summary>{t.browse}</summary><DocsNav slug={slug} lang={lang}/></details></aside>
     <article class="doc-content"><slot /></article>
-    {headings.length > 0 && <aside class="docs-toc"><nav aria-label="On this page"><h2>On this page</h2>{headings.filter((h: {depth: number}) => h.depth === 2).map((heading: {slug: string, text: string}) => <a href={`#${heading.slug}`}>{heading.text}</a>)}</nav></aside>}
+    {headings.length > 0 && <aside class="docs-toc"><nav aria-label={t.onPage}><h2>{t.onPage}</h2>{headings.filter((h: {depth: number}) => h.depth === 2).map((heading: {slug: string, text: string}) => <a href={`#${heading.slug}`}>{heading.text}</a>)}</nav></aside>}
   </div>
 </Layout>
 <script>
