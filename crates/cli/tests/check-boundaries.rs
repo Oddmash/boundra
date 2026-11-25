@@ -295,6 +295,42 @@ fn check_boundaries_defaults_to_text_output() {
 }
 
 #[test]
+fn check_boundaries_supports_ci_reports_without_changing_exit_codes() {
+    let root = create_fixture("ci-reports");
+    let relative = "domains/order/client/use order.ts";
+    fs::write(root.join(relative), "import '../server/checkout';\n").unwrap();
+    fs::write(
+        root.join("domains/order/server/checkout.ts"),
+        "export {};\n",
+    )
+    .unwrap();
+    let github = run_boundra(&root, &["check-boundaries", "--format", "github"]);
+    assert_eq!(github.status.code(), Some(1));
+    assert!(String::from_utf8_lossy(&github.stdout)
+        .contains("::error file=domains/order/client/use order.ts,line=1,title=BR-001::"));
+    let sarif = run_boundra(&root, &["check-boundaries", "--format=sarif"]);
+    assert_eq!(sarif.status.code(), Some(1));
+    let report = parse_json_stdout(&sarif);
+    assert_eq!(report["version"], "2.1.0");
+    assert_eq!(report["runs"][0]["results"][0]["ruleId"], "BR-001");
+    assert_eq!(
+        report["runs"][0]["results"][0]["locations"][0]["physicalLocation"]["artifactLocation"]
+            ["uri"],
+        "domains/order/client/use%20order.ts"
+    );
+    fs::write(root.join(relative), "export {};\n").unwrap();
+    let clean = run_boundra(&root, &["check-boundaries", "--format=sarif"]);
+    assert_eq!(clean.status.code(), Some(0));
+    assert_eq!(parse_json_stdout(&clean)["runs"][0]["results"], json!([]));
+    let invalid = run_boundra(&root, &["check-boundaries", "--format=sarif", "--unknown"]);
+    assert_eq!(invalid.status.code(), Some(2));
+    assert_eq!(
+        parse_json_stdout(&invalid)["runs"][0]["invocations"][0]["executionSuccessful"],
+        false
+    );
+}
+
+#[test]
 fn check_boundaries_accepts_space_separated_json_format() {
     let root = create_fixture("json-output");
     write_domain_manifest(&root, "auth", "auth", &[]);
