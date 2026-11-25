@@ -163,3 +163,7 @@
 ## 4. 规则说明
 
 `boundra explain BR-001 [--format text|json]` 无需加载工作区即可解释内置边界规则。支持 BR-001 至 BR-006，不区分大小写。提供原因、正确与违规示例以及解决建议，JSON 包含 `rule`、`title`、`description`、`reason`、`invalid_example`、`valid_example`、`suggestion` 和 `meta.command`。未知规则或无效选项返回退出码 2 和结构化错误。
+
+## 5. 监视模式
+
+`boundra watch [--root <path>] [--format text|json] [--interval-ms <n>] [--min-domains <n>] [--once]` 立即执行完整扫描，然后默认每 1,500ms（最短 250ms）重复，仅输出变化后的结果。无需缓存即可检查源码、配置、清单及别名变化。JSON 每行包含 `event`、`exit_code`、`report` 和 `meta.command`；`--once` 返回检查退出码，Ctrl+C 停止。
