@@ -40,10 +40,10 @@ const sections = [
   [t.docCI, t.docCIDesc, docs + 'ci-integration/'],
 ];
 const scenes = [
-  { rule: 'BR-001', title: t.rule1Title, description: t.rule1Desc, source: 'order', sourceLayer: 'client', target: 'order', targetLayer: 'server/internal', path: 'domains/order/client/use-order.ts', symbol: 'orderService', imported: '@domains/order/server/internal', allowed: false },
+  { rule: 'BR-001', title: t.rule1Title, description: t.rule1Desc, source: 'order', sourceLayer: 'client', target: 'order', targetLayer: 'server/internal', path: 'domains/order/client/use-order.ts', symbol: 'orderService', imported: '@domains/order/server/internal', dependency: '[]', allowed: false },
   { rule: 'BR-004', title: t.rule4Title, description: t.rule4Desc, source: 'billing', sourceLayer: 'server', target: 'order', targetLayer: 'server/internal', path: 'domains/billing/server/invoice.ts', symbol: 'orderService', imported: '@domains/order/server/internal', allowed: false },
-  { rule: 'BR-006', title: t.rule6Title, description: t.rule6Desc, source: 'billing', sourceLayer: 'server', target: 'order', targetLayer: 'shared/public', path: 'domains/billing/server/invoice.ts', symbol: 'getOrderQuery', imported: '@domains/order/shared/public', allowed: false },
-  { rule: 'PASS', title: t.passTitle, description: t.passDesc, source: 'billing', sourceLayer: 'server', target: 'order', targetLayer: 'shared/public', path: 'domains/billing/server/invoice.ts', symbol: 'getOrderQuery', imported: '@domains/order/shared/public', allowed: true },
+  { rule: 'BR-006', title: t.rule6Title, description: t.rule6Desc, source: 'billing', sourceLayer: 'server', target: 'order', targetLayer: 'shared/public', path: 'domains/billing/server/invoice.ts', symbol: 'getOrderQuery', imported: '@domains/order/shared/public', dependency: '[]', allowed: false },
+  { rule: 'PASS', title: t.passTitle, description: t.passDesc, source: 'billing', sourceLayer: 'server', target: 'order', targetLayer: 'shared/public', path: 'domains/billing/server/invoice.ts', symbol: 'getOrderQuery', imported: '@domains/order/shared/public', dependency: '["order"]', allowed: true },
 ];
 ---
 <Layout title={`Boundra | ${t.eyebrow}`} description={t.meta} lang={htmlLanguage(locale)} landingLocale={locale}>
@@ -72,7 +72,7 @@ const scenes = [
               </div>
               <div class="domain target"><span class="domain-name">{scene.target}</span><span class="layer">{scene.targetLayer === 'shared/public' ? 'client' : 'shared/public'}</span><strong class="layer selected">{scene.targetLayer}</strong><span class="layer">{scene.targetLayer === 'shared/public' ? 'server/internal' : 'client'}</span></div>
             </div>
-            <div class="scene-code"><span class="preview-path">{scene.path}</span><pre><code><span class="syntax-keyword">import</span> {'{ ' + scene.symbol + ' }'} <span class="syntax-keyword">from</span>{'\n'}  <span class="syntax-string">{'"' + scene.imported + '"'}</span>;</code></pre></div>
+            <div class="scene-code"><span class="preview-path">{scene.path}</span><pre><code><span class="syntax-keyword">import</span> {'{ ' + scene.symbol + ' }'} <span class="syntax-keyword">from</span>{'\n'}  <span class="syntax-string">{'"' + scene.imported + '"'}</span>;</code></pre><div class="manifest-line"><span>{scene.source}/domain.json</span><code>"dependsOn": {scene.dependency}</code></div></div>
             <div class="scene-result"><span class="rule">{scene.rule}</span><div><strong data-scene-title>{scene.title}</strong><p>{scene.description}</p></div></div>
           </div>
         ))}
@@ -203,6 +203,8 @@ const scenes = [
   .scene-code { background:#171614; border:1px solid #39342f; border-radius:10px; padding:12px; min-width:0; }
   .preview-path { display:block; color:#bdb7ae; font:11px/1.5 var(--mono); overflow-wrap:anywhere; border-bottom:1px solid #3b3630; padding-bottom:9px; }
   .scene pre { margin: 10px 0 0; font:clamp(11px,1.1vw,13px)/1.7 var(--mono); white-space:pre-wrap; overflow-wrap:anywhere; }
+  .manifest-line { display:flex; gap:8px; justify-content:space-between; flex-wrap:wrap; border-top:1px solid #39342f; padding-top:9px; margin-top:12px; font:11px/1.5 var(--mono); color:#bdb7ae; overflow-wrap:anywhere; }
+  .manifest-line code { color:var(--result); }
   .syntax-keyword { color:#d5b7ff; }
   .syntax-string { color:#ffd09e; }
   .scene-result { border-top:1px solid #4b4038; padding-top:14px; display:flex; gap:12px; align-items:flex-start; color:var(--result); font-size:14px; line-height:1.5; min-width:0; }
