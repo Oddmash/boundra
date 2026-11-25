@@ -9,10 +9,26 @@ const t = docCopy[localeFromLang(lang)];
   <div class="shell docs-layout">
     <aside class="docs-sidebar"><div class="desktop-docs-nav"><DocsNav slug={slug} lang={lang}/></div><details class="mobile-docs-nav"><summary>{t.browse}</summary><DocsNav slug={slug} lang={lang}/></details></aside>
     <article class="doc-content om-prose"><slot /></article>
-    {headings.length > 0 && <aside class="docs-toc"><nav aria-label={t.onPage}><h2>{t.onPage}</h2>{headings.filter((h: {depth: number}) => h.depth === 2).map((heading: {slug: string, text: string}) => <a href={`#${heading.slug}`}>{heading.text}</a>)}</nav></aside>}
+    {headings.length > 0 && <aside class="docs-toc"><nav class="om-table-of-contents" aria-label={t.onPage}><h2 class="om-toc-label">{t.onPage}</h2><ul class="om-toc-links" role="list">{headings.filter((h: {depth: number}) => h.depth === 2).map((heading: {slug: string, text: string}) => <li data-level="2"><a href={`#${heading.slug}`} data-heading-id={heading.slug}>{heading.text}</a></li>)}</ul></nav></aside>}
   </div>
 </Layout>
 <script>
+  import { observeActiveHeading } from '@oddmash/ui/docs-navigation';
+
+  const content = document.querySelector<HTMLElement>('.doc-content');
+  const headings = Array.from(document.querySelectorAll<HTMLAnchorElement>('.docs-toc [data-heading-id]'));
+  if (content && headings.length > 0) {
+    const stop = observeActiveHeading(content, headings.map(link => link.dataset.headingId!), (active) => {
+      for (const link of headings) {
+        if (link.dataset.headingId === active) link.setAttribute('aria-current', 'location');
+        else link.removeAttribute('aria-current');
+      }
+    }, { offset: 96 });
+    window.addEventListener('pagehide', event => {
+      if (!event.persisted) stop();
+    });
+  }
+
   const lang = document.documentElement.lang.toLowerCase().split('-')[0];
   const locale = lang === 'ko' || lang === 'en' || lang === 'ja' || lang === 'zh' ? lang : null;
   if (locale) {
