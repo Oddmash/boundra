@@ -364,7 +364,7 @@ test("copy failure gives honest localized feedback", async ({ page }) => {
   await expect(page.locator(".om-toast [role=alert]")).toContainText("코드를 복사하지 못했어요");
 });
 
-test("documentation cards sweep their background from left to right without shifting content", async ({ page }) => {
+test("documentation cards sweep their background from left to right without shifting content", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto("ko/");
@@ -387,7 +387,8 @@ test("documentation cards sweep their background from left to right without shif
     };
   });
   const initial = await readStyle();
-  expect(initial).toMatchObject({ fill: "0% 100%", position: "0%", repeat: "no-repeat" });
+  expect(initial).toMatchObject({ fill: "0% 100%", repeat: "no-repeat" });
+  expect(initial.position).toMatch(/^0(?:px|%)$/);
   expect(initial.image).toContain("linear-gradient");
   expect(initial.transition).toContain("background-size");
   expect(initial.duration).not.toBe("0s");
@@ -400,6 +401,7 @@ test("documentation cards sweep their background from left to right without shif
     height: initial.height,
     titleLeft: initial.titleLeft,
   });
+  await page.locator(".doc-list").screenshot({ path: testInfo.outputPath("card-hover.png") });
   await page.mouse.move(0, 0);
   await expect.poll(async () => (await readStyle()).fill).toBe("0% 100%");
 
@@ -409,6 +411,7 @@ test("documentation cards sweep their background from left to right without shif
   await expect.poll(() => card.evaluate(element => element.matches(":focus-visible"))).toBe(true);
   await expect.poll(async () => (await readStyle()).fill).toBe("100% 100%");
   expect(await card.evaluate(element => getComputedStyle(element).outlineStyle)).toBe("solid");
+  await page.locator(".doc-list").screenshot({ path: testInfo.outputPath("card-focus.png") });
   await card.press("Enter");
   await expect(page).toHaveURL(/\/docs\/user-guide\.ko\/$/);
 });
