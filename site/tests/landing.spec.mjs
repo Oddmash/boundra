@@ -156,7 +156,16 @@ test("automatic boundary sequence pauses and supports explicit inspection", asyn
   const rule = page.locator("[data-active=true] .rule");
   await expect(rule).toHaveText("BR-001");
   await expect(page.getByRole("button", { name: "Next example" })).toBeHidden();
-  await expect(rule).toHaveText("PASS", { timeout: 9000 });
+  const stage = page.locator(".boundary-stage");
+  await expect(stage).toHaveAttribute("data-running", "true");
+  const packet = page.locator("[data-active=true] .route-packet");
+  await expect(packet).toHaveCSS("animation-iteration-count", "infinite");
+  const blocked = await packet.getAttribute("d");
+  expect(blocked).not.toContain("100 ");
+  await expect(rule).toHaveText("PASS", { timeout: 4000 });
+  expect(await packet.getAttribute("d")).toContain("100 ");
+  await expect(rule).toHaveText("BR-004", { timeout: 3500 });
+  await expect(rule).toHaveText("PASS", { timeout: 4000 });
   await page.getByRole("button", { name: "Pause animation" }).click();
   await expect(page.getByRole("button", { name: "Resume animation" })).toBeVisible();
   await page.mouse.move(0, 0);
@@ -164,13 +173,14 @@ test("automatic boundary sequence pauses and supports explicit inspection", asyn
   await page.waitForTimeout(5500);
   await expect(rule).toHaveText("PASS");
   await page.getByRole("button", { name: "Next example" }).click();
-  await expect(rule).toHaveText("BR-004");
+  await expect(rule).toHaveText("BR-006");
+  await expect(stage).toHaveAttribute("data-running", "false");
   await page.getByRole("button", { name: "Resume animation" }).click();
   await page.locator("#quickstart").scrollIntoViewIfNeeded();
   await page.locator("#quickstart h2").click();
   await page.mouse.move(0,0);
   await page.waitForTimeout(5500);
-  await expect(rule).toHaveText("BR-004");
+  await expect(rule).toHaveText("BR-006");
 });
 
 for (const [route, lang, name, start, suffix] of [
