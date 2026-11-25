@@ -42,30 +42,14 @@ const t = docCopy[localeFromLang(lang)];
   const content = document.querySelector<HTMLElement>('.doc-content');
   const headings = Array.from(document.querySelectorAll<HTMLAnchorElement>('.docs-toc [data-heading-id]'));
   if (content && headings.length > 0) {
-    let observedHeading: string | undefined;
-    const update = () => {
-      const scrollRoot = document.scrollingElement;
-      const atEnd = scrollRoot && scrollRoot.scrollTop > 0 &&
-        scrollRoot.scrollTop + scrollRoot.clientHeight >= scrollRoot.scrollHeight - 2;
-      const active = atEnd ? headings.at(-1)?.dataset.headingId : observedHeading;
+    const stop = observeActiveHeading(content, headings.map(link => link.dataset.headingId!), (active) => {
       for (const link of headings) {
         if (link.dataset.headingId === active) link.setAttribute('aria-current', 'location');
         else link.removeAttribute('aria-current');
       }
-    };
-    const stop = observeActiveHeading(content, headings.map(link => link.dataset.headingId!), (active) => {
-      observedHeading = active;
-      update();
     }, { offset: 96 });
-    window.addEventListener('scroll', update, { passive: true });
-    window.addEventListener('resize', update);
-    update();
     window.addEventListener('pagehide', event => {
-      if (!event.persisted) {
-        stop();
-        window.removeEventListener('scroll', update);
-        window.removeEventListener('resize', update);
-      }
+      if (!event.persisted) stop();
     });
   }
 
