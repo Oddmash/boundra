@@ -1,13 +1,4 @@
 ---
-import Docs from '../../layouts/docs.astro';
-import example from '../../../../examples/order-billing/src/index.ts?raw';
-const base = import.meta.env.BASE_URL.replace(/\/$/, '') + '/docs/';
+import Example from '../../layouts/docs-example.astro';
 ---
-<Docs title="Order and billing example" slug="example">
-  <h1>Order and billing example</h1><p>This repository example demonstrates two domains, a declared dependency, a query, mutation and route, and input validation. The order domain owns its contracts. Billing depends on order.</p>
-  <h2>Run it</h2><p>After installing your own project, follow the <a href={`${base}user-guide/`}>user guide</a> to create a contract and local transport. If you have the Boundra source checkout, these commands run the committed example.</p><pre><code>{`pnpm example:order-billing
-cargo run -p boundra-cli -- check-boundaries --root examples/order-billing
-cargo run -p boundra-cli -- graph-domains --root examples/order-billing --format mermaid`}</code></pre>
-  <h2>Example entry point</h2><p>This is the actual example source, not pseudocode. It relies on the generated and implemented domain files in the example workspace.</p><pre><code>{example}</code></pre>
-  <p><a href={`${base}user-guide/#4-implement-a-real-contract`}>Implement your own contract</a> · <a href="https://github.com/Oddmash/boundra/tree/main/examples/order-billing">Browse example source</a></p>
-</Docs>
+<Example locale="en" />
