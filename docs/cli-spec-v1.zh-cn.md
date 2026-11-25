@@ -128,6 +128,15 @@
 
 共享文件负责 list/create/update/delete 的 Schema 和契约。客户端文件暴露类型化函数，并从 `client/public.ts` 幂等导出。Boundra 不生成持久化、HTTP 路由、UI 或 ORM 代码。
 
+### 1.9 `impact <domain>`
+
+根据已声明的 `dependsOn` 关系，查看公共 API 变更可能影响的直接和间接依赖方。不扫描或修改源文件。
+
+- `--root <path>`（默认：`.`）
+- `--format text|json`（默认：`text`）
+
+JSON 包含 `domain`、`direct_dependents`、`transitive_dependents`（仅间接）、`meta.command` 和 `meta.affected_domain_count`。按名称排序，去除重复项和目标域本身。未知域或无效项目返回退出码 2 和结构化错误。没有依赖方时成功返回空结果。此命令不能替代运行时调用分析或边界检查。
+
 ## 2. CLI 用户体验原则
 
 - 边界诊断包含规则代码、文件、行号、import、消息及建议。
