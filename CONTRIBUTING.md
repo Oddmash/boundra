@@ -4,6 +4,7 @@ Follow the [Oddmash organization working agreements](https://github.com/Oddmash/
 
 ## 1. Working Agreement
 
+- Use Node.js 24 and the pnpm version pinned in `package.json` for internal development. Install the root workspace with `pnpm install --frozen-lockfile` and the independent site with `pnpm --dir site install --frozen-lockfile`. Consumer compatibility tests retain their own package-manager and Node.js matrix.
 - 문서화된 규칙 없이 구조를 변경하지 않는다.
 - 도메인 경계 예외는 반드시 ADR로 남긴다.
 - 구현 전에 관련 문서(헌장/아키텍처/규칙)를 먼저 확인한다.
