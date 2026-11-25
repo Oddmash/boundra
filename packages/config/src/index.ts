@@ -41,6 +41,7 @@ export interface BoundraCheckBoundariesConfig {
   ignore?: readonly string[];
   capabilities?: BoundraCapabilityConfig;
   policy?: BoundraBoundaryPolicyConfig;
+  denyDomainDependencies?: Readonly<Record<string, readonly string[]>>;
 }
 
 /**
