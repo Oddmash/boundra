@@ -79,8 +79,10 @@ Import를 분석하고 경계 규칙 위반을 감지합니다.
 
 옵션:
 - `--root <path>` (기본값: `.`)
-- `--format mermaid|json|dot` (기본값: `mermaid`)
+- `--format mermaid|json|dot|html` (기본값: `mermaid`)
 - `--output <path>`
+
+`boundra graph-domains --format html --output graph.html`로 검색 가능한 오프라인 의존성 뷰를 생성합니다. 브라우저로 파일을 열면 선언된 의존성을 탐색할 수 있으며 네트워크나 서버가 필요하지 않습니다.
 
 ### 1.4 `generate route <domain>/<name>`
 ### 1.5 `generate query <domain>/<name>`
