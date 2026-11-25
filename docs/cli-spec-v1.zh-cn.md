@@ -159,3 +159,7 @@
   }
 }
 ```
+
+## 4. 规则说明
+
+`boundra explain BR-001 [--format text|json]` 无需加载工作区即可解释内置边界规则。支持 BR-001 至 BR-006，不区分大小写。提供原因、正确与违规示例以及解决建议，JSON 包含 `rule`、`title`、`description`、`reason`、`invalid_example`、`valid_example`、`suggestion` 和 `meta.command`。未知规则或无效选项返回退出码 2 和结构化错误。
