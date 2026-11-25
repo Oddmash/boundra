@@ -6,13 +6,13 @@ use boundra_parser::{collect_imports_with_report, ScanOptions};
 use boundra_rules::{check_boundaries_with_config, BoundaryContext};
 
 use crate::output::{
-    print_error, print_error_json, print_json, print_text, BoundaryScanCoverage, CliDiagnostic,
-    OutputFormat,
+    print_error, print_error_json, print_github, print_github_error, print_json, print_sarif,
+    print_sarif_error, print_text, BoundaryFormat, BoundaryScanCoverage, CliDiagnostic,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct CheckBoundariesOptions {
-    pub(crate) format: OutputFormat,
+    pub(crate) format: BoundaryFormat,
     pub(crate) root: PathBuf,
     pub(crate) min_domains: Option<usize>,
 }
@@ -98,8 +98,10 @@ pub(crate) fn run(options: &CheckBoundariesOptions) -> i32 {
     }
 
     match options.format {
-        OutputFormat::Text => print_text(&violations, coverage),
-        OutputFormat::Json => print_json(&violations, coverage),
+        BoundaryFormat::Text => print_text(&violations, coverage),
+        BoundaryFormat::Json => print_json(&violations, coverage),
+        BoundaryFormat::Github => print_github(&violations, coverage),
+        BoundaryFormat::Sarif => print_sarif(&violations),
     }
 
     if violations.is_empty() {
@@ -128,8 +130,10 @@ pub(crate) fn count_analyzed_domains(
 
 fn report_error(options: &CheckBoundariesOptions, diagnostic: &CliDiagnostic) {
     match options.format {
-        OutputFormat::Text => print_error(diagnostic),
-        OutputFormat::Json => print_error_json("check-boundaries", diagnostic),
+        BoundaryFormat::Text => print_error(diagnostic),
+        BoundaryFormat::Json => print_error_json("check-boundaries", diagnostic),
+        BoundaryFormat::Github => print_github_error(diagnostic),
+        BoundaryFormat::Sarif => print_sarif_error(diagnostic),
     }
 }
 
