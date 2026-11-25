@@ -16,6 +16,7 @@ for (const [name, paths, expected] of [
   ["mixed site and runtime", ["site/src/layouts/landing.astro", "packages/runtime/src/index.ts"], { ...none, runtime: true, integration: true }],
   ["CI definition", [".github/workflows/boundra.yml"], all],
   ["workspace lockfile", ["pnpm-lock.yaml"], all],
+  ["editor adapter", ["editors/vscode/extension.cjs"], all],
   ["unknown path", ["new-component/input.ts"], all],
   ["empty diff", [], none],
 ]) test(name, () => assert.deepEqual(classifyPaths(paths), expected));

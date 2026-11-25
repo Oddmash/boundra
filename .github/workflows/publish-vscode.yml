@@ -1,0 +1,63 @@
+name: VS Code Extension
+
+on:
+  pull_request:
+    branches: [develop, main]
+    paths:
+      - 'editors/vscode/**'
+      - '.github/workflows/publish-vscode.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vscode-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify-extension:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo build --locked -p boundra-cli
+      - run: node --test editors/vscode/diagnostics.test.cjs
+      - name: Install pinned verification and packaging tools
+        run: npm install --prefix "$RUNNER_TEMP/vscode-tools" --ignore-scripts --no-audit --no-fund @vscode/test-electron@2.5.2 @vscode/vsce@4.1.0
+      - name: Verify actual extension host
+        run: NODE_PATH="$RUNNER_TEMP/vscode-tools/node_modules" xvfb-run -a node editors/vscode/run-host-test.cjs
+      - name: Package extension
+        working-directory: editors/vscode
+        run: |
+          cp ../../LICENSE LICENSE
+          "$RUNNER_TEMP/vscode-tools/node_modules/.bin/vsce" package --no-dependencies --pre-release --out "$RUNNER_TEMP/boundra.vsix"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: boundra-vsix
+          path: ${{ runner.temp }}/boundra.vsix
+          if-no-files-found: error
+
+  publish:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    needs: verify-extension
+    runs-on: ubuntu-24.04
+    environment: marketplace
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - uses: actions/download-artifact@v4
+        with:
+          name: boundra-vsix
+          path: ${{ runner.temp }}/marketplace
+      - name: Publish verified pre-release package
+        run: |
+          npm install --prefix "$RUNNER_TEMP/vscode-tools" --ignore-scripts --no-audit --no-fund @vscode/vsce@4.1.0
+          "$RUNNER_TEMP/vscode-tools/node_modules/.bin/vsce" publish --oidc --packagePath "$RUNNER_TEMP/marketplace/boundra.vsix"

@@ -1,0 +1,21 @@
+{
+  "name": "boundra-vscode",
+  "displayName": "Boundra",
+  "description": "Workspace boundary diagnostics from the Boundra CLI",
+  "publisher": "oddmash",
+  "version": "0.1.0",
+  "license": "MIT",
+  "repository": { "type": "git", "url": "https://github.com/Oddmash/boundra.git", "directory": "editors/vscode" },
+  "homepage": "https://github.com/Oddmash/boundra/tree/main/editors/vscode",
+  "bugs": { "url": "https://github.com/Oddmash/boundra/issues" },
+  "categories": ["Linters"],
+  "keywords": ["boundra", "typescript", "architecture", "boundaries"],
+  "engines": { "vscode": "^1.95.0" },
+  "main": "./extension.cjs",
+  "extensionKind": ["workspace"],
+  "activationEvents": ["onStartupFinished"],
+  "capabilities": { "untrustedWorkspaces": { "supported": false }, "virtualWorkspaces": { "supported": false } },
+  "contributes": {
+    "commands": [{ "command": "boundra.checkWorkspace", "title": "Boundra: Check Workspace" }]
+  }
+}
