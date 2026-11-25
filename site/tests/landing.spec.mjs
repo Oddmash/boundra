@@ -302,4 +302,3 @@ test("copy failure gives honest localized feedback", async ({ page }) => {
   await page.getByRole("button",{name:"코드 복사"}).first().click();
   await expect(page.locator(".om-toast [role=alert]")).toContainText("코드를 복사하지 못했어요");
 });
-
