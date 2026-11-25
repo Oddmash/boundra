@@ -2,7 +2,7 @@
 
 [한국어](user-guide.ko.md) · [日本語](user-guide.ja.md) · [简体中文](user-guide.zh-cn.md)
 
-Boundra combines a Rust source architecture checker with a framework-neutral TypeScript contract runtime. This guide uses public v0.6.0 behavior. It does not assume a new framework, hosted service, or automatic API server.
+Boundra combines a Rust source architecture checker with a framework-neutral TypeScript contract runtime. This guide uses public v0.7.0 behavior. It does not assume a new framework, hosted service, or automatic API server.
 
 ## 1. Install and verify
 
@@ -130,6 +130,8 @@ node --input-type=module -e 'import fs from "node:fs"; const r = JSON.parse(fs.r
 ```
 
 Adjust the expected domain count to your pilot. Keep the report out of version control if it contains internal paths.
+
+For the current CLI, use `pnpm exec boundra check-boundaries --format json --min-domains 2` to require at least two analyzed domains directly; adjust the threshold to your project.
 
 ## 8. Troubleshooting
 

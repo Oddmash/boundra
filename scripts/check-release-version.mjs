@@ -39,4 +39,12 @@ for (const [source, version] of Object.entries(versions)) {
   }
 }
 
+const cargoLock = await readFile(resolve(repositoryRoot, "Cargo.lock"), "utf8");
+for (const crate of ["boundra-cli", "boundra-core", "boundra-parser", "boundra-rules"]) {
+  const match = cargoLock.match(new RegExp(`\\[\\[package\\]\\]\\s+name = "${crate}"\\s+version = "([^"]+)"`));
+  if (match?.[1] !== requested) {
+    throw new Error(`${crate} lockfile version ${match?.[1] ?? "<missing>"} != ${requested}`);
+  }
+}
+
 console.log(`release-version: OK (${requested})`);

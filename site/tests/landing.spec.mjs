@@ -35,24 +35,66 @@ const assertReflow = async (page) => {
 
 const assertSceneGeometry = async (page) => {
   const geometry = await page.locator("[data-active=true]").evaluate(scene => {
-    const route = scene.querySelector(".route");
-    const track = scene.querySelector(".route-track");
-    const bounds = route.getBoundingClientRect();
-    const center = selector => {
-      const rect = scene.querySelector(selector).getBoundingClientRect();
-      return (rect.top + rect.height / 2 - bounds.top) / bounds.height * 100;
+    const source = scene.querySelector(".scene-code").getBoundingClientRect();
+    const checker = scene.querySelector(".checker").getBoundingClientRect();
+    const blocked = scene.querySelector('[data-outcome="blocked"]').getBoundingClientRect();
+    const allowed = scene.querySelector('[data-outcome="allowed"]').getBoundingClientRect();
+    const point = (selector, atEnd) => {
+      const path = scene.querySelector(selector);
+      return path.getPointAtLength(atEnd ? path.getTotalLength() : 0).matrixTransform(path.getScreenCTM());
     };
+    const distance = (point, rect, bottom) => Math.hypot(
+      point.x - (rect.left + rect.width / 2),
+      point.y - (bottom ? rect.bottom : rect.top)
+    );
+    const selected = scene.querySelector('[data-selected="true"]').dataset.outcome;
     return {
-      startError: Math.abs(track.getPointAtLength(0).y - center(".domain:not(.target) .selected")),
-      endError: Math.abs(track.getPointAtLength(track.getTotalLength()).y - center(".target .selected")),
-      rows: [...scene.querySelectorAll(".domain:not(.target) .layer")].map(node => node.textContent),
-      targetRows: [...scene.querySelectorAll(".target .layer")].map(node => node.textContent),
+      errors: [
+        distance(point(".scan-wire .wire-track", false), source, true),
+        distance(point(".scan-wire .wire-track", true), checker, false),
+        distance(point('[data-branch="blocked"]', false), checker, true),
+        distance(point('[data-branch="allowed"]', false), checker, true),
+        distance(point('[data-branch="blocked"]', true), blocked, false),
+        distance(point('[data-branch="allowed"]', true), allowed, false),
+      ],
+      selected,
+      signal: scene.querySelector(".decision-signal").getAttribute("d"),
+      selectedTrack: scene.querySelector(`[data-branch="${selected}"]`).getAttribute("d"),
+      accepted: scene.classList.contains("accepted"),
+      count: scene.querySelectorAll('[data-selected="true"]').length,
+      phase: scene.closest(".boundary-stage").dataset.phase,
+      wires: [...scene.querySelectorAll(".wire-signal")].map(path => {
+        const viewBox = path.ownerSVGElement.viewBox.baseVal;
+        const rect = path.ownerSVGElement.getBoundingClientRect();
+        const matrix = path.getScreenCTM();
+        const style = getComputedStyle(path);
+        return {
+          widthError: Math.abs(viewBox.width - rect.width),
+          heightError: Math.abs(viewBox.height - rect.height),
+          scaleError: Math.max(Math.abs(matrix.a - 1), Math.abs(matrix.d - 1)),
+          lengthError: Math.abs(parseFloat(path.style.getPropertyValue("--wire-length")) - path.getTotalLength()),
+          vectorEffect: style.vectorEffect,
+          dash: style.strokeDasharray,
+          offset: parseFloat(style.strokeDashoffset),
+        };
+      }),
     };
   });
-  expect(geometry.rows).toEqual(["client", "shared", "server"]);
-  expect(geometry.targetRows).toEqual(["client", "shared/public", "server/internal"]);
-  expect(geometry.startError).toBeLessThan(1);
-  expect(geometry.endError).toBeLessThan(1);
+  expect(geometry.errors.every(error => error <= 1.5), JSON.stringify(geometry)).toBe(true);
+  expect(geometry.count).toBe(1);
+  expect(geometry.selected).toBe(geometry.accepted ? "allowed" : "blocked");
+  expect(geometry.signal).toBe(geometry.selectedTrack);
+  for (const wire of geometry.wires) {
+    expect(wire.widthError).toBeLessThan(0.1);
+    expect(wire.heightError).toBeLessThan(0.1);
+    expect(wire.scaleError).toBeLessThan(0.01);
+    expect(wire.lengthError).toBeLessThan(0.1);
+    expect(wire.vectorEffect).toBe("none");
+    if (geometry.phase === "result") {
+      expect(wire.dash).toBe("none");
+      expect(wire.offset).toBe(0);
+    }
+  }
 };
 
 test("reflow diagnostics detect content clipped on the left", async ({
@@ -102,6 +144,7 @@ for (const width of [1440, 768, 390, 320]) {
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     await expect(page.locator("[data-active=true] .rule")).toHaveText("BR-001");
     await expect(page.locator(".boundary-stage")).toHaveAttribute("data-ready", "true");
+    await expect(page.locator(".boundary-stage")).toHaveAttribute("data-phase", "result");
     await assertSceneGeometry(page);
     if (width >= 921) {
       const bottom = await page.locator(".hero-band").evaluate(element => element.getBoundingClientRect().bottom);
@@ -149,38 +192,107 @@ for (const width of [1440, 768, 390, 320]) {
   });
 }
 
-test("automatic boundary sequence pauses and supports explicit inspection", async ({ page }) => {
+test("the boundary scan routes the result in one synchronized sequence", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.addInitScript(() => {
+    window.boundraTrace = [];
+    const observer = new MutationObserver(records => {
+      for (const record of records) {
+        const element = record.target;
+        if (!(element instanceof HTMLElement) || !element.hasAttribute("data-boundary-stage")) continue;
+        const scene = element.querySelector("[data-active=true]");
+        if (!scene) continue;
+        const scanSignal = scene.querySelector(".scan-signal");
+        const decisionSignal = scene.querySelector(".decision-signal");
+        const decisionStyle = getComputedStyle(decisionSignal);
+        window.boundraTrace.push({
+          phase: element.dataset.phase,
+          scene: scene.dataset.scene,
+          input: Number(element.style.getPropertyValue("--input-offset")),
+          output: Number(element.style.getPropertyValue("--decision-offset")),
+          check: Number(element.style.getPropertyValue("--check-progress")),
+          scanDash: getComputedStyle(scanSignal).strokeDasharray,
+          outputDash: decisionStyle.strokeDasharray,
+          outputVisible: decisionStyle.visibility === "visible",
+          outputLength: decisionSignal.getTotalLength(),
+          outputOffset: parseFloat(decisionStyle.strokeDashoffset),
+        });
+      }
+    });
+    observer.observe(document, { subtree: true, attributeFilter: ["data-phase"] });
+  });
   await page.goto("./");
+  const stage = page.locator(".boundary-stage");
+  await expect(stage).toHaveAttribute("data-running", "true");
   const rule = page.locator("[data-active=true] .rule");
   await expect(rule).toHaveText("BR-001");
   await expect(page.getByRole("button", { name: "Next example" })).toBeHidden();
-  const stage = page.locator(".boundary-stage");
-  await expect(stage).toHaveAttribute("data-running", "true");
-  const packet = page.locator("[data-active=true] .route-packet");
-  await expect(packet).toHaveCSS("animation-iteration-count", "infinite");
-  const blocked = await packet.getAttribute("d");
-  expect(blocked).not.toContain("100 ");
-  await expect(rule).toHaveText("PASS", { timeout: 4000 });
-  expect(await packet.getAttribute("d")).toContain("100 ");
-  await expect(rule).toHaveText("BR-004", { timeout: 3500 });
-  await expect(rule).toHaveText("PASS", { timeout: 4000 });
+  await assertSceneGeometry(page);
+
+  await expect(stage).toHaveAttribute("data-phase", "result", { timeout: 4000 });
+  const states = await page.evaluate(() => window.boundraTrace.filter(state => state.scene === "0"));
+  const checking = states.find(state => state.phase === "checking");
+  const decision = states.find(state => state.phase === "decision");
+  expect(checking).toBeDefined();
+  expect(decision).toBeDefined();
+  expect(checking.input).toBe(0);
+  expect(checking.output).toBe(100);
+  expect(checking.scanDash).toBe("none");
+  expect(checking.outputVisible).toBe(false);
+  expect(decision.input).toBe(0);
+  expect(decision.check).toBe(1);
+  expect(decision.outputVisible).toBe(true);
+  expect(decision.outputDash).not.toBe("none");
+  expect(Math.abs(parseFloat(decision.outputDash) - decision.outputLength)).toBeLessThan(0.1);
+  expect(Math.abs(decision.outputOffset - decision.outputLength * decision.output / 100)).toBeLessThan(0.1);
+  expect(states.at(-1)).toMatchObject({ phase: "result", scene: "0", input: 0, output: 0, check: 1, scanDash: "none", outputDash: "none", outputVisible: true, outputOffset: 0 });
+  await expect(page.locator('[data-active=true] [data-selected="true"]')).toHaveAttribute("data-outcome", "blocked");
+  await expect(page.locator("[data-active=true] [data-scene-title]")).toBeVisible();
+
+  await expect(rule).toHaveText("PASS", { timeout: 5000 });
+  await expect(page.locator('[data-active=true] .syntax-string')).toHaveClass(/revised/);
+  await expect(stage).toHaveAttribute("data-phase", "result", { timeout: 3500 });
+  await expect(page.locator('[data-active=true] [data-selected="true"]')).toHaveAttribute("data-outcome", "allowed");
+  await assertSceneGeometry(page);
+
   await page.getByRole("button", { name: "Pause animation" }).click();
   await expect(page.getByRole("button", { name: "Resume animation" })).toBeVisible();
-  await page.mouse.move(0, 0);
-  await page.locator("h1").click();
-  await page.waitForTimeout(5500);
-  await expect(rule).toHaveText("PASS");
-  await page.getByRole("button", { name: "Next example" }).click();
-  await expect(rule).toHaveText("BR-006");
   await expect(stage).toHaveAttribute("data-running", "false");
+  const frozen = await stage.getAttribute("style");
+  await page.waitForTimeout(3600);
+  await expect(rule).toHaveText("PASS");
+  await expect(stage).toHaveAttribute("style", frozen);
+  await page.getByRole("button", { name: "Next example" }).click();
+  await expect(rule).toHaveText("BR-004");
+  await expect(stage).toHaveAttribute("data-phase", "result");
+  await expect(stage).toHaveAttribute("data-running", "false");
+  await assertSceneGeometry(page);
   await page.getByRole("button", { name: "Resume animation" }).click();
   await page.locator("#quickstart").scrollIntoViewIfNeeded();
   await page.locator("#quickstart h2").click();
-  await page.mouse.move(0,0);
-  await page.waitForTimeout(5500);
-  await expect(rule).toHaveText("BR-006");
+  await page.mouse.move(0, 0);
+  await expect(stage).toHaveAttribute("data-running", "false");
+  await page.waitForTimeout(3600);
+  await expect(rule).toHaveText("BR-004");
+});
+
+test("wire geometry follows viewport changes without breaking the result trace", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("./");
+  await expect(page.locator(".boundary-stage")).toHaveAttribute("data-geometry-ready", "true");
+  await assertSceneGeometry(page);
+  for (const width of [320, 768, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await expect.poll(() => page.locator("[data-active=true] .decision-wire svg").evaluate(svg => {
+      const bounds = svg.getBoundingClientRect();
+      const viewBox = svg.viewBox.baseVal;
+      return Math.max(Math.abs(bounds.width - viewBox.width), Math.abs(bounds.height - viewBox.height));
+    })).toBeLessThan(0.1);
+    await assertSceneGeometry(page);
+    await assertReflow(page);
+  }
 });
 
 for (const [route, lang, name, start, suffix] of [

@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-import { boundra } from "../src/vite";
+import { boundra, runBoundaryCheck } from "../src/vite";
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
@@ -49,6 +49,40 @@ try {
   assert(publishCount === 2, "Svelte updates should rerun boundary checks");
   plugin.handleHotUpdate({ file: join(root, "apps/web/src/theme.css") });
   assert(publishCount === 2, "non-source updates should not rerun boundary checks");
+
+  await writeFile(join(root, "apps/web/src/main.ts"), "export {};\n");
+  plugin.handleHotUpdate({ file: join(root, "apps/web/src/main.ts") });
+  assert((received as { diagnostics: unknown[] }).diagnostics.length === 0,
+    "a successful scan should clear boundary diagnostics");
+
+  await writeFile(join(root, "boundra.config.json"), "{ invalid json");
+  plugin.handleHotUpdate({ file: join(root, "apps/web/src/main.ts") });
+  const errorPayload = received as ReturnType<typeof runBoundaryCheck>;
+  const projectError = errorPayload.diagnostics[0];
+  assert(projectError?.rule === "PROJECT-001", "project loading errors should preserve the CLI diagnostic code");
+  assert(projectError?.file === root, "project loading errors should identify the CLI root");
+  assert(projectError?.message.includes("failed to load project"), "project loading errors should retain the CLI message");
+  assert(projectError?.suggestion.includes("config or domain manifest"), "project loading errors should retain the CLI suggestion");
+
+  const missingCli = runBoundaryCheck(root, join(root, "missing-boundra"));
+  assert(missingCli.diagnostics[0]?.rule === "PROJECT-002",
+    "a missing CLI must report a diagnostic instead of clearing the overlay");
+  assert(missingCli.diagnostics[0]?.message.length > 0,
+    "a missing CLI must provide a failure message");
+
+  const previousDirectory = process.cwd();
+  try {
+    process.chdir(root);
+    await writeFile(join(root, "check-boundaries"), "process.stdout.write('{}');\n");
+    assert(runBoundaryCheck(root, process.execPath).diagnostics[0]?.rule === "PROJECT-002",
+      "unexpected JSON must not be reported as a successful scan");
+    await writeFile(join(root, "check-boundaries"),
+      "process.stdout.write(JSON.stringify({ violations: [] })); process.exitCode = 2;\n");
+    assert(runBoundaryCheck(root, process.execPath).diagnostics[0]?.rule === "PROJECT-002",
+      "a nonzero exit with empty diagnostics must not clear the overlay");
+  } finally {
+    process.chdir(previousDirectory);
+  }
 
   console.log("vite-test: OK");
 } finally {

@@ -1,52 +1,13 @@
 import type { MarkdownInstance } from 'astro';
 import type { LandingLocale } from './landing-copy';
 import { docCopy } from './doc-ui-copy';
+import { groups } from './docs-inventory.mjs';
 
 const docs = import.meta.glob<MarkdownInstance<Record<string, unknown>>>('../../docs/**/*.md', { eager: true });
 const documents = new Map(Object.entries(docs).map(([path, document]) => [path.replace(/^.*?\/docs\//, '').replace(/\.md$/, ''), document]));
 
-export const groups = [
-  {
-    label: "Start here",
-    items: [
-      ["user-guide", "User guide"],
-      ["quickstart", "Quickstart"],
-      ["cli-install", "Installation"],
-      ["example", "Order and billing example"],
-    ],
-  },
-  {
-    label: "Architecture",
-    items: [
-      ["architecture", "Architecture"],
-      ["boundary-rules", "Boundary rules"],
-      ["domain-manifest-spec", "Domain manifests"],
-      ["product-positioning", "Adoption and limitations"],
-    ],
-  },
-  {
-    label: "Runtime and frameworks",
-    items: [
-      ["contract-schema-spec", "Contracts"],
-      ["http-transport", "HTTP transport"],
-      ["frameworks", "Next.js and Vite"],
-      ["vite-integration", "Vite integration"],
-      ["error-view", "Development error view"],
-    ],
-  },
-  {
-    label: "Reference",
-    items: [
-      ["cli-spec-v1", "CLI commands"],
-      ["config-spec", "Configuration"],
-      ["config-authoring", "Configuration authoring"],
-      ["diagnostic-spec", "Diagnostics"],
-      ["ci-integration", "CI integration"],
-      ["performance", "Performance"],
-      ["framework-conformance", "Framework compatibility"],
-    ],
-  },
-];
+export { groups } from './docs-inventory.mjs';
+
 
 export const docsHome = (base: string, locale: LandingLocale) => base + 'docs/' + (locale === 'en' ? '' : locale + '/');
 export const docPath = (base: string, slug: string, locale: LandingLocale): string | undefined => {

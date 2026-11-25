@@ -1,7 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
 
-use boundra_core::load_project_model;
+use boundra_core::{load_project_model, normalize_workspace_path, DomainRootIndex};
 use boundra_parser::{collect_imports_with_report, ScanOptions};
 use boundra_rules::{check_boundaries_with_config, BoundaryContext};
 
@@ -107,19 +107,13 @@ fn count_analyzed_domains(
     scanned_files: &[String],
     domain_roots: &BTreeMap<String, String>,
 ) -> usize {
+    let domain_index = DomainRootIndex::new(domain_roots);
     scanned_files
         .iter()
         .filter_map(|file| {
-            let normalized_file = file.replace('\\', "/");
-            domain_roots
-                .iter()
-                .filter(|(_, root)| {
-                    let normalized_root = root.replace('\\', "/").trim_matches('/').to_string();
-                    normalized_file == normalized_root
-                        || normalized_file.starts_with(&format!("{normalized_root}/"))
-                })
-                .max_by_key(|(_, root)| root.len())
-                .map(|(domain, _)| domain.as_str())
+            domain_index
+                .find(&normalize_workspace_path(file))
+                .map(|(domain, _)| domain)
         })
         .collect::<BTreeSet<_>>()
         .len()
@@ -129,5 +123,29 @@ fn report_error(options: &CheckBoundariesOptions, diagnostic: &CliDiagnostic) {
     match options.format {
         OutputFormat::Text => print_error(diagnostic),
         OutputFormat::Json => print_error_json("check-boundaries", diagnostic),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn coverage_counts_unique_deepest_domains_and_excludes_prefix_matches() {
+        let roots = BTreeMap::from([
+            ("order".to_string(), "domains/order".to_string()),
+            ("invoice".to_string(), "domains/order/nested/invoice".to_string()),
+            ("shipping".to_string(), "domains/shipping".to_string()),
+        ]);
+        let nested_only = vec![
+            "domains/order/nested/invoice/shared/public.ts".to_string(),
+            "domains\\order\\nested\\invoice\\server\\handler.ts".to_string(),
+            "domains/order-extra/shared/public.ts".to_string(),
+        ];
+        assert_eq!(count_analyzed_domains(&nested_only, &roots), 1);
+
+        let mut with_parent = nested_only;
+        with_parent.push("domains/order/client/view.ts".to_string());
+        assert_eq!(count_analyzed_domains(&with_parent, &roots), 2);
     }
 }

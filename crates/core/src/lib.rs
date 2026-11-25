@@ -83,6 +83,52 @@ impl ProjectModel {
     }
 }
 
+pub struct DomainRootIndex<'a> {
+    by_root: BTreeMap<String, &'a str>,
+}
+
+impl<'a> DomainRootIndex<'a> {
+    pub fn new(domain_roots: &'a BTreeMap<String, String>) -> Self {
+        Self {
+            by_root: domain_roots
+                .iter()
+                .map(|(domain, root)| (normalize_workspace_path(root), domain.as_str()))
+                .collect(),
+        }
+    }
+
+    pub fn find<'path>(&self, normalized_path: &'path str) -> Option<(&'a str, &'path str)> {
+        if self.by_root.is_empty() {
+            return None;
+        }
+        let mut candidate = normalized_path;
+        loop {
+            if let Some(&domain) = self.by_root.get(candidate) {
+                return Some((domain, candidate));
+            }
+            if candidate.is_empty() {
+                return None;
+            }
+            candidate = candidate.rsplit_once('/').map_or("", |(parent, _)| parent);
+        }
+    }
+}
+
+pub fn normalize_workspace_path(input: &str) -> String {
+    let mut stack = Vec::new();
+    let replaced = input.replace('\\', "/");
+    for part in replaced.split('/') {
+        match part {
+            "" | "." => {}
+            ".." => {
+                stack.pop();
+            }
+            value => stack.push(value),
+        }
+    }
+    stack.join("/")
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BoundraConfig {
     pub project: ProjectConfig,
@@ -1081,5 +1127,40 @@ impl RawPublicApi {
                 .shared
                 .unwrap_or_else(|| default_public_api.shared.clone()),
         }
+    }
+}
+
+#[cfg(test)]
+mod domain_root_index_tests {
+    use super::{normalize_workspace_path, DomainRootIndex};
+    use std::collections::BTreeMap;
+
+    #[test]
+    fn finds_deepest_domain_root_on_segment_boundaries() {
+        let roots = BTreeMap::from([
+            ("parent".to_string(), "domains/parent".to_string()),
+            (
+                "child".to_string(),
+                "domains\\parent\\groups\\child".to_string(),
+            ),
+            ("other".to_string(), "domains/other".to_string()),
+        ]);
+        let index = DomainRootIndex::new(&roots);
+
+        let child = normalize_workspace_path("domains/parent/groups/./child/server/file.ts");
+        assert_eq!(
+            index.find(&child),
+            Some(("child", "domains/parent/groups/child"))
+        );
+        assert_eq!(
+            index.find("domains/parent/shared/public.ts"),
+            Some(("parent", "domains/parent"))
+        );
+        assert_eq!(index.find("domains/parent-extra/shared/public.ts"), None);
+        assert_eq!(
+            index.find("domains/parent/groups/child"),
+            Some(("child", "domains/parent/groups/child"))
+        );
+        assert_eq!(index.find("apps/web/main.ts"), None);
     }
 }

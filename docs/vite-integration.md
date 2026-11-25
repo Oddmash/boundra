@@ -24,6 +24,7 @@ During development the plugin:
 - reacts to TypeScript, JavaScript, and Svelte source updates
 - clears resolved boundary diagnostics automatically; runtime diagnostics can
   be dismissed with the close button or `Escape`
+- reports CLI/project failures, including structured diagnostic codes and recovery suggestions, instead of clearing the overlay when a check cannot run
 
 The overlay is not injected during production builds. Use `cliPath` only in
 controlled development or tests when the native CLI is not resolved through

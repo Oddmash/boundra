@@ -9,7 +9,7 @@ on:
       version:
         description: Version to build without publishing
         required: true
-        default: "0.6.0"
+        default: "0.7.0"
 
 env:
   RELEASE_VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
@@ -39,6 +39,13 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm check-release-notes "${RELEASE_VERSION}"
       - run: pnpm check-release-version "${RELEASE_VERSION}"
+      - name: Verify legacy CLI download through repository redirect
+        shell: bash
+        run: |
+          legacy_dir="$(mktemp -d "$RUNNER_TEMP/boundra-legacy-XXXXXX")"
+          npm pack boundra@0.6.0 --ignore-scripts --pack-destination "$legacy_dir"
+          tar -xzf "$legacy_dir/boundra-0.6.0.tgz" -C "$legacy_dir"
+          BOUNDRA_CACHE_DIR="$legacy_dir/cache" node "$legacy_dir/package/bin/boundra.mjs" --version | grep -F '0.6.0'
 
   build-cli:
     needs: validate

@@ -1,4 +1,6 @@
 from html.parser import HTMLParser
+import re
+import subprocess
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
@@ -47,5 +49,34 @@ for page_path, page in pages.items():
 
 for locale in ('', '.ko', '.ja', '.zh-cn'):
     assert root / 'docs' / f'user-guide{locale}' / 'index.html' in pages
+
+docs_root = Path(__file__).resolve().parents[2] / 'docs'
+locales = ('ko', 'ja', 'zh-cn')
+reference_sets = []
+
+
+def code_blocks(text):
+    return [
+        block.rstrip()
+        for block in re.findall(r'^\x60\x60\x60[^\n]*\n.*?^\x60\x60\x60[^\n]*$', text, re.M | re.S)
+    ]
+
+
+for locale in locales:
+    references = {
+        path.name.removesuffix(f'.{locale}.md'): path
+        for path in docs_root.glob(f'*.{locale}.md')
+    }
+    reference_sets.append(set(references))
+    for slug, translated in references.items():
+        original = (docs_root / f'{slug}.md').read_text(encoding='utf-8')
+        content = translated.read_text(encoding='utf-8')
+        assert code_blocks(original) == code_blocks(content), (slug, locale, 'code example mismatch')
+        assert root / 'docs' / f'{slug}.{locale}' / 'index.html' in pages
+assert reference_sets[0] == reference_sets[1] == reference_sets[2], 'reference localization coverage differs'
+
+scripts = Path(__file__).resolve().parent
+subprocess.run(['node', '--test', str(scripts / 'public-docs.test.mjs')], check=True)
+subprocess.run(['node', str(scripts / 'public-docs.mjs'), '--verify', str(root)], check=True)
 
 print(f'Validated {len(pages)} pages and {sum(len(page.links) for page in pages.values())} link references')
