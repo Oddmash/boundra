@@ -52,7 +52,10 @@ export const readOrder = () => createBoundraClient(async () => ({id: "order-1", 
   await write("domains/commerce/order/server/internal.ts", "export const internal = 1;\n");
   await write("domains/commerce/order/server/public.ts", `import { implementQuery } from "boundra";
 import { query } from "../shared/public";
-export const orderImplementation = implementQuery(query, ({id}) => ({id, status: "ready" as const}));
+export const orderImplementation = implementQuery(query, ({id}) => {
+  if (id === "fixture-failure") throw new Error("fixture-only internal failure");
+  return {id, status: "ready" as const};
+});
 `);
   await write("domains/billing/shared/public.ts", 'export { query } from "@domains/commerce/order/shared/public";\n');
   await write("apps/next/app/layout.tsx", 'import type { ReactNode } from "react";\nexport default function Layout({children}: {children: ReactNode}) { return <html lang="en"><body>{children}</body></html>; }');
@@ -60,8 +63,10 @@ export const orderImplementation = implementQuery(query, ({id}) => ({id, status:
   await write("apps/next/app/contracts/order-summary/route.ts", `import { BoundraRuntimeError, executeContract } from "boundra";
 import { orderImplementation } from "@domains/commerce/order/server/public";
 export async function POST(request: Request) {
+  let body: unknown;
+  try { body = await request.json(); } catch { return Response.json({code: "RUNTIME-001"}, {status: 400}); }
   try {
-    const {input} = await request.json();
+    const input = body && typeof body === "object" && "input" in body ? body.input : undefined;
     const result = await executeContract(orderImplementation, input);
     return Response.json({result});
   } catch (error) {
@@ -113,6 +118,14 @@ try {
   const invalid = await fetch("http://127.0.0.1:41379/contracts/order-summary", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({input: {id: ""}})});
   assert.equal(invalid.status, 400);
   assert.deepEqual(await invalid.json(), {code: "RUNTIME-001"});
+  for (const body of ["{", JSON.stringify({}), JSON.stringify(null)]) {
+    const malformed = await fetch("http://127.0.0.1:41379/contracts/order-summary", {method: "POST", headers: {"content-type": "application/json"}, body});
+    assert.equal(malformed.status, 400);
+    assert.deepEqual(await malformed.json(), {code: "RUNTIME-001"});
+  }
+  const failed = await fetch("http://127.0.0.1:41379/contracts/order-summary", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({input: {id: "fixture-failure"}})});
+  assert.equal(failed.status, 500);
+  assert.deepEqual(await failed.json(), {code: "REQUEST_FAILED"});
   await page.goto("http://127.0.0.1:41379");
   await page.getByText("Next order: ready").waitFor();
   await page.goto(server.resolvedUrls.local[0]);
