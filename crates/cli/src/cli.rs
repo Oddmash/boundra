@@ -63,7 +63,7 @@ fn print_help() {
     println!("  boundra init [--root <path>] [--name <kebab-case>]");
     println!("  boundra migrate [--root <path>] [--from <relative-path>] [--format text|json]");
     println!(
-        "  boundra graph-domains [--root <path>] [--format mermaid|dot|json] [--output <path>]"
+        "  boundra graph-domains [--root <path>] [--format mermaid|dot|json|html] [--output <path>]"
     );
     println!("  boundra generate route|query|mutation|resource <domain>/<name> [--root <path>]");
 }
