@@ -120,7 +120,7 @@ fn read_baseline(path: &PathBuf) -> Result<(usize, BTreeMap<Fingerprint, usize>)
         if entry.count == 0
             || !matches!(
                 key.rule.as_str(),
-                "BR-001" | "BR-002" | "BR-003" | "BR-004" | "BR-005" | "BR-006"
+                "BR-001" | "BR-002" | "BR-003" | "BR-004" | "BR-005" | "BR-006" | "BR-007"
             )
             || key.file.is_empty()
             || key.file.starts_with('/')
