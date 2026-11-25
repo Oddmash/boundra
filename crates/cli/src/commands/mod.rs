@@ -9,3 +9,4 @@ pub mod generate;
 #[path = "graph-domains.rs"]
 pub mod graph_domains;
 pub mod init;
+pub mod watch;
