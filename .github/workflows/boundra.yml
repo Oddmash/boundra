@@ -1,7 +1,8 @@
-name: Boundra
+name: CI
 
 on:
   pull_request:
+    branches: [develop, main]
     types: [opened, reopened, synchronize, edited, ready_for_review]
   push:
     branches:
@@ -22,16 +23,23 @@ jobs:
       pull-requests: read
     uses: Oddmash/.github/.github/workflows/ci-scope.yml@9a2077a4b0ff9188ef2cb2ab306f181a134d3110
     with:
-      profile: meta
+      profile: agents
   verify-example:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: boundra-cargo-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock', '**/Cargo.toml') }}
       - uses: actions/setup-node@v6
         with:
           node-version: 24
-      - run: corepack enable
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa
       - run: pnpm install --frozen-lockfile
       - run: pnpm check-release-notes
       - run: pnpm verify-example
@@ -40,6 +48,8 @@ jobs:
       - run: cargo clippy --workspace --all-targets -- -D warnings
 
   verify-runtime:
+    needs: scope
+    if: needs.scope.outputs.runtime == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -47,14 +57,21 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
       - uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
-      - run: npm install
-      - run: npm exec tsc -- -p packages/runtime/tsconfig.build.json
-      - run: npm run test-runtime
+      - run: node node_modules/typescript/bin/tsc -p packages/runtime/tsconfig.build.json
+      - run: node --import tsx packages/runtime/tests/runtime-test.ts
 
   verify-cli-platforms:
+    needs: scope
+    if: needs.scope.outputs.runtime == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -67,6 +84,13 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: boundra-cargo-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock', '**/Cargo.toml') }}
       - uses: actions/setup-node@v6
         with:
           node-version: 24
@@ -78,10 +102,19 @@ jobs:
           BOUNDRA_CLI_PATH: ${{ runner.os == 'Windows' && format('{0}\\target\\release\\boundra.exe', github.workspace) || format('{0}/target/release/boundra', github.workspace) }}
 
   benchmark-smoke:
+    needs: scope
+    if: needs.scope.outputs.runtime == 'true'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: boundra-cargo-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock', '**/Cargo.toml') }}
       - uses: actions/setup-node@v6
         with:
           node-version: 24
@@ -92,8 +125,16 @@ jobs:
   verify:
     if: ${{ always() }}
     needs: [scope, verify-example, verify-runtime, verify-cli-platforms, benchmark-smoke]
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-slim
     steps:
-      - name: Require all Boundra checks
-        if: ${{ needs.scope.result != 'success' || needs.verify-example.result != 'success' || needs.verify-runtime.result != 'success' || needs.verify-cli-platforms.result != 'success' || needs.benchmark-smoke.result != 'success' }}
-        run: exit 1
+      - name: Require all applicable Boundra checks
+        env:
+          SCOPE: ${{ needs.scope.result }}
+          EXAMPLE: ${{ needs.verify-example.result }}
+          RUNTIME: ${{ needs.scope.outputs.runtime }}
+          RESULTS: ${{ needs.verify-runtime.result }} ${{ needs.verify-cli-platforms.result }} ${{ needs.benchmark-smoke.result }}
+        run: |
+          test "$SCOPE:$EXAMPLE" = success:success
+          for result in $RESULTS; do
+            case "$RUNTIME:$result" in true:success|false:skipped) ;; *) exit 1 ;; esac
+          done
