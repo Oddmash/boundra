@@ -114,7 +114,7 @@ for (const width of [1440, 768, 390, 320]) {
     await assertReflow(page);
     const next = page.getByRole("button", { name: "Next example" });
     await expect(page.getByRole("button", { name: "Pause animation" })).toBeHidden();
-    for (const rule of ["BR-004", "BR-006", "PASS"]) {
+    for (const rule of ["PASS", "BR-004", "PASS", "BR-006", "PASS"]) {
       await next.press("Enter");
       await expect(page.locator("[data-active=true] .rule")).toHaveText(rule);
       await assertSceneGeometry(page);
@@ -155,21 +155,22 @@ test("automatic boundary sequence pauses and supports explicit inspection", asyn
   await page.goto("./");
   const rule = page.locator("[data-active=true] .rule");
   await expect(rule).toHaveText("BR-001");
-  await expect(rule).toHaveText("BR-004", { timeout: 8000 });
+  await expect(page.getByRole("button", { name: "Next example" })).toBeHidden();
+  await expect(rule).toHaveText("PASS", { timeout: 9000 });
   await page.getByRole("button", { name: "Pause animation" }).click();
   await expect(page.getByRole("button", { name: "Resume animation" })).toBeVisible();
   await page.mouse.move(0, 0);
   await page.locator("h1").click();
   await page.waitForTimeout(5500);
-  await expect(rule).toHaveText("BR-004");
+  await expect(rule).toHaveText("PASS");
   await page.getByRole("button", { name: "Next example" }).click();
-  await expect(rule).toHaveText("BR-006");
+  await expect(rule).toHaveText("BR-004");
   await page.getByRole("button", { name: "Resume animation" }).click();
   await page.locator("#quickstart").scrollIntoViewIfNeeded();
   await page.locator("#quickstart h2").click();
   await page.mouse.move(0,0);
   await page.waitForTimeout(5500);
-  await expect(rule).toHaveText("BR-006");
+  await expect(rule).toHaveText("BR-004");
 });
 
 for (const [route, lang, name, start, suffix] of [
