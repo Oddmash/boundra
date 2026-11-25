@@ -33,6 +33,10 @@
       "types": "./dist/config/index.d.ts",
       "import": "./dist/config/index.js"
     },
+    "./eslint": {
+      "types": "./dist/eslint.d.ts",
+      "import": "./dist/eslint.js"
+    },
     "./dev-overlay": {
       "types": "./dist/dev-overlay.d.ts",
       "import": "./dist/dev-overlay.js"

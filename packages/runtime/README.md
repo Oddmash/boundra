@@ -78,6 +78,20 @@ or runtime security boundary.
 - `defineConfig` and `BoundraConfig` from `boundra/config`: author configuration with TypeScript
 - `createBoundraErrorView` from `boundra/ui`: render framework-neutral development diagnostics
 - `boundra/vite`: integrate boundary and runtime diagnostics into Vite development
+- `boundra/eslint`: create a flat-config plugin from a single project boundary scan
+
+### ESLint (flat config)
+
+```js
+import { createBoundaryPlugin } from "boundra/eslint";
+
+export default [{
+  plugins: { boundra: createBoundaryPlugin({ root: import.meta.dirname }) },
+  rules: { "boundra/boundaries": "error" },
+}];
+```
+
+The adapter takes one full scan when the config loads, reusing its diagnostics for every linted file. Use a fresh ESLint process for each lint run, without `--cache`, to avoid stale project-wide diagnostics. The snapshot does not support live editor refresh or processor-generated virtual documents. Run `boundra check-boundaries` in CI to cover files excluded by ESLint. A malformed or failed scan aborts configuration rather than silently passing lint.
 
 Configuration-aware TypeScript tooling can use the public config contract:
 
