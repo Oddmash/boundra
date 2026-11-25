@@ -75,8 +75,10 @@ import を分析し、境界ルール違反を検出します。
 
 オプション：
 - `--root <path>`（デフォルト：`.`）
-- `--format mermaid|json|dot`（デフォルト：`mermaid`）
+- `--format mermaid|json|dot|html`（デフォルト：`mermaid`）
 - `--output <path>`
+
+`boundra graph-domains --format html --output graph.html` で検索可能なオフライン依存関係ビューを生成します。ブラウザーで開くと宣言された依存関係を確認でき、ネットワークやサーバーは不要です。
 
 ### 1.4 `generate route <domain>/<name>`
 ### 1.5 `generate query <domain>/<name>`
