@@ -11,6 +11,8 @@
 - `--help`, `-h`
 - `--version`, `-V`
 
+`boundra <command> --help` 또는 `-h`로 명령별 사용법을 확인할 수 있습니다.
+
 ### 1.0 `init`
 
 애플리케이션 파일을 덮어쓰지 않고 Boundra 워크스페이스를 초기화합니다.
