@@ -71,4 +71,15 @@ function createScheduler(run, publish, delay = 150) {
   };
 }
 
-module.exports = { inside, findRoot, findLauncher, decodeReport, runCheck, createScheduler };
+function publishDiagnostics(collection, items, toUri, toDiagnostic) {
+  const byFile = new Map();
+  for (const item of items) {
+    const list = byFile.get(item.file) ?? [];
+    list.push(toDiagnostic(item));
+    byFile.set(item.file, list);
+  }
+  collection.clear();
+  for (const [file, diagnostics] of byFile) collection.set(toUri(file), diagnostics);
+}
+
+module.exports = { inside, findRoot, findLauncher, decodeReport, runCheck, createScheduler, publishDiagnostics };
