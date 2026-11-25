@@ -200,3 +200,12 @@ source coverage, unique import specifiers and warnings. It skips unsupported
 names, empty candidates and symbolic-link candidates. Ambiguous layouts and
 invalid paths fail with exit code 2. No configuration, manifest or source file
 is created, modified or moved. Review all candidates before adoption.
+
+## Changed-file reporting
+
+`boundra check-changed --base <ref> [--root <path>] [--format text|json]`
+resolves the explicit Git base and reports focused and other violations from a
+complete workspace scan. It includes staged, unstaged and untracked paths;
+deletions, renames and non-source changes conservatively focus the full result.
+Exit 1 still means any full-scan violation, including unchanged files. Invalid
+Git references or failed/empty scans return 2. Nothing is modified.
