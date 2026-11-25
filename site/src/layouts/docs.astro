@@ -15,6 +15,30 @@ const t = docCopy[localeFromLang(lang)];
 <script>
   import { observeActiveHeading } from '@oddmash/ui/docs-navigation';
 
+  const sidebar = document.querySelector<HTMLElement>('.docs-sidebar');
+  const desktop = window.matchMedia('(min-width: 721px)');
+  const sidebarKey = 'boundra:docs-sidebar-scroll';
+  if (sidebar) {
+    try {
+      const saved = sessionStorage.getItem(sidebarKey);
+      sessionStorage.removeItem(sidebarKey);
+      if (saved && desktop.matches) {
+        const state = JSON.parse(saved) as { path: string; top: number };
+        if (state.path === location.pathname && Number.isFinite(state.top)) sidebar.scrollTop = state.top;
+      }
+    } catch {}
+    sidebar.addEventListener('click', event => {
+      if (!desktop.matches || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>('a[href]') : null;
+      if (!link || link.target || link.hasAttribute('download')) return;
+      const target = new URL(link.href);
+      if (target.origin !== location.origin || target.pathname === location.pathname) return;
+      try {
+        sessionStorage.setItem(sidebarKey, JSON.stringify({ path: target.pathname, top: sidebar.scrollTop }));
+      } catch {}
+    });
+  }
+
   const content = document.querySelector<HTMLElement>('.doc-content');
   const headings = Array.from(document.querySelectorAll<HTMLAnchorElement>('.docs-toc [data-heading-id]'));
   if (content && headings.length > 0) {
