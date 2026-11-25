@@ -51,7 +51,7 @@ const assertPalette = async (header, theme) => {
   await expect(header.locator(".docs-header-link")).toHaveCSS("color", dark ? "rgb(244, 242, 237)" : "rgb(23, 23, 23)");
   await expect(header.locator("[data-language-picker] [role=combobox]")).toHaveCSS("color", dark ? "rgb(245, 245, 245)" : "rgb(23, 23, 23)");
   const iconContrast = await header.evaluate(element => {
-    const rgb = color => color.match(/[\\d.]+/g).slice(0, 3).map(Number);
+    const rgb = color => color.match(/[0-9.]+/g).slice(0, 3).map(Number);
     const luminance = color => rgb(color).map(value => {
       const channel = value / 255;
       return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
