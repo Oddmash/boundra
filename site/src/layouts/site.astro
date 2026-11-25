@@ -2,14 +2,13 @@
 import '../styles.css';
 import PlatformLinks from '../components/platform-links.astro';
 import { docsHome, docPath } from '../docs-nav';
-import { landingCopy, locales, htmlLanguage, landingPath, guidePath, type LandingLocale } from '../landing-copy';
+import { landingCopy, locales, htmlLanguage, landingPath, type LandingLocale } from '../landing-copy';
 const { title, description = 'Boundra documentation for TypeScript applications.', lang = 'en', landingLocale, documentSlug = '' } = Astro.props as { title: string; description?: string; lang?: string; landingLocale?: LandingLocale; documentSlug?: string };
 const base = import.meta.env.BASE_URL.replace(/\/$/, '') + '/';
 const docs = `${base}docs/`;
 const locale = landingLocale ?? (lang === 'zh-CN' || lang === 'zh-cn' ? 'zh-cn' : lang === 'ko' || lang === 'ja' ? lang : 'en');
 const t = landingCopy[locale];
 const home = landingPath(base, locale);
-const guide = guidePath(base, locale);
 const docsUrl = docsHome(base, locale);
 const alternate = (item: LandingLocale) => landingLocale ? landingPath(base,item) : docPath(base,documentSlug,item) ?? docsHome(base,item);
 ---
@@ -31,7 +30,7 @@ const alternate = (item: LandingLocale) => landingLocale ? landingPath(base,item
   </body>
 </html>
 <style>
-  .landing-page .site-header { background:#111110; border-bottom:1px solid #33302d; }
+  .landing-page .site-header { background:#111110; color:#f4f2ed; border-bottom:1px solid #33302d; }
   .landing-page .site-header .brand,.landing-page .site-header nav a { color:#f4f2ed; }
   .landing-page .site-header nav a:hover { color:#ffb07d; }
   .landing-page .site-header :is(a,summary):focus-visible { outline:2px solid #ffbf91; outline-offset:3px; }
