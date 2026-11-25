@@ -5,6 +5,7 @@ const { setTimeout: delay } = require("node:timers/promises");
 const { mkdtemp, writeFile, rm } = require("node:fs/promises");
 const { tmpdir } = require("node:os");
 const { findRoot, findLauncher, decodeReport, runCheck, createScheduler, publishDiagnostics } = require("./diagnostics.cjs");
+const { activate } = require("./extension.cjs");
 
 test("discovers nested workspace and launcher without crossing folder", () => {
   const limit = resolve("workspace");
@@ -73,4 +74,41 @@ test("replaces all published diagnostics including deleted files", () => {
   assert.deepEqual([...collection.keys()], ["kept.ts"]);
   publish([]);
   assert.equal(collection.size, 0);
+});
+
+test("does not activate in untrusted workspaces and disposes removed workspace roots", async () => {
+  const untrusted = { workspace: { isTrusted: false } };
+  assert.doesNotThrow(() => activate({ subscriptions: [] }, untrusted));
+  const root = await mkdtemp(join(tmpdir(), "boundra-editor-lifecycle-"));
+  try {
+    await writeFile(join(root, "boundra.config.json"), "{}");
+    const disposable = () => ({ dispose() {} });
+    let folderChanged;
+    let collections = 0;
+    let disposed = 0;
+    const folder = { uri: { scheme: "file", fsPath: root } };
+    const virtual = { uri: { scheme: "virtual", fsPath: root } };
+    const event = () => disposable();
+    const context = { subscriptions: [] };
+    const vscode = {
+      workspace: {
+        isTrusted: true, workspaceFolders: [virtual, folder], getWorkspaceFolder: () => folder,
+        createFileSystemWatcher: () => ({ ...disposable(), onDidChange: event, onDidCreate: event, onDidDelete: event }),
+        onDidSaveTextDocument: event, onDidCreateFiles: event, onDidDeleteFiles: event, onDidRenameFiles: event,
+        onDidChangeWorkspaceFolders: listener => { folderChanged = listener; return disposable(); },
+      },
+      window: { createOutputChannel: disposable, onDidChangeActiveTextEditor: event },
+      commands: { registerCommand: event },
+      languages: { createDiagnosticCollection() { collections += 1; return { dispose() { disposed += 1; } }; } },
+    };
+    activate(context, vscode);
+    assert.equal(collections, 1, "virtual folder must not create diagnostics or schedule the CLI");
+    folderChanged({ removed: [folder], added: [] });
+    assert.equal(disposed, 1);
+    folderChanged({ removed: [], added: [folder] });
+    assert.equal(collections, 2);
+    folderChanged({ removed: [folder], added: [] });
+    assert.equal(disposed, 2);
+    for (const entry of context.subscriptions) entry.dispose();
+  } finally { await rm(root, { recursive: true, force: true }); }
 });
