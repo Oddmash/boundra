@@ -66,6 +66,7 @@ pub fn collect_imports_with_report(
 ) -> io::Result<ImportScanReport> {
     let mut files = Vec::new();
     collect_ts_like_files(root, root, options, &mut files)?;
+    files.sort_unstable();
     let scanned_file_count = files.len();
 
     let mut imports = Vec::new();
@@ -684,6 +685,41 @@ import { visible } from '../shared/visible';
     fn ignores_interpolated_template_literal_dynamic_import() {
         let content = "const selected = import(`../shared/${moduleName}`);";
         assert!(import_paths(content).is_empty());
+    }
+
+    #[test]
+    fn reports_scanned_files_and_imports_in_stable_path_order() {
+        use super::collect_imports_with_report;
+        use std::fs;
+        use std::time::{SystemTime, UNIX_EPOCH};
+
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!(
+            "boundra-parser-order-{}-{nonce}",
+            std::process::id()
+        ));
+        fs::create_dir(&root).unwrap();
+        fs::create_dir(root.join("z")).unwrap();
+        fs::create_dir(root.join("a")).unwrap();
+        fs::write(root.join("z/second.ts"), "import './second';").unwrap();
+        fs::write(root.join("a/first.ts"), "import './first';").unwrap();
+
+        let report = collect_imports_with_report(&root, &ScanOptions::default());
+        fs::remove_dir_all(&root).unwrap();
+        let report = report.unwrap();
+        assert_eq!(report.scanned_files, vec!["a/first.ts", "z/second.ts"]);
+        assert_eq!(
+            report
+                .imports
+                .iter()
+                .map(|record| record.source_file.as_str())
+                .collect::<Vec<_>>(),
+            vec!["a/first.ts", "z/second.ts"]
+        );
+        assert_eq!(report.scanned_file_count, 2);
     }
 
     #[test]

@@ -1,7 +1,8 @@
 use std::collections::BTreeMap;
 
 use boundra_core::{
-    CheckBoundariesConfig, DomainManifest, Layer, PathAlias, PublicApi, RuleCode, Violation,
+    normalize_workspace_path as normalize_path, CheckBoundariesConfig, DomainManifest,
+    DomainRootIndex, Layer, PathAlias, PublicApi, RuleCode, Violation,
 };
 use boundra_parser::ImportRecord;
 
@@ -45,10 +46,11 @@ pub fn check_boundaries_with_config(
     config: &CheckBoundariesConfig,
 ) -> Vec<Violation> {
     let mut violations = Vec::new();
+    let domain_index = DomainRootIndex::new(&context.domain_roots);
 
     for record in imports {
         let (source_domain, source_layer) =
-            parse_domain_path_with_context(&record.source_file, context)
+            parse_domain_path_with_context(&record.source_file, context, &domain_index)
                 .unwrap_or((String::new(), Layer::Unknown));
 
         let resolved_target =
@@ -78,7 +80,7 @@ pub fn check_boundaries_with_config(
         let Some(target) = resolved_target else {
             continue;
         };
-        let (target_domain, target_layer) = parse_domain_path_with_context(&target, context)
+        let (target_domain, target_layer) = parse_domain_path_with_context(&target, context, &domain_index)
             .unwrap_or((String::new(), Layer::Unknown));
 
         match (source_layer, target_layer) {
@@ -231,16 +233,13 @@ fn parse_domain_path(path: &str, domains_path: &str) -> Option<(String, Layer)> 
 fn parse_domain_path_with_context(
     path: &str,
     context: &BoundaryContext,
+    domain_index: &DomainRootIndex<'_>,
 ) -> Option<(String, Layer)> {
     let normalized = normalize_path(path);
-    let discovered = context
-        .domain_roots
-        .iter()
-        .filter(|(_, root)| is_within_path(&normalized, root))
-        .max_by_key(|(_, root)| normalize_path(root).len());
+    let discovered = domain_index.find(&normalized);
 
     let (domain, domain_root) = match discovered {
-        Some((domain, root)) => (domain.clone(), normalize_path(root)),
+        Some((domain, root)) => (domain.to_string(), root.to_string()),
         None if !context.domain_roots.is_empty() => return None,
         None => {
             let (domain, _) = parse_domain_path(path, &context.domains_path)?;
@@ -460,23 +459,6 @@ fn strip_ts_like_extension(path: &str) -> &str {
     }
 
     path
-}
-
-fn normalize_path(input: &str) -> String {
-    let mut stack: Vec<&str> = Vec::new();
-    let replaced = input.replace('\\', "/");
-
-    for part in replaced.split('/') {
-        match part {
-            "" | "." => {}
-            ".." => {
-                stack.pop();
-            }
-            x => stack.push(x),
-        }
-    }
-
-    stack.join("/")
 }
 
 #[cfg(test)]
@@ -868,6 +850,35 @@ mod tests {
         let violations = check_boundaries_with_context(&imports, &context);
         assert_eq!(violations.len(), 1);
         assert_eq!(violations[0].rule, RuleCode::Br001);
+    }
+
+    #[test]
+    fn applies_rules_using_the_deepest_discovered_root() {
+        let imports = vec![
+            ImportRecord {
+                source_file: "domains/order/group/item/client/view.ts".to_string(),
+                source_dir: "domains/order/group/item/client".to_string(),
+                line: 1,
+                import_path: "../server/service".to_string(),
+            },
+            ImportRecord {
+                source_file: "domains/order-extra/client/view.ts".to_string(),
+                source_dir: "domains/order-extra/client".to_string(),
+                line: 1,
+                import_path: "../server/service".to_string(),
+            },
+        ];
+        let context = BoundaryContext {
+            domain_roots: BTreeMap::from([
+                ("order".to_string(), "domains/order".to_string()),
+                ("item".to_string(), "domains/order/group/item".to_string()),
+            ]),
+            ..BoundaryContext::default()
+        };
+        let violations = check_boundaries_with_context(&imports, &context);
+        assert_eq!(violations.len(), 1);
+        assert_eq!(violations[0].rule, RuleCode::Br001);
+        assert_eq!(violations[0].file, "domains/order/group/item/client/view.ts");
     }
 
     #[test]
