@@ -18,7 +18,17 @@ permissions:
   contents: read
 
 jobs:
+  verify-full:
+    uses: ./.github/workflows/boundra.yml
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+    with:
+      full_verify: true
+
   validate:
+    needs: verify-full
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
@@ -30,8 +40,6 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm check-release-notes "${RELEASE_VERSION}"
       - run: pnpm check-release-version "${RELEASE_VERSION}"
-      - run: pnpm verify-example
-      - run: pnpm verify-clean-room
 
   build-cli:
     needs: validate
