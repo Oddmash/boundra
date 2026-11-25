@@ -63,16 +63,14 @@ fn compare(root: &Path, cache: &mut ExperimentalImportCache) -> (usize, f64, f64
 
 #[test]
 fn experimental_cache_matches_full_scan_after_workspace_edits() {
-    let root = Fixture(
-        std::env::temp_dir().join(format!(
+    let root = Fixture(std::env::temp_dir().join(format!(
             "boundra-incremental-{}-{}",
             std::process::id(),
             SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .unwrap()
                 .as_nanos()
-        )),
-    );
+        )));
     fs::create_dir(&root.0).unwrap();
     cli(&root.0, &["init", "--name", "incremental-experiment"]);
     cli(&root.0, &["create-domain", "order"]);
@@ -94,6 +92,22 @@ fn experimental_cache_matches_full_scan_after_workspace_edits() {
     let mut cache = ExperimentalImportCache::default();
     let cold = compare(&root.0, &mut cache);
     let warm = compare(&root.0, &mut cache);
+    let added = root.0.join("domains/billing/client/new-feature.ts");
+    fs::write(&added, "import '@order/server/public';\n").unwrap();
+    assert!(compare(&root.0, &mut cache).0 > cold.0);
+    fs::remove_file(&added).unwrap();
+    assert_eq!(compare(&root.0, &mut cache).0, cold.0);
+    let other = Fixture(root.0.with_extension("other"));
+    fs::create_dir(&other.0).unwrap();
+    cli(&other.0, &["init", "--name", "incremental-other"]);
+    cli(&other.0, &["create-domain", "billing"]);
+    fs::write(
+        other.0.join("domains/billing/client/feature-0.ts"),
+        "import '../server/public';\n",
+    )
+    .unwrap();
+    assert!(compare(&other.0, &mut cache).0 > 0);
+    assert_eq!(compare(&root.0, &mut cache).0, cold.0);
     let edited = root.0.join("domains/billing/client/feature-0.ts");
     fs::write(&edited, "import '@order/server/public';\n").unwrap();
     let changed = compare(&root.0, &mut cache);
