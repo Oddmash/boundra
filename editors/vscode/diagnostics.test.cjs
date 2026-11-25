@@ -4,7 +4,7 @@ const { resolve, join, dirname } = require("node:path");
 const { setTimeout: delay } = require("node:timers/promises");
 const { mkdtemp, writeFile, rm } = require("node:fs/promises");
 const { tmpdir } = require("node:os");
-const { findRoot, findLauncher, decodeReport, runCheck, createScheduler } = require("./diagnostics.cjs");
+const { findRoot, findLauncher, decodeReport, runCheck, createScheduler, publishDiagnostics } = require("./diagnostics.cjs");
 
 test("discovers nested workspace and launcher without crossing folder", () => {
   const limit = resolve("workspace");
@@ -60,4 +60,15 @@ test("coalesces, cancels and discards outdated scans", async () => {
   scheduler.dispose();
   await delay(30);
   assert.equal(requests.length, 2);
+});
+
+test("replaces all published diagnostics including deleted files", () => {
+  const collection = new Map();
+  const publish = files => publishDiagnostics(collection, files.map(file => ({file})), file => file, item => item.file);
+  publish(["deleted.ts", "kept.ts"]);
+  assert.deepEqual([...collection.keys()], ["deleted.ts", "kept.ts"]);
+  publish(["kept.ts"]);
+  assert.deepEqual([...collection.keys()], ["kept.ts"]);
+  publish([]);
+  assert.equal(collection.size, 0);
 });
