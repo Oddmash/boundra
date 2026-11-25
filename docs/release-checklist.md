@@ -36,7 +36,7 @@
 
 ## Registry and Release
 
-- [ ] deprecate the accidental repository snapshot published as `boundra@0.1.0`
+- [x] deprecate the accidental repository snapshot published as `boundra@0.1.0`
 - [x] configure npm trusted publishing for `boundra`
 - [x] publish `boundra@0.1.1`
 - [x] verify the public npm package in a fresh project
@@ -59,7 +59,7 @@
 
 ## Oddmash Ownership Migration
 
-- [ ] Verify the npm trusted publisher points to `Oddmash/boundra` and `release.yml` before publishing the next version.
+- [x] Verify the npm trusted publisher points to `Oddmash/boundra` and `release.yml` before publishing the next version (configuration present; npm validation requires the next publish).
 - [ ] Verify old published CLI versions can still download their matching archived releases through GitHub redirects.
 - [ ] Run the release workflow dry-run from Oddmash and verify all artifacts.
 
