@@ -41,7 +41,7 @@ const sections = [
 ];
 const scenes = [
   { rule: 'BR-001', title: t.rule1Title, description: t.rule1Desc, source: 'order', sourceLayer: 'client', target: 'order', targetLayer: 'server/internal', path: 'domains/order/client/use-order.ts', symbol: 'orderService', imported: '@domains/order/server/internal', dependency: '[]', allowed: false },
-  { rule: 'BR-004', title: t.rule4Title, description: t.rule4Desc, source: 'billing', sourceLayer: 'server', target: 'order', targetLayer: 'server/internal', path: 'domains/billing/server/invoice.ts', symbol: 'orderService', imported: '@domains/order/server/internal', allowed: false },
+  { rule: 'BR-004', title: t.rule4Title, description: t.rule4Desc, source: 'billing', sourceLayer: 'server', target: 'order', targetLayer: 'server/internal', path: 'domains/billing/server/invoice.ts', symbol: 'orderService', imported: '@domains/order/server/internal', dependency: '["order"]', allowed: false },
   { rule: 'BR-006', title: t.rule6Title, description: t.rule6Desc, source: 'billing', sourceLayer: 'server', target: 'order', targetLayer: 'shared/public', path: 'domains/billing/server/invoice.ts', symbol: 'getOrderQuery', imported: '@domains/order/shared/public', dependency: '[]', allowed: false },
   { rule: 'PASS', title: t.passTitle, description: t.passDesc, source: 'billing', sourceLayer: 'server', target: 'order', targetLayer: 'shared/public', path: 'domains/billing/server/invoice.ts', symbol: 'getOrderQuery', imported: '@domains/order/shared/public', dependency: '["order"]', allowed: true },
 ];
