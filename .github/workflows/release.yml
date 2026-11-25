@@ -7,9 +7,17 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Version to build without publishing
+        description: Exact release version
         required: true
-        default: "0.7.0"
+        type: string
+      publish:
+        description: Publish this verified main commit to npm and GitHub
+        type: boolean
+        default: false
+
+concurrency:
+  group: boundra-release
+  cancel-in-progress: false
 
 env:
   RELEASE_VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
@@ -18,7 +26,32 @@ permissions:
   contents: read
 
 jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate release ref
+        env:
+          PUBLISH_REQUESTED: ${{ github.event_name == 'push' || inputs.publish == true }}
+        shell: bash
+        run: |
+          if [[ ! "$RELEASE_VERSION" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Expected an exact semantic version"
+            exit 1
+          fi
+          if [[ "$PUBLISH_REQUESTED" == "true" ]]; then
+            if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" && "$GITHUB_REF" != "refs/heads/main" ]]; then
+              echo "::error::Manual publication requires main"
+              exit 1
+            fi
+            git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+          fi
+
   verify-full:
+    needs: preflight
     uses: ./.github/workflows/boundra.yml
     permissions:
       contents: read
@@ -116,9 +149,36 @@ jobs:
           path: dist/*.tgz
           if-no-files-found: error
 
-  publish-package:
-    if: github.event_name == 'push'
+  prepare-tag:
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.publish == true && github.ref == 'refs/heads/main')
     needs: [build-cli, build-package]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Verify or create immutable release tag
+        shell: bash
+        run: |
+          tag="v${RELEASE_VERSION#v}"
+          commit="$(git rev-parse HEAD)"
+          if git show-ref --verify --quiet "refs/tags/$tag"; then
+            if [[ "$(git rev-parse "refs/tags/$tag^{commit}")" != "$commit" ]]; then
+              echo "::error::Release tag already points to a different commit"
+              exit 1
+            fi
+          elif [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            git tag "$tag" "$commit"
+            git push origin "refs/tags/$tag"
+          else
+            echo "::error::Expected release tag is missing"
+            exit 1
+          fi
+
+  publish-package:
+    needs: [build-cli, build-package, prepare-tag]
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -137,7 +197,6 @@ jobs:
 
   publish-release:
     needs: [build-cli, build-package, publish-package]
-    if: github.event_name == 'push'
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -154,16 +213,17 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          version="${GITHUB_REF_NAME#v}"
+          version="${RELEASE_VERSION#v}"
+          tag="v${version}"
           notes_file="docs/releases/v${version//./-}.md"
-          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
-            gh release edit "$GITHUB_REF_NAME" \
-              --title "Boundra $GITHUB_REF_NAME" \
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release edit "$tag" \
+              --title "Boundra $tag" \
               --notes-file "$notes_file"
-            gh release upload "$GITHUB_REF_NAME" release/* --clobber
+            gh release upload "$tag" release/* --clobber
           else
-            gh release create "$GITHUB_REF_NAME" release/* \
+            gh release create "$tag" release/* \
               --verify-tag \
-              --title "Boundra $GITHUB_REF_NAME" \
+              --title "Boundra $tag" \
               --notes-file "$notes_file"
           fi

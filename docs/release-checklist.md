@@ -60,14 +60,20 @@
 ## Oddmash Ownership Migration
 
 - [x] Verify the npm trusted publisher points to `Oddmash/boundra` and `release.yml` before publishing the next version (configuration present; npm validation requires the next publish).
-- [ ] Verify old published CLI versions can still download their matching archived releases through GitHub redirects.
-- [ ] Run the release workflow dry-run from Oddmash and verify all artifacts.
+- [x] Verify old published CLI versions can still download their matching archived releases through GitHub redirects (v0.6.0 verified in the Oddmash release dry-run).
+- [x] Run the release workflow dry-run from Oddmash and verify all artifacts ([v0.7.0 dry-run](https://github.com/Oddmash/boundra/actions/runs/45559355221)).
 
 ## Release Trigger
 
-After the release preparation commit is merged, push the version tag and let
-the tag workflow publish npm, CLI archives, checksums, and the GitHub Release.
-Do not create the GitHub Release manually before pushing the tag.
+After the release preparation commit is merged into `main`, run the Release
+workflow on `main` with the exact version and `publish` enabled. By default,
+manual runs only verify and build artifacts. An explicit publish run verifies
+the main commit, builds all artifacts, creates the matching immutable tag, and
+publishes npm and the GitHub Release in the same run.
+
+Alternatively, push a version tag pointing to a commit on `main` to trigger
+publication. Never move an existing version tag or create the GitHub Release
+manually before the tag exists.
 
 If a Release for the tag already exists, the workflow updates its title and
 notes and uploads the generated assets with replacement enabled. This makes the
