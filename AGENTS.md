@@ -172,3 +172,7 @@ Follow the [Oddmash review follow-up guidance](https://github.com/Oddmash/.githu
 ## Agent contribution attribution
 
 Follow the [Oddmash agent attribution convention](https://github.com/Oddmash/.github/blob/main/AGENTS.md#agent-contribution-attribution). When a commit materially incorporates a verified finding or recommendation from Reviewer, Impact, Triage, QA, Release, Docs, or Architect, append the canonical `Co-authored-by` trailer for each actual contributing GitHub account. Deduplicate trailers, preserve human authorship and record the source role or discussion for shared identities. Do not credit unused advice or rewrite published history.
+
+## CI change scope
+
+The required `verify` aggregate runs for PRs to `develop` and `main` and pushes to `main`. `scripts/classify-ci-scope.mjs` distinguishes landing/documentation, TypeScript packages, native CLI, examples and release notes. Keep site verification in `Deploy Pages`. Unknown/shared build or workflow changes, manual full verification and release publishing require the complete matrix. Update the classifier tests when adding source roots or altering the scope rules; never loosen a required check merely to make a PR pass.
