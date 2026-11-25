@@ -65,7 +65,6 @@ for locale in locales:
     references = {
         path.name.removesuffix(f'.{locale}.md'): path
         for path in docs_root.glob(f'*.{locale}.md')
-        if not path.name.startswith('user-guide.')
     }
     reference_sets.append(set(references))
     for slug, translated in references.items():
