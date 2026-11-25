@@ -1,6 +1,6 @@
 const vscode = require("vscode");
 const { dirname } = require("node:path");
-const { inside, findRoot, findLauncher, runCheck, createScheduler } = require("./diagnostics.cjs");
+const { inside, findRoot, findLauncher, runCheck, createScheduler, publishDiagnostics } = require("./diagnostics.cjs");
 
 function activate(context) {
   if (!vscode.workspace.isTrusted) return;
@@ -25,18 +25,13 @@ function activate(context) {
         if (!launcher) throw new Error("Install boundra in this workspace to enable diagnostics.");
         return runCheck(root, launcher, signal);
       }, result => {
-        collection.clear();
-        const byFile = new Map();
-        for (const item of result.diagnostics) {
+        publishDiagnostics(collection, result.diagnostics, file => vscode.Uri.file(file), item => {
           const range = new vscode.Range(item.line - 1, 0, item.line - 1, 0);
           const diagnostic = new vscode.Diagnostic(range, `${item.message}\n${item.suggestion}`, vscode.DiagnosticSeverity.Error);
           diagnostic.source = "Boundra";
           diagnostic.code = item.rule;
-          const list = byFile.get(item.file) ?? [];
-          list.push(diagnostic);
-          byFile.set(item.file, list);
-        }
-        for (const [file, diagnostics] of byFile) collection.set(vscode.Uri.file(file), diagnostics);
+          return diagnostic;
+        });
         for (const error of result.errors) output.appendLine(`[${root}] ${error}`);
       });
       state = { scheduler, collection };
