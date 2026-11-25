@@ -1,7 +1,8 @@
-name: Landing page
+name: Deploy Pages
 
 on:
   pull_request:
+    branches: [develop, main]
     paths: ['site/**', 'docs/**', 'examples/order-billing/**', '.github/workflows/pages.yml']
   push:
     branches: [main]
@@ -38,8 +39,9 @@ jobs:
           name: landing-browser-results
           path: site/test-results/
           if-no-files-found: ignore
+          retention-days: 7
       - name: Upload static website
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v4
         with:
           path: site/dist
