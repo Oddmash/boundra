@@ -168,6 +168,10 @@ Import를 분석하고 경계 규칙 위반을 감지합니다.
 }
 ```
 
+## 읽기 전용 마이그레이션 계획
+
+`boundra migrate [--root <path>] [--from <relative-path>] [--format text|json]`은 지정한 또는 유일한 관례적 소스 디렉터리의 하위 폴더를 분석하여 도메인 후보, 레이어, 매니페스트 존재 여부, 소스 수, import 목록 및 경고를 반환합니다. 모호한 경로는 명시적으로 선택해야 하며 파일은 변경하지 않습니다.
+
 ## 명시적 위반 기준선
 
 `boundra baseline create [--root <path>]`는 버전이 있는 JSON 기준선을 표준 출력으로 생성합니다. `boundra baseline check --baseline <path> [--root <path>] [--format text|json]`은 전체 검사 후 신규, 기존, 해결된 위반을 분류합니다. 규칙, 상대 경로, import 및 발생 횟수를 비교하며 줄 변경은 무시합니다. 이름 변경은 신규 및 해결로 처리합니다. 종료 코드 0은 신규 없음, 1은 신규 위반, 2는 잘못된 기준선이나 검사 실패 또는 도메인 검사 범위 감소입니다. 일반 `check-boundaries`는 기준선을 자동 적용하지 않습니다.
