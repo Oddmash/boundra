@@ -17,3 +17,8 @@ folder, coalesces saves, cancels superseded checks and does not run in untrusted
 or virtual workspaces. It does not install or publish an extension automatically.
 
 Run adapter tests with `node --test editors/vscode/diagnostics.test.cjs`.
+
+The Marketplace pre-release is built and verified by the VS Code Extension
+workflow. Publishing is a manual operation restricted to the repository's
+`main` branch and the `marketplace` environment. It uses short-lived trusted
+publishing credentials rather than a stored PAT.
