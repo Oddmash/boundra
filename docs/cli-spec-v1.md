@@ -189,3 +189,14 @@ are conservatively treated as new violations and resolved old entries.
 Exit 0 permits existing violations only, 1 indicates new violations, and 2
 rejects malformed baselines, failed scans or decreased analyzed domain coverage.
 The standard `check-boundaries` command is unchanged and never uses a baseline implicitly.
+
+## Read-only migration planning
+
+`boundra migrate [--root <path>] [--from <relative-path>] [--format text|json]`
+inspects direct child directories of an explicitly selected source or a unique
+conventional directory (`domains`, `src/domains`, `features`, `src/features`).
+The plan lists candidate names, detected layer directories, manifest presence,
+source coverage, unique import specifiers and warnings. It skips unsupported
+names, empty candidates and symbolic-link candidates. Ambiguous layouts and
+invalid paths fail with exit code 2. No configuration, manifest or source file
+is created, modified or moved. Review all candidates before adoption.
