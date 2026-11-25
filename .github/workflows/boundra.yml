@@ -7,6 +7,12 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      full_verify:
+        type: boolean
+        default: true
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -16,15 +22,53 @@ permissions:
   contents: read
 
 jobs:
-  scope:
+  contribution:
     permissions:
       contents: read
       issues: read
       pull-requests: read
     uses: Oddmash/.github/.github/workflows/ci-scope.yml@9a2077a4b0ff9188ef2cb2ab306f181a134d3110
     with:
-      profile: agents
+      profile: meta
+
+  scope:
+    runs-on: ubuntu-slim
+    outputs:
+      runtime: ${{ steps.classify.outputs.runtime }}
+      cli: ${{ steps.classify.outputs.cli }}
+      integration: ${{ steps.classify.outputs.integration }}
+      notes: ${{ steps.classify.outputs.notes }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - name: Test scope decisions
+        run: node --test scripts/classify-ci-scope.test.mjs
+      - name: Classify Boundra changes
+        id: classify
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE_SHA: ${{ github.event.before }}
+          FULL_VERIFY: ${{ inputs.full_verify == true }}
+        run: node scripts/classify-ci-scope.mjs
+
+  release-notes:
+    needs: scope
+    if: needs.scope.outputs.notes == 'true'
+    runs-on: ubuntu-slim
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - run: node scripts/check-release-notes.mjs
+
   verify-example:
+    needs: scope
+    if: needs.scope.outputs.integration == 'true'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
@@ -41,7 +85,6 @@ jobs:
           node-version: 24
       - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa
       - run: pnpm install --frozen-lockfile
-      - run: pnpm check-release-notes
       - run: pnpm verify-example
       - run: pnpm verify-clean-room
       - run: node scripts/verify-framework-consumers.mjs
@@ -71,7 +114,7 @@ jobs:
 
   verify-cli-platforms:
     needs: scope
-    if: needs.scope.outputs.runtime == 'true'
+    if: needs.scope.outputs.cli == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -103,7 +146,7 @@ jobs:
 
   benchmark-smoke:
     needs: scope
-    if: needs.scope.outputs.runtime == 'true'
+    if: needs.scope.outputs.cli == 'true'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
@@ -124,17 +167,20 @@ jobs:
 
   verify:
     if: ${{ always() }}
-    needs: [scope, verify-example, verify-runtime, verify-cli-platforms, benchmark-smoke]
+    needs: [contribution, scope, release-notes, verify-example, verify-runtime, verify-cli-platforms, benchmark-smoke]
     runs-on: ubuntu-slim
     steps:
       - name: Require all applicable Boundra checks
         env:
+          CONTRIBUTION: ${{ needs.contribution.result }}
           SCOPE: ${{ needs.scope.result }}
-          EXAMPLE: ${{ needs.verify-example.result }}
-          RUNTIME: ${{ needs.scope.outputs.runtime }}
-          RESULTS: ${{ needs.verify-runtime.result }} ${{ needs.verify-cli-platforms.result }} ${{ needs.benchmark-smoke.result }}
+          NOTES: ${{ needs.scope.outputs.notes }}:${{ needs.release-notes.result }}
+          INTEGRATION: ${{ needs.scope.outputs.integration }}:${{ needs.verify-example.result }}
+          RUNTIME: ${{ needs.scope.outputs.runtime }}:${{ needs.verify-runtime.result }}
+          CLI: ${{ needs.scope.outputs.cli }}:${{ needs.verify-cli-platforms.result }}
+          BENCHMARK: ${{ needs.scope.outputs.cli }}:${{ needs.benchmark-smoke.result }}
         run: |
-          test "$SCOPE:$EXAMPLE" = success:success
-          for result in $RESULTS; do
-            case "$RUNTIME:$result" in true:success|false:skipped) ;; *) exit 1 ;; esac
+          test "$CONTRIBUTION:$SCOPE" = success:success
+          for result in "$NOTES" "$INTEGRATION" "$RUNTIME" "$CLI" "$BENCHMARK"; do
+            case "$result" in true:success|false:skipped) ;; *) exit 1 ;; esac
           done
