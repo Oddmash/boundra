@@ -145,6 +145,23 @@ client file exposes typed functions and is exported idempotently from
 `client/public.ts`. Boundra does not generate persistence, HTTP routes, UI, or
 ORM code.
 
+### 1.9 `impact <domain>`
+
+Inspect the potential impact of changing a domain's public API using declared
+`dependsOn` relationships. This command is read-only and does not scan imports.
+
+Options:
+- `--root <path>` (default: `.`)
+- `--format text|json` (default: `text`)
+
+The report lists direct consumers and indirect consumers separately, sorted by
+domain name and without duplicates. The requested domain is excluded. JSON
+contains `domain`, `direct_dependents`, `transitive_dependents` (indirect only),
+and `meta` with `command` and `affected_domain_count`. An unknown domain or
+invalid project returns exit code 2 and a structured error for JSON requests.
+An isolated domain returns a successful empty report. This is a potential
+change-impact report, not proof of runtime usage or a replacement for checks.
+
 ## 2. CLI UX Principles
 
 - Boundary diagnostics include rule code, file, line, import, message, and suggestion.

@@ -128,6 +128,15 @@ import を分析し、境界ルール違反を検出します。
 
 共有ファイルは list/create/update/delete のスキーマと契約を所有します。クライアントファイルは型付き関数を公開し、`client/public.ts` から冪等に export されます。Boundra は永続化、HTTP ルート、UI、ORM コードを生成しません。
 
+### 1.9 `impact <domain>`
+
+宣言された `dependsOn` に基づき、公開 API の変更が影響する直接・間接の利用ドメインを確認します。ソースの読み取り解析や変更は行いません。
+
+- `--root <path>` (既定値: `.`)
+- `--format text|json` (既定値: `text`)
+
+JSON は `domain`、`direct_dependents`、`transitive_dependents` (間接のみ)、`meta.command`、`meta.affected_domain_count` を返します。名前順に整列し、重複と対象自身を除きます。不明なドメインや無効なプロジェクトは終了コード 2 と構造化エラーを返します。利用者がいない場合は空の結果で成功します。実行時の呼び出し分析や境界チェックの代替ではありません。
+
 ## 2. CLI UX の原則
 
 - 境界診断にはルールコード、ファイル、行、import、メッセージ、提案を含めます。

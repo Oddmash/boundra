@@ -5,6 +5,7 @@ use crate::commands::check_boundaries::CheckBoundariesOptions;
 use crate::commands::create_domain::CreateDomainOptions;
 use crate::commands::generate::{GenerateKind, GenerateOptions};
 use crate::commands::graph_domains::{GraphDomainsOptions, GraphFormat};
+use crate::commands::impact::ImpactOptions;
 use crate::commands::init::InitOptions;
 use crate::output::OutputFormat;
 use crate::util::is_kebab_case;
@@ -17,6 +18,7 @@ pub(crate) enum Command {
     GraphDomains(GraphDomainsOptions),
     Generate(GenerateOptions),
     Init(InitOptions),
+    Impact(ImpactOptions),
     Help,
     Version,
 }
@@ -48,10 +50,52 @@ pub(crate) fn parse_command(args: &[String]) -> Result<Command, String> {
             Ok(Command::Generate(options))
         }
         "init" => Ok(Command::Init(parse_init_options(&args[1..])?)),
+        "impact" => Ok(Command::Impact(parse_impact_options(&args[1..])?)),
         "help" | "--help" | "-h" => Ok(Command::Help),
         "--version" | "-V" => Ok(Command::Version),
         _ => Err(format!("unknown command: {command}")),
     }
+}
+
+fn parse_impact_options(args: &[String]) -> Result<ImpactOptions, String> {
+    let domain = args
+        .first()
+        .filter(|name| is_kebab_case(name))
+        .ok_or("expected a kebab-case domain name")?
+        .clone();
+    let mut options = ImpactOptions {
+        domain,
+        root: PathBuf::from("."),
+        format: OutputFormat::Text,
+    };
+    let mut index = 1;
+    while index < args.len() {
+        let arg = &args[index];
+        let (key, value) = if let Some((key, value)) = arg.split_once('=') {
+            (key, value)
+        } else {
+            if arg != "--root" && arg != "--format" {
+                return Err(format!("unknown option: {arg}"));
+            }
+            index += 1;
+            (
+                arg.as_str(),
+                args.get(index)
+                    .map(String::as_str)
+                    .ok_or_else(|| format!("missing value for {arg}"))?,
+            )
+        };
+        if value.is_empty() || value.starts_with("--") {
+            return Err(format!("missing value for {key}"));
+        }
+        match key {
+            "--root" => options.root = PathBuf::from(value),
+            "--format" => options.format = parse_output_format(value)?,
+            _ => return Err(format!("unknown option: {key}")),
+        }
+        index += 1;
+    }
+    Ok(options)
 }
 
 fn parse_init_options(args: &[String]) -> Result<InitOptions, String> {
@@ -189,7 +233,9 @@ fn parse_check_boundaries_options(args: &[String]) -> Result<CheckBoundariesOpti
 fn parse_min_domains(value: &str) -> Result<usize, String> {
     match value.parse::<usize>() {
         Ok(count) if count > 0 => Ok(count),
-        _ => Err(format!("invalid --min-domains value: {value}; expected a positive integer")),
+        _ => Err(format!(
+            "invalid --min-domains value: {value}; expected a positive integer"
+        )),
     }
 }
 
