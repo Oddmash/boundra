@@ -14,6 +14,8 @@ test("discovers nested workspace and launcher without crossing folder", () => {
   const launcher = join(limit, "node_modules", "boundra", "bin", "boundra.mjs");
   const exists = path => [config, launcher].includes(path);
   assert.equal(findRoot(file, limit, exists), root);
+  assert.equal(findRoot(root, root, exists), root);
+  assert.equal(findRoot(root, root, () => false), undefined);
   assert.equal(findLauncher(root, limit, exists), launcher);
   assert.equal(findRoot(dirname(limit), limit, exists), undefined);
   assert.equal(findLauncher(root, root, exists), undefined);
