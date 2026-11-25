@@ -1,5 +1,6 @@
 ---
 import Layout from './site.astro';
+import '../landing-navigation.css';
 import { docsHome, docPath } from '../docs-nav';
 import { docCopy } from '../doc-ui-copy';
 import { landingCopy, htmlLanguage, guidePath, type LandingLocale } from '../landing-copy';
@@ -297,7 +298,7 @@ const scenes = [
     for (const wire of stage.querySelectorAll('.scan-wire,.decision-wire')) resize.observe(wire);
     window.addEventListener('pagehide', stop);
     window.addEventListener('pageshow', schedule);
-    elapsed = reduced.matches ? decisionEnd : 0;
+    elapsed = decisionEnd;
     measureRoutes();
     render();
     stage.dataset.ready = 'true';
@@ -329,7 +330,7 @@ const scenes = [
   .stage-top { display:flex; justify-content:space-between; gap:8px; align-items:center; color:#d5d0c8; font:12px/1.5 var(--mono); margin-bottom:20px; min-height:30px; }
   .stage-command { display:flex; align-items:baseline; gap:8px; min-width:0; overflow-wrap:anywhere; }
   .stage-command > span:first-child { color:#ffab7d; font-weight:700; }
-  .stage-controls { display:flex; gap:6px; flex:none; }
+  .stage-controls { display:flex; gap:6px; flex:none; min-inline-size:30px; }
   .stage-controls button { width:30px; height:30px; border-radius:7px; background:transparent; border:1px solid #524e48; color:#c3beb6; font-size:14px; display:grid; place-items:center; cursor:pointer; }
   .stage-controls button:hover { border-color:#ff9c61; background:#332a24; }
   .stage-controls button[hidden] { display:none; }
