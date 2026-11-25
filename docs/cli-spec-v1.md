@@ -90,6 +90,10 @@ Options:
 
 Use `boundra graph-domains --format html --output graph.html` to create an offline, searchable dependency view. Open the file in a browser. It shows declared, not observed, dependencies and requires no network or server.
 
+### `completions <bash|zsh|fish>`
+
+Print shell completion scripts generated from CLI help; save and load the script using your shell's normal completion mechanism. Startup files are never modified automatically.
+
 ### 1.4 `generate route <domain>/<name>`
 ### 1.5 `generate query <domain>/<name>`
 ### 1.6 `generate mutation <domain>/<name>`
