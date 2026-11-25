@@ -18,6 +18,7 @@ exports.run = async () => {
   const native = process.env.BOUNDRA_CLI_PATH;
   const runtime = process.env.BOUNDRA_RUNTIME_SOURCE;
   assert.ok(native && runtime);
+  await vscode.workspace.getConfiguration("typescript").update("updateImportsOnFileMove.enabled", "never", vscode.ConfigurationTarget.Workspace);
   const cli = (...args) => execFileSync(native, [...args, "--root", root], {encoding: "utf8"});
   cli("init", "--name", "editor-host-fixture");
   cli("create-domain", "order");
@@ -53,7 +54,12 @@ exports.run = async () => {
   await waitFor(() => diagnostics().length === 0);
   const movedDiagnostics = () => vscode.languages.getDiagnostics(moved).filter(item => item.source === "Boundra");
   assert.equal(movedDiagnostics().length, 0);
-  await writeFile(moved.fsPath, "import '../client/public';\n");
+  const movedDocument = await vscode.workspace.openTextDocument(moved);
+  await vscode.window.showTextDocument(movedDocument);
+  const movedEdit = new vscode.WorkspaceEdit();
+  movedEdit.replace(moved, new vscode.Range(movedDocument.positionAt(0), movedDocument.positionAt(movedDocument.getText().length)), "import '../client/public';\n");
+  assert.ok(await vscode.workspace.applyEdit(movedEdit));
+  assert.ok(await movedDocument.save());
   await waitFor(() => movedDiagnostics().some(item => item.code === "BR-002"));
   const deletion = new vscode.WorkspaceEdit();
   deletion.deleteFile(moved);
