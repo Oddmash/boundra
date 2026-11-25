@@ -7,6 +7,9 @@ authors.workspace = true
 repository.workspace = true
 publish = false
 
+[features]
+incremental-experiment = []
+
 [dependencies]
 boundra-core = { path = "../core" }
 

@@ -53,6 +53,10 @@
 
 <a id="2-allow-list"></a>
 
+### BR-007: 선언형 도메인 제한
+
+`checkBoundaries.denyDomainDependencies`에 지정한 대상 도메인으로 해석되는 import를 금지합니다. 선언된 공개 API에도 적용되며 기존 BR-001~006은 그대로 유지됩니다. 기본값은 빈 맵입니다.
+
 ## 2. 허용 목록
 
 - `client -> shared`

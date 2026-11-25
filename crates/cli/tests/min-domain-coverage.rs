@@ -51,9 +51,57 @@ fn json(output: &Output) -> Value {
 }
 
 #[test]
+fn impact_reports_unique_direct_and_indirect_consumers() {
+    let workspace = Workspace::new();
+    assert!(workspace
+        .run(&["init", "--name", "impact-test"])
+        .status
+        .success());
+    for name in ["order", "billing", "shipping", "checkout", "isolated"] {
+        assert!(workspace.run(&["create-domain", name]).status.success());
+    }
+    for edge in [
+        "billing/order",
+        "shipping/order",
+        "checkout/billing",
+        "checkout/shipping",
+    ] {
+        assert!(workspace.run(&["add-dependency", edge]).status.success());
+    }
+    let result = workspace.run(&["impact", "order", "--format=json"]);
+    assert!(result.status.success());
+    let report = json(&result);
+    assert_eq!(report["domain"], "order");
+    assert_eq!(
+        report["direct_dependents"],
+        serde_json::json!(["billing", "shipping"])
+    );
+    assert_eq!(
+        report["transitive_dependents"],
+        serde_json::json!(["checkout"])
+    );
+    assert_eq!(report["meta"]["affected_domain_count"], 3);
+    let isolated = workspace.run(&["impact", "isolated", "--format", "json"]);
+    assert!(isolated.status.success());
+    assert_eq!(json(&isolated)["meta"]["affected_domain_count"], 0);
+    let unknown = workspace.run(&["impact", "missing", "--format=json"]);
+    assert_eq!(unknown.status.code(), Some(2));
+    assert_eq!(json(&unknown)["errors"][0]["code"], "DOMAIN-004");
+    let invalid = workspace.run(&["impact", "BadName", "--format=json"]);
+    assert_eq!(invalid.status.code(), Some(2));
+    assert_eq!(json(&invalid)["errors"][0]["code"], "CLI-001");
+    let text = workspace.run(&["impact", "order"]);
+    assert!(text.status.success());
+    assert!(String::from_utf8_lossy(&text.stdout).contains("Indirect consumers:\n  checkout"));
+}
+
+#[test]
 fn minimum_domain_coverage_preserves_default_and_violation_behavior() {
     let workspace = Workspace::new();
-    assert!(workspace.run(&["init", "--name", "coverage-test"]).status.success());
+    assert!(workspace
+        .run(&["init", "--name", "coverage-test"])
+        .status
+        .success());
 
     let default_scan = workspace.run(&["check-boundaries", "--format", "json"]);
     assert_eq!(default_scan.status.code(), Some(0));
@@ -93,7 +141,11 @@ fn minimum_domain_coverage_preserves_default_and_violation_behavior() {
 #[test]
 fn minimum_domain_coverage_rejects_invalid_flags() {
     let workspace = Workspace::new();
-    for flag in ["--min-domains=0", "--min-domains=-1", "--min-domains=invalid"] {
+    for flag in [
+        "--min-domains=0",
+        "--min-domains=-1",
+        "--min-domains=invalid",
+    ] {
         let output = workspace.run(&["check-boundaries", "--format=json", flag]);
         assert_eq!(output.status.code(), Some(2));
         assert_eq!(json(&output)["errors"][0]["code"], "CLI-001");

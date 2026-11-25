@@ -68,6 +68,89 @@ fn help_lists_the_complete_v1_command_surface() {
 }
 
 #[test]
+fn doctor_reports_workspace_readiness_and_discovers_ancestors() {
+    let root = create_temp_dir("doctor");
+    let missing = run_boundra(&root, &["doctor", "--root", ".", "--format=json"]);
+    assert_eq!(missing.status.code(), Some(2));
+    assert_eq!(
+        parse_json_stdout(&missing)["errors"][0]["code"],
+        "DOCTOR-001"
+    );
+    assert!(run_boundra(&root, &["init"]).status.success());
+    let empty = run_boundra(&root, &["doctor", "--format", "json"]);
+    assert_eq!(empty.status.code(), Some(1));
+    assert_eq!(parse_json_stdout(&empty)["status"], "empty");
+    assert!(run_boundra(&root, &["create-domain", "order"])
+        .status
+        .success());
+    let nested = root.join("domains/order");
+    let ready = run_boundra(&nested, &["doctor", "--format=json"]);
+    assert_eq!(ready.status.code(), Some(0));
+    let report = parse_json_stdout(&ready);
+    assert_eq!(report["status"], "ready");
+    assert_eq!(report["domain_count"], 1);
+    assert_eq!(report["analyzed_domain_count"], 1);
+    assert_eq!(
+        run_boundra(&nested, &["doctor", "--root", "."])
+            .status
+            .code(),
+        Some(2)
+    );
+    fs::write(root.join("boundra.config.json"), "{ invalid").unwrap();
+    let invalid = run_boundra(&nested, &["doctor", "--format=json"]);
+    assert_eq!(invalid.status.code(), Some(2));
+    assert_eq!(
+        parse_json_stdout(&invalid)["errors"][0]["code"],
+        "PROJECT-001"
+    );
+}
+
+#[test]
+fn command_help_and_init_default_are_usable() {
+    let root = create_temp_dir("command-help");
+    for command in [
+        "add-dependency",
+        "check-boundaries",
+        "create-domain",
+        "generate",
+        "graph-domains",
+        "init",
+        "impact",
+    ] {
+        for flag in ["--help", "-h"] {
+            let output = run_boundra(&root, &[command, flag]);
+            assert!(output.status.success());
+            assert!(String::from_utf8_lossy(&output.stdout)
+                .contains(&format!("Usage: boundra {command}")));
+        }
+    }
+    let output = run_boundra(&root, &["init"]);
+    assert!(output.status.success());
+    let config: Value =
+        serde_json::from_slice(&fs::read(root.join("boundra.config.json")).unwrap()).unwrap();
+    assert_eq!(
+        config["project"]["name"],
+        root.file_name().unwrap().to_str().unwrap()
+    );
+    let output = run_boundra(&root, &["check-boundaries"]);
+    assert!(output.status.success());
+    assert!(String::from_utf8_lossy(&output.stdout)
+        .contains("Scanned 0 source file(s) across 0 analyzed domain(s)"));
+    assert!(run_boundra(&root, &["create-domain", "order"])
+        .status
+        .success());
+    let output = run_boundra(&root, &["impact", "order"]);
+    assert!(String::from_utf8_lossy(&output.stdout)
+        .contains("Direct consumers:\n  (none)\nIndirect consumers:\n  (none)"));
+    let output = run_boundra(&root, &["init", "--root", "nested-app"]);
+    assert!(output.status.success());
+    let nested: Value =
+        serde_json::from_slice(&fs::read(root.join("nested-app/boundra.config.json")).unwrap())
+            .unwrap();
+    assert_eq!(nested["project"]["name"], "nested-app");
+}
+
+#[test]
 fn init_creates_a_valid_non_destructive_workspace() {
     let root = create_temp_dir("init-workspace");
     let root_arg = root.to_string_lossy().to_string();
@@ -209,6 +292,42 @@ fn check_boundaries_defaults_to_text_output() {
     assert_eq!(output.status.code(), Some(1));
     assert!(stdout.contains("[BOUNDARY_VIOLATION] BR-001"));
     assert!(stdout.contains("check-boundaries: FAILED (1 violation(s))"));
+}
+
+#[test]
+fn check_boundaries_supports_ci_reports_without_changing_exit_codes() {
+    let root = create_fixture("ci-reports");
+    let relative = "domains/order/client/use order.ts";
+    fs::write(root.join(relative), "import '../server/checkout';\n").unwrap();
+    fs::write(
+        root.join("domains/order/server/checkout.ts"),
+        "export {};\n",
+    )
+    .unwrap();
+    let github = run_boundra(&root, &["check-boundaries", "--format", "github"]);
+    assert_eq!(github.status.code(), Some(1));
+    assert!(String::from_utf8_lossy(&github.stdout)
+        .contains("::error file=domains/order/client/use order.ts,line=1,title=BR-001::"));
+    let sarif = run_boundra(&root, &["check-boundaries", "--format=sarif"]);
+    assert_eq!(sarif.status.code(), Some(1));
+    let report = parse_json_stdout(&sarif);
+    assert_eq!(report["version"], "2.1.0");
+    assert_eq!(report["runs"][0]["results"][0]["ruleId"], "BR-001");
+    assert_eq!(
+        report["runs"][0]["results"][0]["locations"][0]["physicalLocation"]["artifactLocation"]
+            ["uri"],
+        "domains/order/client/use%20order.ts"
+    );
+    fs::write(root.join(relative), "export {};\n").unwrap();
+    let clean = run_boundra(&root, &["check-boundaries", "--format=sarif"]);
+    assert_eq!(clean.status.code(), Some(0));
+    assert_eq!(parse_json_stdout(&clean)["runs"][0]["results"], json!([]));
+    let invalid = run_boundra(&root, &["check-boundaries", "--format=sarif", "--unknown"]);
+    assert_eq!(invalid.status.code(), Some(2));
+    assert_eq!(
+        parse_json_stdout(&invalid)["runs"][0]["invocations"][0]["executionSuccessful"],
+        false
+    );
 }
 
 #[test]

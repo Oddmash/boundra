@@ -35,6 +35,10 @@
 - 允许：`dependsOn` 中声明的领域的 manifest 公开 API
 - 原因：使实际代码依赖与领域关系图一致，防止隐式耦合
 
+### BR-007：声明式领域限制
+
+禁止解析到 `checkBoundaries.denyDomainDependencies` 所指定目标领域的 import。即使声明了公开 API 也适用，BR-001 至 BR-006 不变。默认值为空映射。
+
 ## 2. 允许列表
 
 - `client -> shared`

@@ -80,8 +80,24 @@ pub fn check_boundaries_with_config(
         let Some(target) = resolved_target else {
             continue;
         };
-        let (target_domain, target_layer) = parse_domain_path_with_context(&target, context, &domain_index)
-            .unwrap_or((String::new(), Layer::Unknown));
+        let (target_domain, target_layer) =
+            parse_domain_path_with_context(&target, context, &domain_index)
+                .unwrap_or((String::new(), Layer::Unknown));
+
+        if config
+            .deny_domain_dependencies
+            .get(&source_domain)
+            .is_some_and(|targets| targets.contains(&target_domain))
+        {
+            violations.push(Violation {
+                rule: RuleCode::Br007,
+                file: record.source_file.clone(),
+                line: record.line,
+                import_path: record.import_path.clone(),
+                message: format!("domain '{source_domain}' is prohibited from importing '{target_domain}' by domain policy"),
+                suggestion: "remove the prohibited import or revise the approved domain restriction".to_string(),
+            });
+        }
 
         match (source_layer, target_layer) {
             (Layer::Client, Layer::Server) => violations.push(Violation {
@@ -878,7 +894,10 @@ mod tests {
         let violations = check_boundaries_with_context(&imports, &context);
         assert_eq!(violations.len(), 1);
         assert_eq!(violations[0].rule, RuleCode::Br001);
-        assert_eq!(violations[0].file, "domains/order/group/item/client/view.ts");
+        assert_eq!(
+            violations[0].file,
+            "domains/order/group/item/client/view.ts"
+        );
     }
 
     #[test]

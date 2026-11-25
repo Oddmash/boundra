@@ -12,7 +12,7 @@
     "@astrojs/markdown-remark": "7.3.10",
     "@oddmash/juliya": "0.4.1",
     "astro": "7.4.13",
-    "@oddmash/ui": "0.5.0",
+    "@oddmash/ui": "0.7.0",
     "react": "19.3.1",
     "react-dom": "19.3.1"
   },

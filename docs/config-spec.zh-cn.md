@@ -128,6 +128,7 @@ boundra.config.json
 - `capabilities.packages`：`paths.packages` 下直接子目录到 capability 列表的映射
 - `capabilities.apps`：分配给解析至 `paths.apps` 中的 import 的 capability
 - `policy.shared.denyCapabilities`：从 `shared` 触发 BR-003 的 capability
+- `denyDomainDependencies`：按已发现的源领域指定禁止依赖的目标列表，例如 `{"billing": ["shipping"]}`。增加 BR-007，不覆盖现有规则。未知名称、自身依赖和重复目标均为配置错误。
 
 外部匹配器匹配确切的包及其子路径。支持单个末尾的 `*`，用于 `node:*` 等前缀系列。
 

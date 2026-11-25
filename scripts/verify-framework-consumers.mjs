@@ -50,9 +50,31 @@ export const query = defineQuery({name: "order-summary", input: z.object({id: z.
 export const readOrder = () => createBoundraClient(async () => ({id: "order-1", status: "ready"})).query(query, {id: "order-1"});
 `);
   await write("domains/commerce/order/server/internal.ts", "export const internal = 1;\n");
+  await write("domains/commerce/order/server/public.ts", `import { implementQuery } from "boundra";
+import { query } from "../shared/public";
+export const orderImplementation = implementQuery(query, ({id}) => {
+  if (id === "fixture-failure") throw new Error("fixture-only internal failure");
+  return {id, status: "ready" as const};
+});
+`);
   await write("domains/billing/shared/public.ts", 'export { query } from "@domains/commerce/order/shared/public";\n');
   await write("apps/next/app/layout.tsx", 'import type { ReactNode } from "react";\nexport default function Layout({children}: {children: ReactNode}) { return <html lang="en"><body>{children}</body></html>; }');
   await write("apps/next/app/page.tsx", 'import { readOrder } from "@domains/commerce/order/shared/public";\nexport default async function Page() { const order = await readOrder(); return <main>Next order: {order.status}</main>; }');
+  await write("apps/next/app/contracts/order-summary/route.ts", `import { BoundraRuntimeError, executeContract } from "boundra";
+import { orderImplementation } from "@domains/commerce/order/server/public";
+export async function POST(request: Request) {
+  let body: unknown;
+  try { body = await request.json(); } catch { return Response.json({code: "RUNTIME-001"}, {status: 400}); }
+  try {
+    const input = body && typeof body === "object" && "input" in body ? body.input : undefined;
+    const result = await executeContract(orderImplementation, input);
+    return Response.json({result});
+  } catch (error) {
+    if (error instanceof BoundraRuntimeError && error.phase === "input") return Response.json({code: error.code}, {status: 400});
+    return Response.json({code: "REQUEST_FAILED"}, {status: 500});
+  }
+}
+`);
   await json("apps/next/tsconfig.json", { extends: "../../tsconfig.json", compilerOptions: { baseUrl: "../..", paths, jsx: "react-jsx" }, include: ["**/*.ts", "**/*.tsx", ".next/types/**/*.ts"] });
   await write("apps/vite/index.html", '<!doctype html><html lang="en"><head><title>Boundra consumer</title></head><body><main id="app"></main><script type="module" src="/src/main.ts"></script></body></html>');
   await write("apps/vite/src/pixel.png", Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jJ1sAAAAASUVORK5CYII=", "base64"));
@@ -75,6 +97,8 @@ import { spawn } from "node:child_process";
 import { readFile, readdir } from "node:fs/promises";
 import { createServer } from "vite";
 import { chromium } from "playwright";
+import { createBoundraClient, createHttpTransport } from "boundra";
+import { query } from "./domains/commerce/order/shared/public.ts";
 const next = spawn(process.execPath, ["node_modules/next/dist/bin/next", "start", "apps/next", "-H", "127.0.0.1", "-p", "41379"], {stdio: "inherit"});
 const server = await createServer({root: "apps/vite", server: {host: "127.0.0.1", port: 0}});
 let browser;
@@ -89,6 +113,19 @@ try {
     await new Promise(resolve => setTimeout(resolve, 500));
   }
   assert.ok(ready, "Next server did not start");
+  const client = createBoundraClient(createHttpTransport({baseUrl: "http://127.0.0.1:41379"}));
+  assert.deepEqual(await client.query(query, {id: "live-order"}), {id: "live-order", status: "ready"});
+  const invalid = await fetch("http://127.0.0.1:41379/contracts/order-summary", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({input: {id: ""}})});
+  assert.equal(invalid.status, 400);
+  assert.deepEqual(await invalid.json(), {code: "RUNTIME-001"});
+  for (const body of ["{", JSON.stringify({}), JSON.stringify(null)]) {
+    const malformed = await fetch("http://127.0.0.1:41379/contracts/order-summary", {method: "POST", headers: {"content-type": "application/json"}, body});
+    assert.equal(malformed.status, 400);
+    assert.deepEqual(await malformed.json(), {code: "RUNTIME-001"});
+  }
+  const failed = await fetch("http://127.0.0.1:41379/contracts/order-summary", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({input: {id: "fixture-failure"}})});
+  assert.equal(failed.status, 500);
+  assert.deepEqual(await failed.json(), {code: "REQUEST_FAILED"});
   await page.goto("http://127.0.0.1:41379");
   await page.getByText("Next order: ready").waitFor();
   await page.goto(server.resolvedUrls.local[0]);

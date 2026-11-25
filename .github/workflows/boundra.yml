@@ -111,6 +111,14 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - run: node node_modules/typescript/bin/tsc -p packages/runtime/tsconfig.build.json
       - run: node --import tsx packages/runtime/tests/runtime-test.ts
+      - run: node --import tsx --test packages/runtime/tests/eslint-test.mjs
+      - name: Verify ESLint flat config compatibility
+        if: matrix.node-version == 24
+        run: |
+          npm install --prefix "$RUNNER_TEMP/eslint-nine" --ignore-scripts --no-audit --no-fund eslint@9.39.5
+          BOUNDRA_ESLINT_PACKAGE="$RUNNER_TEMP/eslint-nine" node --import tsx --test packages/runtime/tests/eslint-test.mjs
+          npm install --prefix "$RUNNER_TEMP/eslint-ten" --ignore-scripts --no-audit --no-fund eslint@10.14.0
+          BOUNDRA_ESLINT_PACKAGE="$RUNNER_TEMP/eslint-ten" node --import tsx --test packages/runtime/tests/eslint-test.mjs
 
   verify-cli-platforms:
     needs: scope

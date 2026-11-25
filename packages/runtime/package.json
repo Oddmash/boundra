@@ -1,6 +1,6 @@
 {
   "name": "boundra",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Schema-backed runtime contracts for Boundra applications",
   "type": "module",
   "license": "MIT",
@@ -32,6 +32,10 @@
     "./config": {
       "types": "./dist/config/index.d.ts",
       "import": "./dist/config/index.js"
+    },
+    "./eslint": {
+      "types": "./dist/eslint.d.ts",
+      "import": "./dist/eslint.js"
     },
     "./dev-overlay": {
       "types": "./dist/dev-overlay.d.ts",

@@ -6,13 +6,13 @@ use boundra_parser::{collect_imports_with_report, ScanOptions};
 use boundra_rules::{check_boundaries_with_config, BoundaryContext};
 
 use crate::output::{
-    print_error, print_error_json, print_json, print_text, BoundaryScanCoverage, CliDiagnostic,
-    OutputFormat,
+    print_error, print_error_json, print_github, print_github_error, print_json, print_sarif,
+    print_sarif_error, print_text, BoundaryFormat, BoundaryScanCoverage, CliDiagnostic,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct CheckBoundariesOptions {
-    pub(crate) format: OutputFormat,
+    pub(crate) format: BoundaryFormat,
     pub(crate) root: PathBuf,
     pub(crate) min_domains: Option<usize>,
 }
@@ -73,9 +73,10 @@ pub(crate) fn run(options: &CheckBoundariesOptions) -> i32 {
         &project.config.check_boundaries,
     );
 
-    if let Some(minimum) = options.min_domains.filter(|&minimum| {
-        violations.is_empty() && coverage.analyzed_domain_count < minimum
-    }) {
+    if let Some(minimum) = options
+        .min_domains
+        .filter(|&minimum| violations.is_empty() && coverage.analyzed_domain_count < minimum)
+    {
         report_error(
             options,
             &CliDiagnostic::new(
@@ -84,15 +85,23 @@ pub(crate) fn run(options: &CheckBoundariesOptions) -> i32 {
                 "check the domain paths, manifests, and ignore patterns or adjust --min-domains",
             )
             .with_context("minimum_domain_count", minimum.to_string())
-            .with_context("analyzed_domain_count", coverage.analyzed_domain_count.to_string())
-            .with_context("scanned_file_count", coverage.scanned_file_count.to_string()),
+            .with_context(
+                "analyzed_domain_count",
+                coverage.analyzed_domain_count.to_string(),
+            )
+            .with_context(
+                "scanned_file_count",
+                coverage.scanned_file_count.to_string(),
+            ),
         );
         return 2;
     }
 
     match options.format {
-        OutputFormat::Text => print_text(&violations, coverage),
-        OutputFormat::Json => print_json(&violations, coverage),
+        BoundaryFormat::Text => print_text(&violations, coverage),
+        BoundaryFormat::Json => print_json(&violations, coverage),
+        BoundaryFormat::Github => print_github(&violations, coverage),
+        BoundaryFormat::Sarif => print_sarif(&violations),
     }
 
     if violations.is_empty() {
@@ -103,7 +112,7 @@ pub(crate) fn run(options: &CheckBoundariesOptions) -> i32 {
 }
 
 /// Count manifest-backed domains that contributed at least one scanned file.
-fn count_analyzed_domains(
+pub(crate) fn count_analyzed_domains(
     scanned_files: &[String],
     domain_roots: &BTreeMap<String, String>,
 ) -> usize {
@@ -121,8 +130,10 @@ fn count_analyzed_domains(
 
 fn report_error(options: &CheckBoundariesOptions, diagnostic: &CliDiagnostic) {
     match options.format {
-        OutputFormat::Text => print_error(diagnostic),
-        OutputFormat::Json => print_error_json("check-boundaries", diagnostic),
+        BoundaryFormat::Text => print_error(diagnostic),
+        BoundaryFormat::Json => print_error_json("check-boundaries", diagnostic),
+        BoundaryFormat::Github => print_github_error(diagnostic),
+        BoundaryFormat::Sarif => print_sarif_error(diagnostic),
     }
 }
 
@@ -134,7 +145,10 @@ mod tests {
     fn coverage_counts_unique_deepest_domains_and_excludes_prefix_matches() {
         let roots = BTreeMap::from([
             ("order".to_string(), "domains/order".to_string()),
-            ("invoice".to_string(), "domains/order/nested/invoice".to_string()),
+            (
+                "invoice".to_string(),
+                "domains/order/nested/invoice".to_string(),
+            ),
             ("shipping".to_string(), "domains/shipping".to_string()),
         ]);
         let nested_only = vec![

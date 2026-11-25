@@ -1,20 +1,23 @@
-# Boundra for VS Code (development preview)
+# Boundra for VS Code
 
 Run the workspace-local `boundra` package on saved files and display boundary
 violations in the Problems panel.
 
-1. Clone the repository and open `editors/vscode` in desktop VS Code.
-2. Select `Run Boundra Extension` in Run and Debug, then press F5. The launch
-   configuration loads the unpackaged extension into a new Extension Development Host.
-3. In that new window choose File > Open Folder and open a trusted Boundra
-   workspace with `boundra` installed. The preview remains loaded in that host;
-   no marketplace installation is needed.
-4. Save a source file or invoke `Boundra: Check Workspace` from the Command Palette.
-   View violations in Problems and CLI errors in the Boundra output channel.
+## Install the pre-release
+
+1. Install [Boundra from the Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=oddmash.boundra-vscode). Select the pre-release version if prompted.
+2. Install `boundra` in your existing TypeScript project using `pnpm add -D boundra` or your usual package manager.
+3. Create or open a trusted workspace with `boundra.config.json` and initialize the domain structure using `pnpm exec boundra init --name my-app` if needed.
+4. Save a source file or invoke **Boundra: Check Workspace** from the Command Palette. View violations in Problems and CLI failures in the Boundra output channel.
 
 The adapter discovers the nearest config within a workspace
 folder, coalesces saves, cancels superseded checks and does not run in untrusted
-or virtual workspaces. It does not install or publish an extension automatically.
+or virtual workspaces. The extension does not install the CLI automatically.
+Keep running the full native checker in CI.
+
+## Contributing
+
+Clone the repository, open `editors/vscode` in desktop VS Code and run the `Run Boundra Extension` launch configuration (F5). Open a trusted fixture workspace in the Extension Development Host.
 
 Run adapter tests with `node --test editors/vscode/diagnostics.test.cjs`.
 

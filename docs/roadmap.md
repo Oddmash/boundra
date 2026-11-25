@@ -128,3 +128,21 @@ Goals:
 - publish only after CLI commands and generated layouts stabilize
 
 Packaging direction is defined by ADR 0003 and `docs/packaging-spec.md`.
+
+## Phase 7: Developer Experience Expansion
+
+Expand the existing Rust engine and TypeScript framework surface without
+introducing another bundler, runtime, ORM, or UI framework.
+
+| Priority | Capability | Acceptance criteria |
+| --- | --- | --- |
+| P0 | Domain impact inspection | Direct and indirect consumers from manifests; stable JSON; no source mutations |
+| P1 | Workspace doctor | Explain missing config, malformed manifests, empty scans and unsupported environments using existing diagnostics |
+| P1 | Editor integration | Reuse checker diagnostics in an editor adapter with cancellation and debounced updates; no duplicate rule implementation |
+| P1 | CI annotations | Map deterministic diagnostics to standard CI reports and retain existing exit semantics |
+| P2 | Incremental checks | Demonstrate equivalent diagnostics to a full scan and measurable gains on realistic workspaces before enabling caching |
+| P2 | Contract adapters | Validate framework-neutral contract behavior against real Next.js, Vite and server consumers before introducing framework-specific packages |
+| P2 | Extension contracts | Evaluate declarative policies and code generation templates before adopting an extension language |
+
+The initial impact command uses the declared dependency graph, not runtime
+call tracing. Changes to rule semantics or manifest compatibility require an ADR.

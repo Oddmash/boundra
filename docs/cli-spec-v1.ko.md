@@ -11,6 +11,8 @@
 - `--help`, `-h`
 - `--version`, `-V`
 
+`boundra <command> --help` 또는 `-h`로 명령별 사용법을 확인할 수 있습니다.
+
 ### 1.0 `init`
 
 애플리케이션 파일을 덮어쓰지 않고 Boundra 워크스페이스를 초기화합니다.
@@ -63,7 +65,7 @@ Import를 분석하고 경계 규칙 위반을 감지합니다.
 
 옵션:
 - `--root <path>` (기본값: `.`)
-- `--format text|json` (기본값: `text`)
+- `--format text|json|github|sarif` (기본값: `text`)
 - `--min-domains <positive integer>` (선택 사항, `--min-domains=<n>`도 허용)
 
 스캔 범위 보고:
@@ -79,8 +81,14 @@ Import를 분석하고 경계 규칙 위반을 감지합니다.
 
 옵션:
 - `--root <path>` (기본값: `.`)
-- `--format mermaid|json|dot` (기본값: `mermaid`)
+- `--format mermaid|json|dot|html` (기본값: `mermaid`)
 - `--output <path>`
+
+`boundra graph-domains --format html --output graph.html`로 검색 가능한 오프라인 의존성 뷰를 생성합니다. 브라우저로 파일을 열면 선언된 의존성을 탐색할 수 있으며 네트워크나 서버가 필요하지 않습니다.
+
+### `completions <bash|zsh|fish>`
+
+CLI 도움말을 기반으로 자동 완성 스크립트를 출력합니다. 사용하는 셸의 일반적인 완성 설정으로 불러올 수 있으며 시작 파일을 자동 수정하지 않습니다.
 
 ### 1.4 `generate route <domain>/<name>`
 ### 1.5 `generate query <domain>/<name>`
@@ -134,6 +142,24 @@ Import를 분석하고 경계 규칙 위반을 감지합니다.
 
 <a id="2-cli-ux-principles"></a>
 
+### 1.9 `impact <domain>`
+
+선언된 `dependsOn` 관계를 기반으로 도메인의 공개 API 변경 시 영향을 받는 직접 및 간접 소비자를 확인합니다. 소스 파일은 수정하거나 스캔하지 않습니다.
+
+- `--root <path>` (기본값: `.`)
+- `--format text|json` (기본값: `text`)
+
+JSON은 `domain`, `direct_dependents`, `transitive_dependents`(간접 소비자만), `meta.command`, `meta.affected_domain_count`를 제공합니다. 이름순으로 정렬하며 중복과 대상 도메인을 제외합니다. 존재하지 않는 도메인이나 잘못된 프로젝트는 종료 코드 2와 구조화된 오류를 반환합니다. 소비자가 없는 도메인은 정상적으로 빈 결과를 반환합니다. 런타임 호출 분석이나 경계 검사를 대체하지 않습니다.
+
+### 1.10 `doctor`
+
+파일을 수정하지 않고 워크스페이스 준비 상태를 확인합니다. `--root`를 생략하면 현재 디렉터리 또는 상위 디렉터리에서 가장 가까운 `boundra.config.json`을 찾습니다. 명시하면 해당 경로만 검사합니다.
+
+- `--root <path>` (선택)
+- `--format text|json` (기본값: `text`)
+
+종료 코드 0은 준비 완료, 1은 빈 검사 범위, 2는 설정 누락 또는 오류, 3은 스캔 오류를 뜻합니다. JSON에는 `status`, `root`, `domain_count`, `scanned_file_count`, `analyzed_domain_count`, `meta.command`가 포함됩니다. 실패 시 구조화된 진단을 반환합니다. 경계 위반은 `check-boundaries`로 별도 검사합니다.
+
 ## 2. CLI UX 원칙
 
 - 경계 진단에는 규칙 코드, 파일, 줄 번호, import, 메시지 및 제안이 포함됩니다.
@@ -167,3 +193,23 @@ Import를 분석하고 경계 규칙 위반을 감지합니다.
   }
 }
 ```
+
+## 변경 파일 검사
+
+`boundra check-changed --base <ref> [--root <path>] [--format text|json]`은 전체 워크스페이스를 검사하고 Git 변경 파일의 위반과 나머지 위반을 구분합니다. staged, unstaged, untracked 파일을 포함하며 삭제, 이름 변경 또는 비소스 변경 시 전체 결과를 강조합니다. 변경되지 않은 파일에 위반이 있어도 종료 코드 1을 반환합니다.
+
+## 읽기 전용 마이그레이션 계획
+
+`boundra migrate [--root <path>] [--from <relative-path>] [--format text|json]`은 지정한 또는 유일한 관례적 소스 디렉터리의 하위 폴더를 분석하여 도메인 후보, 레이어, 매니페스트 존재 여부, 소스 수, import 목록 및 경고를 반환합니다. 모호한 경로는 명시적으로 선택해야 하며 파일은 변경하지 않습니다.
+
+## 명시적 위반 기준선
+
+`boundra baseline create [--root <path>]`는 버전이 있는 JSON 기준선을 표준 출력으로 생성합니다. `boundra baseline check --baseline <path> [--root <path>] [--format text|json]`은 전체 검사 후 신규, 기존, 해결된 위반을 분류합니다. 규칙, 상대 경로, import 및 발생 횟수를 비교하며 줄 변경은 무시합니다. 이름 변경은 신규 및 해결로 처리합니다. 종료 코드 0은 신규 없음, 1은 신규 위반, 2는 잘못된 기준선이나 검사 실패 또는 도메인 검사 범위 감소입니다. 일반 `check-boundaries`는 기준선을 자동 적용하지 않습니다.
+
+## 4. 규칙 설명
+
+`boundra explain BR-001 [--format text|json]`은 워크스페이스를 로드하지 않고 기본 경계 규칙을 설명합니다. BR-001부터 BR-007까지 대소문자 구분 없이 지원합니다. 원인, 올바른 예시와 위반 예시, 해결 방법을 제공하며 JSON에는 `rule`, `title`, `description`, `reason`, `invalid_example`, `valid_example`, `suggestion`, `meta.command`가 포함됩니다. 알 수 없는 규칙이나 잘못된 옵션은 종료 코드 2와 구조화된 오류를 반환합니다.
+
+## 5. 감시 모드
+
+`boundra watch [--root <path>] [--format text|json] [--interval-ms <n>] [--min-domains <n>] [--once]`는 전체 검사를 즉시 실행한 후 기본 1,500ms(최소 250ms) 간격으로 반복하며 변경된 결과만 출력합니다. 캐시 없이 소스, 설정, 매니페스트 및 별칭 변경을 반영합니다. JSON은 줄마다 `event`, `exit_code`, `report`, `meta.command`를 제공하고, `--once`는 검사 종료 코드를 반환합니다. Ctrl+C로 종료합니다.
