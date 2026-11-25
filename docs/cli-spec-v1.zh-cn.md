@@ -80,6 +80,10 @@
 
 使用 `boundra graph-domains --format html --output graph.html` 生成可搜索的离线依赖视图。在浏览器中打开文件即可查看声明的依赖关系，无需网络或服务器。
 
+### `completions <bash|zsh|fish>`
+
+输出从 CLI 帮助生成的补全脚本，通过 shell 常规补全配置加载即可，不会自动修改启动文件。
+
 ### 1.4 `generate route <domain>/<name>`
 ### 1.5 `generate query <domain>/<name>`
 ### 1.6 `generate mutation <domain>/<name>`
