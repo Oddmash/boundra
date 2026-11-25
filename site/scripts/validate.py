@@ -1,5 +1,6 @@
 from html.parser import HTMLParser
 import re
+import subprocess
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
@@ -73,5 +74,9 @@ for locale in locales:
         assert code_blocks(original) == code_blocks(content), (slug, locale, 'code example mismatch')
         assert root / 'docs' / f'{slug}.{locale}' / 'index.html' in pages
 assert reference_sets[0] == reference_sets[1] == reference_sets[2], 'reference localization coverage differs'
+
+scripts = Path(__file__).resolve().parent
+subprocess.run(['node', '--test', str(scripts / 'public-docs.test.mjs')], check=True)
+subprocess.run(['node', str(scripts / 'public-docs.mjs'), '--verify', str(root)], check=True)
 
 print(f'Validated {len(pages)} pages and {sum(len(page.links) for page in pages.values())} link references')

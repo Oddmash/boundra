@@ -2,10 +2,11 @@ import { defineConfig } from "astro/config";
 import { unified } from "@astrojs/markdown-remark";
 import { cp } from "node:fs/promises";
 import remarkDocLinks from "./remark-doc-links.mjs";
+import { PUBLIC_SITE, PUBLIC_BASE, writePublicDocs } from "./scripts/public-docs.mjs";
 
 export default defineConfig({
-  site: "https://oddmash.github.io",
-  base: "/boundra",
+  site: PUBLIC_SITE,
+  base: PUBLIC_BASE,
   output: "static",
   markdown: {
     processor: unified({ remarkPlugins: [remarkDocLinks], smartypants: false }),
@@ -20,6 +21,7 @@ export default defineConfig({
             new URL("docs/assets/", dir),
             { recursive: true },
           );
+          await writePublicDocs({ dir });
         },
       },
     },
