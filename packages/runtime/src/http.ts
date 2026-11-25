@@ -67,14 +67,15 @@ export function createHttpTransport(
   }
 
   return async (contract, callOptions) => {
+    const headers = new Headers(options.headers);
+    if (!headers.has("content-type")) {
+      headers.set("content-type", "application/json");
+    }
     const response = await request(
       `${baseUrl}/contracts/${encodeURIComponent(contract.name)}`,
       {
         method: "POST",
-        headers: {
-          "content-type": "application/json",
-          ...options.headers,
-        },
+        headers,
         body: JSON.stringify(contract),
         signal: callOptions?.signal,
       },
@@ -147,28 +148,26 @@ async function readBoundedBody(
   let text = "";
   let bytesRead = 0;
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) {
-      text += decoder.decode();
-      return { text, truncated: false };
-    }
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        text += decoder.decode();
+        return { text, truncated: false };
+      }
 
-    const remaining = maxBytes - bytesRead;
-    if (remaining <= 0) {
-      await reader.cancel().catch(() => undefined);
-      text += decoder.decode();
-      return { text, truncated: true };
+      const remaining = maxBytes - bytesRead;
+      const captured = value.subarray(0, remaining);
+      bytesRead += captured.byteLength;
+      text += decoder.decode(captured, { stream: true });
+      if (captured.byteLength < value.byteLength) {
+        void reader.cancel().catch(() => undefined);
+        text += decoder.decode();
+        return { text, truncated: true };
+      }
     }
-
-    const captured = value.subarray(0, remaining);
-    bytesRead += captured.byteLength;
-    text += decoder.decode(captured, { stream: true });
-    if (captured.byteLength < value.byteLength) {
-      await reader.cancel().catch(() => undefined);
-      text += decoder.decode();
-      return { text, truncated: true };
-    }
+  } finally {
+    reader.releaseLock();
   }
 }
 
