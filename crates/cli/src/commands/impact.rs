@@ -97,10 +97,16 @@ pub(crate) fn run(options: &ImpactOptions) -> i32 {
                 report.domain, report.meta.affected_domain_count
             );
             println!("Direct consumers:");
+            if report.direct_dependents.is_empty() {
+                println!("  (none)");
+            }
             for name in report.direct_dependents {
                 println!("  {name}");
             }
             println!("Indirect consumers:");
+            if report.transitive_dependents.is_empty() {
+                println!("  (none)");
+            }
             for name in report.transitive_dependents {
                 println!("  {name}");
             }
