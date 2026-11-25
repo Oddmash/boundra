@@ -1,0 +1,29 @@
+name: Shell Completions
+
+on:
+  pull_request:
+    paths:
+      - 'crates/cli/src/cli.rs'
+      - 'crates/cli/src/commands/completions.rs'
+      - '.github/workflows/verify-completions.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-shells:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo build --locked -p boundra-cli
+      - run: sudo apt-get update && sudo apt-get install -y fish zsh
+      - name: Check native completion scripts
+        run: |
+          target/debug/boundra completions bash | bash -n
+          target/debug/boundra completions zsh | zsh -n
+          target/debug/boundra completions fish > "$RUNNER_TEMP/boundra.fish"
+          fish -n "$RUNNER_TEMP/boundra.fish"
+          fish -c 'source $argv[1]; complete -C "boundra check-boundaries --f"' "$RUNNER_TEMP/boundra.fish" | grep -F -- '--format'
+          fish -c 'source $argv[1]; complete -C "boundra check-boundaries --format j"' "$RUNNER_TEMP/boundra.fish" | grep -Fx 'json'
