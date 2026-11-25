@@ -160,6 +160,10 @@
 }
 ```
 
+## 只读迁移计划
+
+`boundra migrate [--root <path>] [--from <relative-path>] [--format text|json]` 从指定或唯一的常规源码目录中识别域候选、层、清单、源文件数、import 和警告。路径存在歧义时必须明确选择，不修改文件。
+
 ## 显式违规基线
 
 `boundra baseline create [--root <path>]` 将版本化 JSON 基线输出到标准输出。`boundra baseline check --baseline <path> [--root <path>] [--format text|json]` 完整扫描后区分新增、既有及已解决违规。比较规则、相对路径、import 和出现次数，忽略行移动；重命名视为新增及解决。退出码 0 表示无新增，1 表示新增违规，2 表示基线无效、扫描失败或域覆盖减少。普通 `check-boundaries` 不会自动应用基线。
