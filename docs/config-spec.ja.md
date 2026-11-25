@@ -128,6 +128,7 @@ boundra.config.json
 - `capabilities.packages`: `paths.packages` 直下の名前から capability のリストへの対応
 - `capabilities.apps`: `paths.apps` 内に解決される import に付与される capability
 - `policy.shared.denyCapabilities`: `shared` からの依存で BR-003 を発生させる capability
+- `denyDomainDependencies`: 検出されたソースドメインごとの禁止対象一覧。例：`{"billing": ["shipping"]}`。BR-007 を追加し、既存ルールは変更しません。不明な名前、自己参照、重複は設定エラーです。
 
 外部マッチャーはパッケージの完全一致とそのサブパスに一致します。`node:*` のような接頭辞のグループでは、末尾に1つの `*` を指定できます。
 

@@ -1,0 +1,34 @@
+name: LSP Preview
+
+on:
+  pull_request:
+    branches: [develop, main]
+    paths:
+      - 'editors/lsp/**'
+      - 'editors/vscode/diagnostics.cjs'
+      - '.github/workflows/verify-lsp-preview.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  protocol-and-neovim:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo build --locked -p boundra-cli
+      - name: Verify native protocol lifecycle
+        run: BOUNDRA_CLI_PATH="$PWD/target/debug/boundra" node --test editors/lsp/server-test.cjs
+      - name: Install representative LSP client
+        run: sudo apt-get update && sudo apt-get install -y neovim
+      - name: Verify real Neovim document lifecycle
+        run: |
+          BOUNDRA_CLI_PATH="$PWD/target/debug/boundra" \
+          BOUNDRA_LSP_SERVER="$PWD/editors/lsp/server.cjs" \
+          BOUNDRA_LSP_FIXTURE="$RUNNER_TEMP/lsp-preview-fixture" \
+          nvim --headless -u NONE -c "luafile editors/lsp/neovim-test.lua"

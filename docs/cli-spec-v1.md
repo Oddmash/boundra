@@ -7,6 +7,8 @@ Global information flags:
 - `--help`, `-h`
 - `--version`, `-V`
 
+Use `boundra <command> --help` (or `-h`) for command-specific usage.
+
 ### 1.0 `init`
 
 Initialize a Boundra workspace without overwriting application files.
@@ -63,7 +65,7 @@ target source file in its server artifact.
 
 Options:
 - `--root <path>` (default: `.`)
-- `--format text|json` (default: `text`)
+- `--format text|json|github|sarif` (default: `text`)
 - `--min-domains <positive integer>` (optional; also accepts `--min-domains=<n>`)
 
 Coverage reporting:
@@ -73,11 +75,18 @@ Coverage reporting:
   `analyzed_domain_count` counts unique domains that contain at least one source
   file included by the configured scan, not merely loaded manifests.
 - Text output warns when no source files or no domains were analyzed.
+- Text output reports scanned file and analyzed domain counts for every completed scan.
+
 - If `--min-domains` is set and the scan has no violations but covers fewer than
   the requested number of domains, the command returns `COVERAGE-001` and exit
   code 2. JSON uses the existing structured error shape with actual and expected
   coverage counts in context. If violations exist, they retain priority and exit
   code 1. Without the option, existing behavior and output remain unchanged.
+
+CI reporting formats preserve the same exit codes. `github` emits GitHub Actions
+annotations (run from the analyzed repository root). `sarif` emits a SARIF 2.1.0
+document with scan-root-relative locations, rule IDs and invocation status;
+redirect stdout to a report file for external tooling.
 
 ### 1.3 `graph-domains`
 
@@ -85,8 +94,14 @@ Generate a domain dependency graph from domain manifests.
 
 Options:
 - `--root <path>` (default: `.`)
-- `--format mermaid|json|dot` (default: `mermaid`)
+- `--format mermaid|json|dot|html` (default: `mermaid`)
 - `--output <path>`
+
+Use `boundra graph-domains --format html --output graph.html` to create an offline, searchable dependency view. Open the file in a browser. It shows declared, not observed, dependencies and requires no network or server.
+
+### `completions <bash|zsh|fish>`
+
+Print shell completion scripts generated from CLI help; save and load the script using your shell's normal completion mechanism. Startup files are never modified automatically.
 
 ### 1.4 `generate route <domain>/<name>`
 ### 1.5 `generate query <domain>/<name>`
@@ -162,6 +177,22 @@ invalid project returns exit code 2 and a structured error for JSON requests.
 An isolated domain returns a successful empty report. This is a potential
 change-impact report, not proof of runtime usage or a replacement for checks.
 
+### 1.10 `doctor`
+
+Check workspace readiness without modifying files. Without `--root`, discover
+the nearest `boundra.config.json` in the current directory or its ancestors.
+An explicit `--root` is checked exactly.
+
+- `--root <path>` (optional)
+- `--format text|json` (default: `text`)
+
+Exit 0 indicates a valid project with analyzed domain sources, exit 1 indicates
+empty scan coverage, exit 2 indicates missing or invalid configuration, and
+exit 3 indicates scan errors. Successful and empty JSON reports contain
+`status`, `root`, `domain_count`, `scanned_file_count`, `analyzed_domain_count`
+and `meta.command`. Failures use structured CLI diagnostics. Doctor does not
+evaluate boundary violations; run `check-boundaries` separately.
+
 ## 2. CLI UX Principles
 
 - Boundary diagnostics include rule code, file, line, import, message, and suggestion.
@@ -193,3 +224,57 @@ change-impact report, not proof of runtime usage or a replacement for checks.
   }
 }
 ```
+
+## Explicit violation baseline
+
+`boundra baseline create [--root <path>]` prints a versioned JSON snapshot to
+stdout. Redirect it to a file intentionally; existing files are never modified
+by the CLI. `boundra baseline check --baseline <path> [--root <path>]
+[--format text|json]` performs a full scan and classifies new, existing and
+resolved violations. A fingerprint consists of the rule, relative source file,
+and import specifier, with occurrence counts. Line changes are ignored; renames
+are conservatively treated as new violations and resolved old entries.
+Exit 0 permits existing violations only, 1 indicates new violations, and 2
+rejects malformed baselines, failed scans or decreased analyzed domain coverage.
+The standard `check-boundaries` command is unchanged and never uses a baseline implicitly.
+
+## Read-only migration planning
+
+`boundra migrate [--root <path>] [--from <relative-path>] [--format text|json]`
+inspects direct child directories of an explicitly selected source or a unique
+conventional directory (`domains`, `src/domains`, `features`, `src/features`).
+The plan lists candidate names, detected layer directories, manifest presence,
+source coverage, unique import specifiers and warnings. It skips unsupported
+names, empty candidates and symbolic-link candidates. Ambiguous layouts and
+invalid paths fail with exit code 2. No configuration, manifest or source file
+is created, modified or moved. Review all candidates before adoption.
+
+## Changed-file reporting
+
+`boundra check-changed --base <ref> [--root <path>] [--format text|json]`
+resolves the explicit Git base and reports focused and other violations from a
+complete workspace scan. It includes staged, unstaged and untracked paths;
+deletions, renames and non-source changes conservatively focus the full result.
+Exit 1 still means any full-scan violation, including unchanged files. Invalid
+Git references or failed/empty scans return 2. Nothing is modified.
+
+## 4. Rule explanations
+
+`boundra explain BR-001 [--format text|json]` explains a built-in boundary
+rule without loading a workspace. Rule codes BR-001 through BR-007 are accepted
+case-insensitively. Text includes the cause, valid and invalid examples, and
+resolution guidance. JSON contains `rule`, `title`, `description`, `reason`,
+`invalid_example`, `valid_example`, `suggestion`, and `meta.command`. Unknown
+rules and invalid options return exit code 2; JSON requests retain structured
+errors. This describes the rule, not the result of a project-specific scan.
+
+## 5. Watch mode
+
+`boundra watch [--root <path>] [--format text|json] [--interval-ms <n>]
+[--min-domains <n>] [--once]` runs a full boundary check immediately and then
+polls with a default 1,500 ms delay (minimum 250 ms). It serializes scans and
+emits only changed results, so bursts are coalesced and all source, config,
+manifest and alias changes are evaluated without caching. Stop with Ctrl+C.
+JSON emits one compact event per line: `event`, `exit_code`, `report` (the
+ordinary check output) and `meta.command`. `--once` returns the check exit code;
+continuous watch keeps running through violations and configuration errors.

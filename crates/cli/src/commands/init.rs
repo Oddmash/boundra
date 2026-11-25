@@ -14,8 +14,11 @@ pub(crate) struct InitOptions {
 
 pub(crate) fn run(options: &InitOptions) -> i32 {
     let name = options.name.clone().unwrap_or_else(|| {
-        options
-            .root
+        let absolute = std::env::current_dir()
+            .map(|cwd| cwd.join(&options.root))
+            .unwrap_or_else(|_| options.root.clone());
+        let resolved = fs::canonicalize(&absolute).unwrap_or(absolute);
+        resolved
             .file_name()
             .and_then(|value| value.to_str())
             .unwrap_or("boundra-app")

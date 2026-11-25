@@ -7,6 +7,8 @@
 - `--help`, `-h`
 - `--version`, `-V`
 
+使用 `boundra <command> --help` 或 `-h` 查看命令用法。
+
 ### 1.0 `init`
 
 初始化 Boundra 工作区，不覆盖应用文件。
@@ -59,7 +61,7 @@
 
 选项：
 - `--root <path>`（默认：`.`）
-- `--format text|json`（默认：`text`）
+- `--format text|json|github|sarif`（默认：`text`）
 - `--min-domains <positive integer>`（可选，也接受 `--min-domains=<n>`）
 
 覆盖范围报告：
@@ -75,8 +77,14 @@
 
 选项：
 - `--root <path>`（默认：`.`）
-- `--format mermaid|json|dot`（默认：`mermaid`）
+- `--format mermaid|json|dot|html`（默认：`mermaid`）
 - `--output <path>`
+
+使用 `boundra graph-domains --format html --output graph.html` 生成可搜索的离线依赖视图。在浏览器中打开文件即可查看声明的依赖关系，无需网络或服务器。
+
+### `completions <bash|zsh|fish>`
+
+输出从 CLI 帮助生成的补全脚本，通过 shell 常规补全配置加载即可，不会自动修改启动文件。
 
 ### 1.4 `generate route <domain>/<name>`
 ### 1.5 `generate query <domain>/<name>`
@@ -137,6 +145,15 @@
 
 JSON 包含 `domain`、`direct_dependents`、`transitive_dependents`（仅间接）、`meta.command` 和 `meta.affected_domain_count`。按名称排序，去除重复项和目标域本身。未知域或无效项目返回退出码 2 和结构化错误。没有依赖方时成功返回空结果。此命令不能替代运行时调用分析或边界检查。
 
+### 1.10 `doctor`
+
+检查工作区准备状态，不修改文件。省略 `--root` 时在当前目录或父目录中查找最近的 `boundra.config.json`；指定时仅检查该路径。
+
+- `--root <path>`（可选）
+- `--format text|json`（默认：`text`）
+
+退出码 0 表示已就绪，1 表示扫描范围为空，2 表示配置缺失或无效，3 表示扫描错误。JSON 包含 `status`、`root`、`domain_count`、`scanned_file_count`、`analyzed_domain_count` 和 `meta.command`。失败时返回结构化诊断。边界违规应另行运行 `check-boundaries` 检查。
+
 ## 2. CLI 用户体验原则
 
 - 边界诊断包含规则代码、文件、行号、import、消息及建议。
@@ -168,3 +185,23 @@ JSON 包含 `domain`、`direct_dependents`、`transitive_dependents`（仅间接
   }
 }
 ```
+
+## 变更文件报告
+
+`boundra check-changed --base <ref> [--root <path>] [--format text|json]` 完整扫描工作区并区分 Git 变更文件和其他违规。包含已暂存、未暂存和未跟踪文件；删除、重命名或非源码变更时聚焦完整结果。未变更文件的违规也返回退出码 1。
+
+## 只读迁移计划
+
+`boundra migrate [--root <path>] [--from <relative-path>] [--format text|json]` 从指定或唯一的常规源码目录中识别域候选、层、清单、源文件数、import 和警告。路径存在歧义时必须明确选择，不修改文件。
+
+## 显式违规基线
+
+`boundra baseline create [--root <path>]` 将版本化 JSON 基线输出到标准输出。`boundra baseline check --baseline <path> [--root <path>] [--format text|json]` 完整扫描后区分新增、既有及已解决违规。比较规则、相对路径、import 和出现次数，忽略行移动；重命名视为新增及解决。退出码 0 表示无新增，1 表示新增违规，2 表示基线无效、扫描失败或域覆盖减少。普通 `check-boundaries` 不会自动应用基线。
+
+## 4. 规则说明
+
+`boundra explain BR-001 [--format text|json]` 无需加载工作区即可解释内置边界规则。支持 BR-001 至 BR-007，不区分大小写。提供原因、正确与违规示例以及解决建议，JSON 包含 `rule`、`title`、`description`、`reason`、`invalid_example`、`valid_example`、`suggestion` 和 `meta.command`。未知规则或无效选项返回退出码 2 和结构化错误。
+
+## 5. 监视模式
+
+`boundra watch [--root <path>] [--format text|json] [--interval-ms <n>] [--min-domains <n>] [--once]` 立即执行完整扫描，然后默认每 1,500ms（最短 250ms）重复，仅输出变化后的结果。无需缓存即可检查源码、配置、清单及别名变化。JSON 每行包含 `event`、`exit_code`、`report` 和 `meta.command`；`--once` 返回检查退出码，Ctrl+C 停止。

@@ -136,6 +136,7 @@ boundra.config.json
 - `capabilities.packages`: `paths.packages`의 직접 하위 디렉터리를 capability 목록에 매핑
 - `capabilities.apps`: `paths.apps` 내부로 해석되는 import에 부여하는 capability
 - `policy.shared.denyCapabilities`: `shared`에서 BR-003을 발생시키는 capability
+- `denyDomainDependencies`: 발견된 소스 도메인별 금지 대상 도메인 목록. 예: `{"billing": ["shipping"]}`. BR-007을 추가하며 기존 규칙을 변경하지 않습니다. 알 수 없는 이름, 자기 자신, 중복 대상은 설정 오류입니다.
 
 외부 매처는 정확한 패키지 및 해당 패키지의 하위 경로와 일치합니다. `node:*`와 같은 접두사 계열에 대해 끝의 단일 `*`를 지원합니다.
 

@@ -6,9 +6,19 @@ The format follows Keep a Changelog and versions follow Semantic Versioning.
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-11-25
+
 ### Added
 
 - inspect direct and indirect domain consumers with `impact <domain>` in text or JSON
+- add workspace doctor, rule explanations, watch mode, migration planning, explicit baselines, changed-file reports, offline graph views, and shell completions
+- support declarative additive domain restrictions and GitHub/SARIF reporting
+- provide an ESLint adapter and read-only architecture MCP and LSP previews
+
+### Fixed
+
+- improve Vite diagnostics reconfiguration and HTTP consumer conformance coverage
+- prepare the independently versioned VS Code 0.1.1 pre-release with lifecycle regressions and Marketplace setup guidance
 
 ## [0.7.0] - 2026-11-25
 

@@ -1,24 +1,38 @@
 use std::path::PathBuf;
 
 use crate::commands::add_dependency::AddDependencyOptions;
+use crate::commands::baseline::{BaselineAction, BaselineOptions};
+use crate::commands::changed::ChangedOptions;
 use crate::commands::check_boundaries::CheckBoundariesOptions;
 use crate::commands::create_domain::CreateDomainOptions;
+use crate::commands::doctor::DoctorOptions;
+use crate::commands::explain::ExplainOptions;
 use crate::commands::generate::{GenerateKind, GenerateOptions};
 use crate::commands::graph_domains::{GraphDomainsOptions, GraphFormat};
 use crate::commands::impact::ImpactOptions;
 use crate::commands::init::InitOptions;
-use crate::output::OutputFormat;
+use crate::commands::migrate::MigrateOptions;
+use crate::commands::watch::WatchOptions;
+use crate::output::{BoundaryFormat, OutputFormat};
 use crate::util::is_kebab_case;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) enum Command {
     AddDependency(AddDependencyOptions),
+    Baseline(BaselineOptions),
+    Changed(ChangedOptions),
     CheckBoundaries(CheckBoundariesOptions),
     CreateDomain(CreateDomainOptions),
     GraphDomains(GraphDomainsOptions),
     Generate(GenerateOptions),
     Init(InitOptions),
+    Migrate(MigrateOptions),
+    Doctor(DoctorOptions),
+    Explain(ExplainOptions),
     Impact(ImpactOptions),
+    Watch(WatchOptions),
+    Mcp(PathBuf),
+    Completions(crate::commands::completions::Shell),
     Help,
     Version,
 }
@@ -50,11 +64,61 @@ pub(crate) fn parse_command(args: &[String]) -> Result<Command, String> {
             Ok(Command::Generate(options))
         }
         "init" => Ok(Command::Init(parse_init_options(&args[1..])?)),
+        "doctor" => Ok(Command::Doctor(parse_doctor_options(&args[1..])?)),
+        "explain" => Ok(Command::Explain(parse_explain_options(&args[1..])?)),
         "impact" => Ok(Command::Impact(parse_impact_options(&args[1..])?)),
+        "watch" => Ok(Command::Watch(parse_watch_options(&args[1..])?)),
+        "baseline" => Ok(Command::Baseline(parse_baseline_options(&args[1..])?)),
+        "migrate" => Ok(Command::Migrate(parse_migrate_options(&args[1..])?)),
+        "check-changed" => Ok(Command::Changed(parse_changed_options(&args[1..])?)),
+        "mcp" => match &args[1..] {
+            [flag, root] if flag == "--root" && !root.is_empty() => Ok(Command::Mcp(root.into())),
+            _ => Err("mcp requires --root <workspace-path>".into()),
+        },
+        "completions" => match &args[1..] {
+            [shell] => crate::commands::completions::Shell::parse(shell).map(Command::Completions),
+            _ => Err("completions requires exactly one shell: bash, zsh or fish".into()),
+        },
         "help" | "--help" | "-h" => Ok(Command::Help),
         "--version" | "-V" => Ok(Command::Version),
         _ => Err(format!("unknown command: {command}")),
     }
+}
+
+fn parse_doctor_options(args: &[String]) -> Result<DoctorOptions, String> {
+    let mut options = DoctorOptions {
+        root: None,
+        format: OutputFormat::Text,
+    };
+    let mut index = 0;
+    while index < args.len() {
+        let argument = &args[index];
+        let (key, value) = match argument.split_once('=') {
+            Some(pair) => pair,
+            None => {
+                if !matches!(argument.as_str(), "--root" | "--format") {
+                    return Err(format!("unknown option: {argument}"));
+                }
+                index += 1;
+                (
+                    argument.as_str(),
+                    args.get(index)
+                        .map(String::as_str)
+                        .ok_or_else(|| format!("missing value for {argument}"))?,
+                )
+            }
+        };
+        if value.is_empty() || value.starts_with("--") {
+            return Err(format!("missing value for {key}"));
+        }
+        match key {
+            "--root" => options.root = Some(PathBuf::from(value)),
+            "--format" => options.format = parse_output_format(value)?,
+            _ => return Err(format!("unknown option: {key}")),
+        }
+        index += 1;
+    }
+    Ok(options)
 }
 
 fn parse_impact_options(args: &[String]) -> Result<ImpactOptions, String> {
@@ -94,6 +158,214 @@ fn parse_impact_options(args: &[String]) -> Result<ImpactOptions, String> {
             _ => return Err(format!("unknown option: {key}")),
         }
         index += 1;
+    }
+    Ok(options)
+}
+
+fn parse_watch_options(args: &[String]) -> Result<WatchOptions, String> {
+    let mut options = WatchOptions {
+        root: PathBuf::from("."),
+        format: OutputFormat::Text,
+        interval_ms: 1500,
+        once: false,
+        min_domains: None,
+    };
+    let mut index = 0;
+    while index < args.len() {
+        let argument = &args[index];
+        if argument == "--once" {
+            options.once = true;
+            index += 1;
+            continue;
+        }
+        let (key, value) = if let Some(pair) = argument.split_once('=') {
+            pair
+        } else {
+            if !matches!(
+                argument.as_str(),
+                "--root" | "--format" | "--interval-ms" | "--min-domains"
+            ) {
+                return Err(format!("unknown option: {argument}"));
+            }
+            index += 1;
+            (
+                argument.as_str(),
+                args.get(index)
+                    .map(String::as_str)
+                    .ok_or_else(|| format!("missing value for {argument}"))?,
+            )
+        };
+        if value.is_empty() || value.starts_with("--") {
+            return Err(format!("missing value for {key}"));
+        }
+        match key {
+            "--root" => options.root = PathBuf::from(value),
+            "--format" => options.format = parse_output_format(value)?,
+            "--interval-ms" => {
+                options.interval_ms = value
+                    .parse::<u64>()
+                    .ok()
+                    .filter(|interval| *interval >= 250)
+                    .ok_or("--interval-ms must be an integer of at least 250")?
+            }
+            "--min-domains" => options.min_domains = Some(parse_min_domains(value)?),
+            _ => return Err(format!("unknown option: {key}")),
+        }
+        index += 1;
+    }
+    Ok(options)
+}
+
+fn parse_explain_options(args: &[String]) -> Result<ExplainOptions, String> {
+    let rule = args
+        .first()
+        .filter(|value| !value.starts_with('-') && !value.is_empty())
+        .ok_or("expected a boundary rule code")?
+        .clone();
+    let format = match &args[1..] {
+        [] => OutputFormat::Text,
+        [option, value] if option == "--format" => parse_output_format(value)?,
+        [option] if option.starts_with("--format=") => parse_output_format(&option[9..])?,
+        _ => return Err("expected --format text|json after the rule code".to_string()),
+    };
+    Ok(ExplainOptions { rule, format })
+}
+
+fn parse_changed_options(args: &[String]) -> Result<ChangedOptions, String> {
+    let mut root = PathBuf::from(".");
+    let mut base = None;
+    let mut format = OutputFormat::Text;
+    let mut index = 0;
+    while index < args.len() {
+        let argument = &args[index];
+        let (key, value) = match argument.split_once('=') {
+            Some(pair) => pair,
+            None => {
+                if !matches!(argument.as_str(), "--root" | "--base" | "--format") {
+                    return Err(format!("unknown option: {argument}"));
+                }
+                index += 1;
+                (
+                    argument.as_str(),
+                    args.get(index)
+                        .map(String::as_str)
+                        .ok_or_else(|| format!("missing value for {argument}"))?,
+                )
+            }
+        };
+        if value.is_empty() || value.starts_with('-') {
+            return Err(format!("invalid value for {key}"));
+        }
+        match key {
+            "--root" => root = PathBuf::from(value),
+            "--base" => base = Some(value.to_string()),
+            "--format" => format = parse_output_format(value)?,
+            _ => return Err(format!("unknown option: {key}")),
+        }
+        index += 1;
+    }
+    Ok(ChangedOptions {
+        root,
+        base: base.ok_or("check-changed requires --base <ref>")?,
+        format,
+    })
+}
+
+fn parse_migrate_options(args: &[String]) -> Result<MigrateOptions, String> {
+    let mut options = MigrateOptions {
+        root: PathBuf::from("."),
+        from: None,
+        format: OutputFormat::Text,
+    };
+    let mut index = 0;
+    while index < args.len() {
+        let argument = &args[index];
+        let (key, value) = match argument.split_once('=') {
+            Some(pair) => pair,
+            None => {
+                if !matches!(argument.as_str(), "--root" | "--from" | "--format") {
+                    return Err(format!("unknown option: {argument}"));
+                }
+                index += 1;
+                (
+                    argument.as_str(),
+                    args.get(index)
+                        .map(String::as_str)
+                        .ok_or_else(|| format!("missing value for {argument}"))?,
+                )
+            }
+        };
+        if value.is_empty() || value.starts_with("--") {
+            return Err(format!("missing value for {key}"));
+        }
+        match key {
+            "--root" => options.root = PathBuf::from(value),
+            "--from" => options.from = Some(PathBuf::from(value)),
+            "--format" => options.format = parse_output_format(value)?,
+            _ => return Err(format!("unknown option: {key}")),
+        }
+        index += 1;
+    }
+    Ok(options)
+}
+
+fn parse_baseline_options(args: &[String]) -> Result<BaselineOptions, String> {
+    let action = match args.first().map(String::as_str) {
+        Some("create") => BaselineAction::Create,
+        Some("check") => BaselineAction::Check,
+        _ => return Err("expected baseline create or check".to_string()),
+    };
+    let mut options = BaselineOptions {
+        action,
+        root: PathBuf::from("."),
+        baseline: None,
+        format: if action == BaselineAction::Create {
+            OutputFormat::Json
+        } else {
+            OutputFormat::Text
+        },
+    };
+    let mut index = 1;
+    while index < args.len() {
+        let arg = &args[index];
+        let (key, value) = match arg.split_once('=') {
+            Some(pair) => pair,
+            None => {
+                if !matches!(arg.as_str(), "--root" | "--baseline" | "--format") {
+                    return Err(format!("unknown option: {arg}"));
+                }
+                index += 1;
+                (
+                    arg.as_str(),
+                    args.get(index)
+                        .map(String::as_str)
+                        .ok_or_else(|| format!("missing value for {arg}"))?,
+                )
+            }
+        };
+        if value.is_empty() || value.starts_with("--") {
+            return Err(format!("missing value for {key}"));
+        }
+        match key {
+            "--root" => options.root = PathBuf::from(value),
+            "--baseline" => options.baseline = Some(PathBuf::from(value)),
+            "--format" => options.format = parse_output_format(value)?,
+            _ => return Err(format!("unknown option: {key}")),
+        }
+        index += 1;
+    }
+    match action {
+        BaselineAction::Create
+            if options.baseline.is_some() || options.format != OutputFormat::Json =>
+        {
+            return Err(
+                "baseline create emits JSON to stdout; redirect it to the intended file".into(),
+            )
+        }
+        BaselineAction::Check if options.baseline.is_none() => {
+            return Err("baseline check requires --baseline <path>".into())
+        }
+        _ => {}
     }
     Ok(options)
 }
@@ -170,7 +442,7 @@ fn parse_add_dependency_options(args: &[String]) -> Result<AddDependencyOptions,
 
 fn parse_check_boundaries_options(args: &[String]) -> Result<CheckBoundariesOptions, String> {
     let mut options = CheckBoundariesOptions {
-        format: OutputFormat::Text,
+        format: BoundaryFormat::Text,
         root: PathBuf::from("."),
         min_domains: None,
     };
@@ -198,13 +470,13 @@ fn parse_check_boundaries_options(args: &[String]) -> Result<CheckBoundariesOpti
             let Some(value) = args.get(index + 1) else {
                 return Err("missing value for --format".to_string());
             };
-            options.format = parse_output_format(value)?;
+            options.format = parse_boundary_format(value)?;
             index += 2;
             continue;
         }
 
         if let Some(value) = arg.strip_prefix("--format=") {
-            options.format = parse_output_format(value)?;
+            options.format = parse_boundary_format(value)?;
             index += 1;
             continue;
         }
@@ -406,11 +678,22 @@ fn parse_output_format(value: &str) -> Result<OutputFormat, String> {
     }
 }
 
+fn parse_boundary_format(value: &str) -> Result<BoundaryFormat, String> {
+    match value {
+        "text" => Ok(BoundaryFormat::Text),
+        "json" => Ok(BoundaryFormat::Json),
+        "github" => Ok(BoundaryFormat::Github),
+        "sarif" => Ok(BoundaryFormat::Sarif),
+        _ => Err(format!("invalid --format value: {value}")),
+    }
+}
+
 fn parse_graph_format(value: &str) -> Result<GraphFormat, String> {
     match value {
         "mermaid" => Ok(GraphFormat::Mermaid),
         "dot" => Ok(GraphFormat::Dot),
         "json" => Ok(GraphFormat::Json),
+        "html" => Ok(GraphFormat::Html),
         _ => Err(format!("invalid --format value: {value}")),
     }
 }
