@@ -68,6 +68,51 @@ fn help_lists_the_complete_v1_command_surface() {
 }
 
 #[test]
+fn command_help_and_init_default_are_usable() {
+    let root = create_temp_dir("command-help");
+    for command in [
+        "add-dependency",
+        "check-boundaries",
+        "create-domain",
+        "generate",
+        "graph-domains",
+        "init",
+        "impact",
+    ] {
+        for flag in ["--help", "-h"] {
+            let output = run_boundra(&root, &[command, flag]);
+            assert!(output.status.success());
+            assert!(String::from_utf8_lossy(&output.stdout)
+                .contains(&format!("Usage: boundra {command}")));
+        }
+    }
+    let output = run_boundra(&root, &["init"]);
+    assert!(output.status.success());
+    let config: Value =
+        serde_json::from_slice(&fs::read(root.join("boundra.config.json")).unwrap()).unwrap();
+    assert_eq!(
+        config["project"]["name"],
+        root.file_name().unwrap().to_str().unwrap()
+    );
+    let output = run_boundra(&root, &["check-boundaries"]);
+    assert!(output.status.success());
+    assert!(String::from_utf8_lossy(&output.stdout)
+        .contains("Scanned 0 source file(s) across 0 analyzed domain(s)"));
+    assert!(run_boundra(&root, &["create-domain", "order"])
+        .status
+        .success());
+    let output = run_boundra(&root, &["impact", "order"]);
+    assert!(String::from_utf8_lossy(&output.stdout)
+        .contains("Direct consumers:\n  (none)\nIndirect consumers:\n  (none)"));
+    let output = run_boundra(&root, &["init", "--root", "nested-app"]);
+    assert!(output.status.success());
+    let nested: Value =
+        serde_json::from_slice(&fs::read(root.join("nested-app/boundra.config.json")).unwrap())
+            .unwrap();
+    assert_eq!(nested["project"]["name"], "nested-app");
+}
+
+#[test]
 fn init_creates_a_valid_non_destructive_workspace() {
     let root = create_temp_dir("init-workspace");
     let root_arg = root.to_string_lossy().to_string();
