@@ -168,6 +168,10 @@ Import를 분석하고 경계 규칙 위반을 감지합니다.
 }
 ```
 
+## 변경 파일 검사
+
+`boundra check-changed --base <ref> [--root <path>] [--format text|json]`은 전체 워크스페이스를 검사하고 Git 변경 파일의 위반과 나머지 위반을 구분합니다. staged, unstaged, untracked 파일을 포함하며 삭제, 이름 변경 또는 비소스 변경 시 전체 결과를 강조합니다. 변경되지 않은 파일에 위반이 있어도 종료 코드 1을 반환합니다.
+
 ## 읽기 전용 마이그레이션 계획
 
 `boundra migrate [--root <path>] [--from <relative-path>] [--format text|json]`은 지정한 또는 유일한 관례적 소스 디렉터리의 하위 폴더를 분석하여 도메인 후보, 레이어, 매니페스트 존재 여부, 소스 수, import 목록 및 경고를 반환합니다. 모호한 경로는 명시적으로 선택해야 하며 파일은 변경하지 않습니다.
