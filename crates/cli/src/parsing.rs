@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use crate::commands::add_dependency::AddDependencyOptions;
 use crate::commands::check_boundaries::CheckBoundariesOptions;
 use crate::commands::create_domain::CreateDomainOptions;
+use crate::commands::doctor::DoctorOptions;
 use crate::commands::generate::{GenerateKind, GenerateOptions};
 use crate::commands::graph_domains::{GraphDomainsOptions, GraphFormat};
 use crate::commands::impact::ImpactOptions;
@@ -19,6 +20,7 @@ pub(crate) enum Command {
     Generate(GenerateOptions),
     Init(InitOptions),
     Impact(ImpactOptions),
+    Doctor(DoctorOptions),
     Help,
     Version,
 }
@@ -51,10 +53,47 @@ pub(crate) fn parse_command(args: &[String]) -> Result<Command, String> {
         }
         "init" => Ok(Command::Init(parse_init_options(&args[1..])?)),
         "impact" => Ok(Command::Impact(parse_impact_options(&args[1..])?)),
+        "doctor" => Ok(Command::Doctor(parse_doctor_options(&args[1..])?)),
         "help" | "--help" | "-h" => Ok(Command::Help),
         "--version" | "-V" => Ok(Command::Version),
         _ => Err(format!("unknown command: {command}")),
     }
+}
+
+fn parse_doctor_options(args: &[String]) -> Result<DoctorOptions, String> {
+    let mut options = DoctorOptions {
+        root: None,
+        format: OutputFormat::Text,
+    };
+    let mut index = 0;
+    while index < args.len() {
+        let argument = &args[index];
+        let (key, value) = match argument.split_once('=') {
+            Some(pair) => pair,
+            None => {
+                if !matches!(argument.as_str(), "--root" | "--format") {
+                    return Err(format!("unknown option: {argument}"));
+                }
+                index += 1;
+                (
+                    argument.as_str(),
+                    args.get(index)
+                        .map(String::as_str)
+                        .ok_or_else(|| format!("missing value for {argument}"))?,
+                )
+            }
+        };
+        if value.is_empty() || value.starts_with("--") {
+            return Err(format!("missing value for {key}"));
+        }
+        match key {
+            "--root" => options.root = Some(PathBuf::from(value)),
+            "--format" => options.format = parse_output_format(value)?,
+            _ => return Err(format!("unknown option: {key}")),
+        }
+        index += 1;
+    }
+    Ok(options)
 }
 
 fn parse_impact_options(args: &[String]) -> Result<ImpactOptions, String> {
