@@ -80,6 +80,7 @@ if (import.meta.hot) {
     },
     configureServer(value: ViteServer) {
       server?.watcher?.off("all", onFile);
+      disposed = false;
       server = value;
       value.watcher?.on("all", onFile);
       schedule(0);
@@ -89,6 +90,8 @@ if (import.meta.hot) {
     },
     closeBundle() {
       disposed = true;
+      revision += 1;
+      pending = false;
       if (timer) clearTimeout(timer);
       timer = undefined;
       server?.watcher?.off("all", onFile);
