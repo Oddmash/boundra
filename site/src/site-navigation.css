@@ -1,3 +1,4 @@
+/* Cross-document navigation requires matching opt-in in both document heads. */
 @view-transition {
   navigation: auto;
 }
