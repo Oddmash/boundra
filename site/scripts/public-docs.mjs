@@ -82,6 +82,19 @@ export function rewriteMarkdownLinks(markdown, context) {
   }).join("\n");
 }
 
+export function sitemapRoutes() {
+  return ["", ...publicLocales.filter(locale => locale !== "en").map(locale => locale + "/"), "docs/frameworks/",
+    ...publicLocales.flatMap(locale => [docsPath(locale), examplePath(locale), ...publicSlugs.map(slug => htmlPath(slug, locale))])];
+}
+
+export function publicSitemap({ site = PUBLIC_SITE, base = PUBLIC_BASE } = {}) {
+  const baseUrl = canonicalBase(site, base);
+  const escape = value => value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+  return '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    + sitemapRoutes().map(route => "  <url><loc>" + escape(new URL(route, baseUrl).href) + "</loc></url>").join("\n")
+    + "\n</urlset>\n";
+}
+
 async function expectedOutputs({ docsRoot = docsRootDefault, rootPackage = rootPackageDefault, site = PUBLIC_SITE, base = PUBLIC_BASE } = {}) {
   const docsDir = docsRoot instanceof URL ? fileURLToPath(docsRoot) : docsRoot;
   const metadata = JSON.parse(await readFile(rootPackage, "utf8"));
@@ -127,6 +140,7 @@ export async function writePublicDocs({ dir, ...options }) {
   const outputs = await expectedOutputs(options);
   await Promise.all(publicLocales.map(locale => mkdir(join(outputDir, "llms", locale), { recursive: true })));
   await Promise.all([...outputs].map(([path, content]) => writeFile(join(outputDir, path), content, "utf8")));
+  await writeFile(join(outputDir, "sitemap.xml"), publicSitemap(options), "utf8");
   return outputs.size - 1;
 }
 
@@ -149,6 +163,10 @@ export async function verifyPublicDocs({ dir, ...options }) {
     for (const path of [docsPath(locale), examplePath(locale), ...publicSlugs.map(slug => htmlPath(slug, locale))]) {
       assert((await stat(join(outputDir, path, "index.html"))).isFile(), "Missing public HTML documentation: " + path);
     }
+  }
+  assert.equal(await readFile(join(outputDir, "sitemap.xml"), "utf8"), publicSitemap(options));
+  for (const route of sitemapRoutes()) {
+    assert((await stat(join(outputDir, route, "index.html"))).isFile(), "Missing sitemap page: " + route);
   }
   return outputs.size - 1;
 }
