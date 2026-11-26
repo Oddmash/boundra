@@ -1,5 +1,7 @@
 # AGENTS.md
 
+Follow the [Oddmash concurrent work claims](https://github.com/Oddmash/.github/blob/main/AGENTS.md#concurrent-work-claims) and organization collaboration rules before implementation, review, CI retries, or merges.
+
 Boundra 프로젝트에서 작업하는 사람/AI 에이전트 공통 운영 규약.
 
 Follow the [Oddmash organization working agreements](https://github.com/Oddmash/.github/blob/main/AGENTS.md). Public issues, PRs, reviews, commits, and changelog entries use English. Preserve Boundra's product-specific architecture and release constraints.
@@ -168,6 +170,10 @@ ADR 위치: `docs/adr/`
   경우에만 draft PR을 생성한다.
 
 Follow the [Oddmash review follow-up guidance](https://github.com/Oddmash/.github/blob/main/docs/AI-CODE-REVIEW.md#following-up-on-review-findings) when addressing review comments, including recording non-adoption or deferral and the final thread disposition.
+
+## GitHub account use
+
+Follow the [Oddmash GitHub account policy](https://github.com/Oddmash/.github/blob/main/docs/github-account-policy.md). Use `arvynoo` for AI-authored commits, issues, and pull requests with command-scoped authentication and a separate checkout or worktree per session. Only `qtaghdi` gives final approval to and manually merges external contributions.
 
 ## Agent contribution attribution
 
