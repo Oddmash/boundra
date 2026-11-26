@@ -6,6 +6,13 @@ The format follows Keep a Changelog and versions follow Semantic Versioning.
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-11-27
+
+### Changed
+
+- Use a local JSON token source for the development diagnostics overlay while preserving rendered styles and package entrypoints.
+- Prepare the independently versioned VS Code 0.1.2 pre-release with clearer Marketplace discovery and installation guidance.
+
 ## [0.8.0] - 2026-11-25
 
 ### Added
