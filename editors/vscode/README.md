@@ -5,6 +5,12 @@ violations in the Problems panel.
 
 ## Install the pre-release
 
+From a terminal with the VS Code CLI available:
+
+```sh
+code --install-extension oddmash.boundra-vscode --pre-release
+```
+
 1. Install [Boundra from the Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=oddmash.boundra-vscode). Select the pre-release version if prompted.
 2. Install `boundra` in your existing TypeScript project using `pnpm add -D boundra` or your usual package manager.
 3. Create or open a trusted workspace with `boundra.config.json` and initialize the domain structure using `pnpm exec boundra init --name my-app` if needed.
@@ -14,6 +20,10 @@ The adapter discovers the nearest config within a workspace
 folder, coalesces saves, cancels superseded checks and does not run in untrusted
 or virtual workspaces. The extension does not install the CLI automatically.
 Keep running the full native checker in CI.
+
+Follow the [Boundra quickstart](https://oddmash.github.io/boundra/docs/quickstart/)
+for a first boundary check. See the [CLI installation guide](https://oddmash.github.io/boundra/docs/cli-install/)
+for supported platforms and native installation.
 
 ## Contributing
 
