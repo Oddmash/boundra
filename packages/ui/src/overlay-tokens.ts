@@ -66,6 +66,9 @@ export const overlayTokens = {
     "labelTracking": ".08em",
     "headingTracking": "-.04em"
   },
+  "opacity": {
+    "disabledTab": ".4"
+  },
   "space": {
     "px2": "2px",
     "px4": "4px",
