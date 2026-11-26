@@ -24,6 +24,8 @@ Boundra は Rust 製の静的解析 CLI とスキーマベースの TypeScript �
 
 **[ユーザーガイド](docs/user-guide.ja.md)** · [導入判断と制約](docs/product-positioning.ja.md)
 
+**VS Code:** [Boundra Marketplace プレリリース](https://marketplace.visualstudio.com/items?itemName=oddmash.boundra-vscode)をインストールし、ローカル CLI がある信頼済みのワークスペースで `Boundra: Check Workspace` を実行すると保存済みファイルの診断を確認できます。[エディター設定](editors/vscode/README.md)を参照してください。
+
 ## クイックスタート
 
 既存の TypeScript プロジェクトで Node.js 20 以上を使用してください。CLI は初回実行時に対応するネイティブバイナリをダウンロードして検証します。対応環境は Linux x64、macOS Intel と Apple Silicon、Windows x64 です。詳細は [インストールとオフラインでの利用](docs/cli-install.ja.md) を参照してください。

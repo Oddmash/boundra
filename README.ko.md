@@ -24,6 +24,8 @@ Boundra는 Rust 기반 정적 분석 CLI와 스키마 기반 TypeScript 계약 �
 
 **[상세 사용 가이드](docs/user-guide.ko.md)** · [도입 기준 및 장단점](docs/product-positioning.ko.md)
 
+**VS Code:** [Boundra Marketplace 프리릴리스](https://marketplace.visualstudio.com/items?itemName=oddmash.boundra-vscode)를 설치하고 CLI가 설치된 신뢰 가능한 워크스페이스에서 `Boundra: Check Workspace`를 실행하면 저장된 파일의 경계 진단을 확인할 수 있습니다. [편집기 설정](editors/vscode/README.md)을 참고하세요.
+
 ## 빠른 시작
 
 기존 TypeScript 프로젝트에서 Node.js 20 이상을 사용하세요. CLI는 처음 실행할 때 대응하는 네이티브 바이너리를 다운로드하고 검증합니다. 지원 대상은 Linux x64, macOS Intel 및 Apple Silicon, Windows x64입니다. 자세한 내용은 [설치 및 오프라인 사용](docs/cli-install.ko.md) 문서를 참고하세요.

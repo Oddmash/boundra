@@ -1,0 +1,6 @@
+.vscode/**
+*.test.cjs
+host-test.cjs
+run-host-test.cjs
+node_modules/**
+*.vsix

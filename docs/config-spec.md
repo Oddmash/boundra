@@ -128,6 +128,7 @@ Supported:
 - `capabilities.packages`: direct child under `paths.packages` to capability list
 - `capabilities.apps`: capabilities assigned to imports that resolve into `paths.apps`
 - `policy.shared.denyCapabilities`: capabilities that trigger BR-003 from `shared`
+- `denyDomainDependencies`: exact discovered source domain names mapped to denied target domains, e.g. `{"billing": ["shipping"]}`. This additive BR-007 policy rejects unknown domains, self-restrictions and repeated targets. It never overrides the built-in rules.
 
 External matchers match an exact package and its subpaths. A single trailing
 `*` is supported for prefix families such as `node:*`.

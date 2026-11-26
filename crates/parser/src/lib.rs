@@ -5,6 +5,10 @@ use std::path::{Path, PathBuf};
 
 use boundra_core::DEFAULT_BOUNDARY_IGNORE_PATTERNS;
 
+#[cfg(feature = "incremental-experiment")]
+#[path = "incremental-experiment.rs"]
+pub mod incremental_experiment;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ImportRecord {
     pub source_file: String,

@@ -7,6 +7,8 @@
 - `--help`、`-h`
 - `--version`、`-V`
 
+`boundra <command> --help` または `-h` でコマンド別の使用方法を表示します。
+
 ### 1.0 `init`
 
 アプリケーションファイルを上書きせずに Boundra ワークスペースを初期化します。
@@ -59,7 +61,7 @@ import を分析し、境界ルール違反を検出します。
 
 オプション：
 - `--root <path>`（デフォルト：`.`）
-- `--format text|json`（デフォルト：`text`）
+- `--format text|json|github|sarif`（デフォルト：`text`）
 - `--min-domains <positive integer>`（任意、`--min-domains=<n>` も受け入れる）
 
 カバレッジの報告：
@@ -75,8 +77,14 @@ import を分析し、境界ルール違反を検出します。
 
 オプション：
 - `--root <path>`（デフォルト：`.`）
-- `--format mermaid|json|dot`（デフォルト：`mermaid`）
+- `--format mermaid|json|dot|html`（デフォルト：`mermaid`）
 - `--output <path>`
+
+`boundra graph-domains --format html --output graph.html` で検索可能なオフライン依存関係ビューを生成します。ブラウザーで開くと宣言された依存関係を確認でき、ネットワークやサーバーは不要です。
+
+### `completions <bash|zsh|fish>`
+
+CLI ヘルプから生成した補完スクリプトを出力します。通常の補完設定で読み込めます。起動ファイルは自動変更しません。
 
 ### 1.4 `generate route <domain>/<name>`
 ### 1.5 `generate query <domain>/<name>`
@@ -128,6 +136,24 @@ import を分析し、境界ルール違反を検出します。
 
 共有ファイルは list/create/update/delete のスキーマと契約を所有します。クライアントファイルは型付き関数を公開し、`client/public.ts` から冪等に export されます。Boundra は永続化、HTTP ルート、UI、ORM コードを生成しません。
 
+### 1.9 `impact <domain>`
+
+宣言された `dependsOn` に基づき、公開 API の変更が影響する直接・間接の利用ドメインを確認します。ソースの読み取り解析や変更は行いません。
+
+- `--root <path>` (既定値: `.`)
+- `--format text|json` (既定値: `text`)
+
+JSON は `domain`、`direct_dependents`、`transitive_dependents` (間接のみ)、`meta.command`、`meta.affected_domain_count` を返します。名前順に整列し、重複と対象自身を除きます。不明なドメインや無効なプロジェクトは終了コード 2 と構造化エラーを返します。利用者がいない場合は空の結果で成功します。実行時の呼び出し分析や境界チェックの代替ではありません。
+
+### 1.10 `doctor`
+
+ファイルを変更せずにワークスペースの準備状態を確認します。`--root` を省略すると現在または親ディレクトリの最も近い `boundra.config.json` を探します。指定時はそのパスのみ確認します。
+
+- `--root <path>` (任意)
+- `--format text|json` (既定値: `text`)
+
+終了コード 0 は準備完了、1 は空の検査範囲、2 は設定の欠落または不正、3 はスキャンエラー。JSON は `status`、`root`、`domain_count`、`scanned_file_count`、`analyzed_domain_count`、`meta.command` を含みます。失敗時は構造化された診断を返します。境界違反は `check-boundaries` で別途確認します。
+
 ## 2. CLI UX の原則
 
 - 境界診断にはルールコード、ファイル、行、import、メッセージ、提案を含めます。
@@ -159,3 +185,23 @@ import を分析し、境界ルール違反を検出します。
   }
 }
 ```
+
+## 変更ファイルの報告
+
+`boundra check-changed --base <ref> [--root <path>] [--format text|json]` は完全検査の結果を Git 変更ファイルとその他に分類します。ステージ済み、未ステージ、未追跡ファイルを含め、削除、改名、非ソース変更時は全結果を対象とします。未変更ファイルの違反も終了コード 1 となります。
+
+## 読み取り専用移行計画
+
+`boundra migrate [--root <path>] [--from <relative-path>] [--format text|json]` は指定されたソースまたは唯一の慣例的なソースディレクトリからドメイン候補、レイヤー、マニフェスト、ソース数、import 一覧と警告を報告します。曖昧なパスは明示的に選択し、ファイルは変更しません。
+
+## 明示的な違反ベースライン
+
+`boundra baseline create [--root <path>]` はバージョン付き JSON を標準出力に生成します。`boundra baseline check --baseline <path> [--root <path>] [--format text|json]` は完全検査後、新規・既存・解決済み違反を分類します。ルール、相対パス、import、出現回数を比較し、行の移動は無視します。名前変更は新規と解決として扱います。終了コード 0 は新規なし、1 は新規違反、2 は不正なベースライン、検査失敗またはドメイン範囲の減少です。通常の `check-boundaries` は自動的に適用しません。
+
+## 4. ルールの説明
+
+`boundra explain BR-001 [--format text|json]` はワークスペースを読み込まず組み込みの境界ルールを説明します。BR-001 から BR-007 まで大文字小文字を区別しません。原因、正しい例と違反例、解決策を表示し、JSON は `rule`、`title`、`description`、`reason`、`invalid_example`、`valid_example`、`suggestion`、`meta.command` を含みます。不明なルールや無効なオプションは終了コード 2 と構造化エラーを返します。
+
+## 5. 監視モード
+
+`boundra watch [--root <path>] [--format text|json] [--interval-ms <n>] [--min-domains <n>] [--once]` は初回と既定 1,500ms（最小 250ms）ごとに完全検査を実行し、変更された結果のみを出力します。キャッシュなしでソース、設定、マニフェスト、エイリアスを検査します。JSON は行ごとに `event`、`exit_code`、`report`、`meta.command` を含みます。`--once` は検査の終了コードを返し、Ctrl+C で停止します。
