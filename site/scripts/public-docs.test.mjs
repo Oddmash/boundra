@@ -62,7 +62,10 @@ test("public docs generation uses only the shared allowlist and checks the built
       await mkdir(join(dir, path), { recursive: true });
       await writeFile(join(dir, path, "index.html"), "<h1>Public</h1>");
     };
+    await html("");
+    await html("docs/frameworks");
     for (const locale of publicLocales) {
+      if (locale !== "en") await html(locale);
       const suffix = locale === "en" ? "" : "." + locale;
       await Promise.all(publicSlugs.map(async slug => {
         await writeFile(join(docsRoot, slug + suffix + ".md"), "# " + slug + "\n");
@@ -77,6 +80,10 @@ test("public docs generation uses only the shared allowlist and checks the built
     const count = await writePublicDocs(options);
     assert.equal(count, publicLocales.length * publicSlugs.length);
     assert.equal(await verifyPublicDocs(options), count);
+    const sitemap = await readFile(join(dir, "sitemap.xml"), "utf8");
+    assert.match(sitemap, /https:\/\/example\.org\/project\/docs\/user-guide\.ko\//);
+    assert.match(sitemap, /https:\/\/example\.org\/project\/ja\//);
+    assert.doesNotMatch(sitemap, /internal|releases\/|llms\//);
     const index = await readFile(join(dir, "llms.txt"), "utf8");
     assert.match(index, /Version: v1\.2\.3/);
     assert.match(index, /https:\/\/example\.org\/project\/llms\/zh-cn\/user-guide\.md/);
