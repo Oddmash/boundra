@@ -17,6 +17,7 @@ const alternate = (item: LandingLocale) => landingLocale ? landingPath(base,item
 <!doctype html>
 <html lang={lang} class:list={[{'landing-document': !!landingLocale}]} style={landingLocale ? 'background-color:#111110' : undefined}>
   <head>
+    <!-- Navigation activation needs the opt-in before external styles load. -->
     <style is:inline set:html={siteNavigation}></style>
     <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><meta name="description" content={description} />
     <title>{title}</title><link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} /><link rel="icon" href={`${base}boundra-mark.svg`} type="image/svg+xml" />
