@@ -1,5 +1,10 @@
 # Boundra VS Code changelog
 
+## 0.1.2 (pre-release)
+
+- Improve Marketplace discovery keywords and link the published documentation and first boundary check.
+- Document CLI installation into VS Code's pre-release channel.
+
 ## 0.1.1 (pre-release)
 
 - Clarify Marketplace installation, project-local CLI setup and workspace checking.
