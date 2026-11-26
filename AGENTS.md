@@ -1,5 +1,7 @@
 # AGENTS.md
 
+Follow the [Oddmash concurrent work claims](https://github.com/Oddmash/.github/blob/main/AGENTS.md#concurrent-work-claims) and organization collaboration rules before implementation, review, CI retries, or merges.
+
 Boundra 프로젝트에서 작업하는 사람/AI 에이전트 공통 운영 규약.
 
 Follow the [Oddmash organization working agreements](https://github.com/Oddmash/.github/blob/main/AGENTS.md). Public issues, PRs, reviews, commits, and changelog entries use English. Preserve Boundra's product-specific architecture and release constraints.
