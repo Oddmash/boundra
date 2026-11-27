@@ -3,7 +3,7 @@ on:
   push:
     branches: [develop, main]
     paths:
-      - '.github/workflows/oddmash-issue-labels.yml'
+      - '.github/workflows/issue-labels.yml'
   workflow_dispatch:
   schedule:
     - cron: '17 2 * * 1'
